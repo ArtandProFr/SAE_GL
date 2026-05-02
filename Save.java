@@ -14,15 +14,17 @@ public class Save{
         String userDir = System.getProperty("user.dir");
         Path folder_path = Path.of(userDir, "Saves");
         File folder = new File(folder_path.toString());
-        File file = null;
         if (folder.exists()){
             Path file_path = Path.of(folder_path.toString(), infos.get("USERNAME") + "-" + infos.get("SAVENAME") + ".txt");
-            file = new File(file_path.toString());
+            File file = new File(file_path.toString());
+            return file.exists();
+        } else {
+            return false;
         }
-        return !(!folder.exists() || !file.exists());
     }
 
-    public static void save(HashMap infos){
+    @SuppressWarnings("ConvertToTryWithResources")
+    public static boolean save(HashMap infos){
 
         /* La méthode sauvegarde la partie. ATTENTION : La méthode ne vérifie pas la validité des infos données. */
 
@@ -38,13 +40,12 @@ public class Save{
             file.delete();
         }
         try {
-        file.createNewFile();
+            file.createNewFile();
         } catch (IOException e){
-            e.printStackTrace();
+            return false;
         }
-        try {
-            FileWriter writer = new FileWriter(file);
-            BufferedWriter bw = new BufferedWriter(writer);
+        try (FileWriter writer = new FileWriter(file);
+            BufferedWriter bw = new BufferedWriter(writer);){
             bw.write("USERNAME : " + (String) infos.get("USERNAME"));
             bw.newLine();
             bw.write("SAVENAME : " + (String) infos.get("SAVENAME"));
@@ -58,9 +59,9 @@ public class Save{
             bw.write("PHASE : " + (String) infos.get("PHASE"));
             bw.newLine();
             bw.write("TIME : " + (String) infos.get("TIME"));
-            bw.close();
+            return true;
         } catch (IOException e){
-            e.printStackTrace();
+            return false;
         }
     }
 
