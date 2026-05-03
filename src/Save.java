@@ -350,6 +350,27 @@ public boolean savenameIsValid(){
         return liste;
     }
 
+    public static Save[] playerFilter(Save[] arr, String userFilter){
+
+        /* Cette méthode renvoie une liste de Save filtrée par nom de joueur. */
+
+        int count = 0;
+        for (Save s : arr){
+            if (s.username.equals(userFilter)){
+                count++;
+            }
+        }
+        Save[] f = new Save[count];
+        int decal = 0;
+        for (int i = 0; i < count; i++){
+            if (arr[i].username.equals(userFilter)){
+                f[decal] = arr[i];
+                decal++;
+            }
+        }
+        return f;
+    }
+
     public static void main(String[] args){
         
     }
