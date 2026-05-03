@@ -1,6 +1,3 @@
-# Fichiers compilés Java
-*.class
-
 # Dossiers de builds (selon ton IDE)
 bin/
 out/
