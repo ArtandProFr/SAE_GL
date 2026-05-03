@@ -65,6 +65,26 @@ public class Save{
         }
     }
 
+    public static boolean delete(HashMap infos){
+
+        /* La méthode supprime la sauvegarde si elle existe et renvoie un booléen selon si la suppression a été effectuée ou non. (Si la sauvegarde existait avant ou non.) */
+
+        String userDir = System.getProperty("user.dir");
+        Path folder_path = Path.of(userDir, "Saves");
+        File folder = new File(folder_path.toString());
+        if (!folder.exists()){
+            folder.mkdir();
+            return false;
+        }
+        Path file_path = Path.of(folder_path.toString(), infos.get("USERNAME") + "-" + infos.get("SAVENAME") + ".txt");
+        File file = new File(file_path.toString());
+        if (file.exists()){
+            file.delete();
+            return true;
+        }
+        return false;
+    }
+
     public static void main(String[] args){
         // TESTS
         /*
