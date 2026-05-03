@@ -15,10 +15,10 @@ public class Save{
     String difficulty = "Normal";
     String creationDate = "";
     String lastSave = "";
-    Double phase = 0.0;
+    double phase = 0.0;
     int time = 0;
 
-    char[] validCaract = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+    static char[] validCaract = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
                           'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
                           '_', '#', '@', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
 
@@ -193,7 +193,7 @@ public class Save{
                         case "DIFFICULY" -> difficulty = elem;
                         case "CREATIONDATE" -> creationDate = elem;
                         case "LASTSAVE" -> lastSave = elem;
-                        case "PHASE" -> phase = Double.valueOf(elem);
+                        case "PHASE" -> phase = Double.parseDouble(elem);
                         case "TIME" -> {
                             arr2 = elem.split(":"); 
                             time = Integer.parseInt(arr2[0]) * 3600 + Integer.parseInt(arr2[1]) * 60 + Integer.parseInt(arr2[2]);}
