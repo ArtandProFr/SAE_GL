@@ -14,7 +14,7 @@ public class Save{
 
     String username = "Enter username here...";
     String savename = "Enter savename here...";
-    String difficulty = "Normal";
+    String difficulty = "Choose difficulty";
     String creationDate = "";
     String lastSave = "";
     double phase = 0.0;
@@ -25,6 +25,8 @@ public class Save{
     static char[] validCaract = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
                           'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
                           '_', '#', '@', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+    
+    static String[] difficulties = {"Easy", "Normal", "Hard"};
 
     public boolean initializeSave(){
 
@@ -56,6 +58,14 @@ public class Save{
         return savenameIsValid();
     }
 
+    public boolean modifyDifficulty(String newDifficulty){
+
+        /* La méthode modifie le nom de sauvegarde et renvoie un booléen selon s'il est valide. */
+
+        difficulty = newDifficulty;
+        return difficultyIsValid();
+    }
+
     public void showSave(){
 
         /* Cette méthode affiche les informations de la sauvegarde en console. Ne doit être utilisé que pour le développement. */
@@ -74,7 +84,7 @@ public class Save{
 
         /* La méthode renvoie un booléen selon si le pseudo et le nom de sauvegarde est valide. */
 
-        return usernameIsValid() && savenameIsValid();
+        return usernameIsValid() && savenameIsValid() && difficultyIsValid();
     }
     
     public boolean usernameIsValid(){
@@ -97,25 +107,37 @@ public class Save{
         return true;
     }
 
-public boolean savenameIsValid(){
+    public boolean savenameIsValid(){
 
-    /* La méthode renvoie un booléen selon si le nom de sauvegarde est valide. */
+        /* La méthode renvoie un booléen selon si le nom de sauvegarde est valide. */
 
-    boolean isValidCaract;
-    for (char c : savename.toCharArray()){
-        isValidCaract = false;
-        for (char car : validCaract){
-            if (car == c){
-                isValidCaract = true;
-                break;
+        boolean isValidCaract;
+        for (char c : savename.toCharArray()){
+            isValidCaract = false;
+            for (char car : validCaract){
+                if (car == c){
+                    isValidCaract = true;
+                    break;
+                }
+            }
+            if (!isValidCaract){
+                return false;
             }
         }
-        if (!isValidCaract){
-            return false;
+        return true;
+    }
+
+    public boolean difficultyIsValid(){
+
+    /* La méthode renvoie un booléen selon si la difficulté est valide. */
+
+    for (String s : difficulties){
+        if (s.equals(difficulty)){
+            return true;
         }
     }
-    return true;
-}
+    return false;
+    }
 
     public boolean alreadyExists(){
 
@@ -260,7 +282,7 @@ public boolean savenameIsValid(){
                     switch (key){
                         case "USERNAME" -> s.username = elem;
                         case "SAVENAME" -> s.savename = elem;
-                        case "DIFFICULY" -> s.difficulty = elem;
+                        case "DIFFICULTY" -> s.difficulty = elem;
                         case "CREATIONDATE" -> s.creationDate = elem;
                         case "LASTSAVE" -> s.lastSave = elem;
                         case "PHASE" -> s.phase = Double.parseDouble(elem);
@@ -314,7 +336,7 @@ public boolean savenameIsValid(){
                     switch (key){
                         case "USERNAME" -> username = elem;
                         case "SAVENAME" -> savename = elem;
-                        case "DIFFICULY" -> difficulty = elem;
+                        case "DIFFICULTY" -> difficulty = elem;
                         case "CREATIONDATE" -> creationDate = elem;
                         case "LASTSAVE" -> lastSave = elem;
                         case "PHASE" -> phase = Double.parseDouble(elem);
@@ -362,7 +384,7 @@ public boolean savenameIsValid(){
         }
         Save[] f = new Save[count];
         int decal = 0;
-        for (int i = 0; i < count; i++){
+        for (int i = 0; i < arr.length; i++){
             if (arr[i].username.equals(userFilter)){
                 f[decal] = arr[i];
                 decal++;
@@ -383,13 +405,63 @@ public boolean savenameIsValid(){
         }
         Save[] f = new Save[count];
         int decal = 0;
-        for (int i = 0; i < count; i++){
+        for (int i = 0; i < arr.length; i++){
             if (arr[i].difficulty.equals(diffFilter)){
                 f[decal] = arr[i];
                 decal++;
             }
         }
         return f;
+    }
+
+    public static void exchange(Save[] arr, int i, int j){
+
+        /* Cette méthode échange 2 éléments d'un tableau. */
+
+        Save temp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = temp;
+    }
+
+    public static LocalDateTime getDateTime(String s){
+
+        /* Cette méthode renvoie le DateTime à partir d'une chaine de caractère. */
+
+        return LocalDateTime.parse(s, formatter);
+    }
+
+    public static int compareLastSave(Save[] arr, int i, int j, int type){
+        return type * getDateTime(arr[i].lastSave).compareTo(getDateTime(arr[j].lastSave));
+    }
+
+    public static void quicksortLastSave(Save[] arr, int debut, int fin, int type){
+
+        /* Cette méthode est une itération de l'algorithme Quicksort appliqué à un tableau de save sur le paramètre LastSave. */
+
+        if (debut < fin){
+            int pivot = fin;
+            int nb_small = debut;
+            int c;
+            for (int i = debut; i < fin; i++){
+                c = compareLastSave(arr, i, pivot, type);
+                if (c < 0){
+                    exchange(arr, i, nb_small);
+                    nb_small++;
+                }
+            }
+            exchange(arr, nb_small, pivot);
+            quicksortLastSave(arr, debut, nb_small-1, type);
+            quicksortLastSave(arr, nb_small+1, fin, type);
+        }
+    }
+
+    public static void lastSaveOrder(Save[] arr, int type){
+
+        /* Cette méthode tri le tableau de Save selon la dernière sauvegarde. */
+
+        if (arr.length > 1){
+            quicksortLastSave(arr, 0, arr.length - 1, type);
+        }
     }
 
     public static void main(String[] args){
