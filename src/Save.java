@@ -371,6 +371,27 @@ public boolean savenameIsValid(){
         return f;
     }
 
+    public static Save[] difficultyFilter(Save[] arr, String diffFilter){
+
+        /* Cette méthode renvoie une liste de Save filtrée par difficulté. */
+
+        int count = 0;
+        for (Save s : arr){
+            if (s.difficulty.equals(diffFilter)){
+                count++;
+            }
+        }
+        Save[] f = new Save[count];
+        int decal = 0;
+        for (int i = 0; i < count; i++){
+            if (arr[i].difficulty.equals(diffFilter)){
+                f[decal] = arr[i];
+                decal++;
+            }
+        }
+        return f;
+    }
+
     public static void main(String[] args){
         
     }
