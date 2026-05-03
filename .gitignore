@@ -1,0 +1,19 @@
+# Fichiers compilés Java
+*.class
+
+# Dossiers de builds (selon ton IDE)
+bin/
+out/
+target/
+
+# Dossiers de configuration d'IDE
+.idea/
+.vscode/
+.settings/
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+
+# Sauvegardes de tests
+Saves/
