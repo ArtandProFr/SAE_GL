@@ -7,10 +7,70 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
-import java.util.HashMap;
 
 public class Save{
-    public static boolean alreadyExists(HashMap infos){
+
+    String username = "Enter username here...";
+    String savename = "Enter savename here...";
+    String difficulty = "Normal";
+    String creationDate = "";
+    String lastSave = "";
+    Double phase = 0.0;
+    int time = 0;
+
+    char[] validCaract = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+                          'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+                          '_', '#', '@', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+
+    public void showSave(){
+
+        /* Cette méthode affiche les informations de la sauvegarde en console. Ne doit être utilisé que pour le développement. */
+
+        System.out.println("Username : " + username);
+        System.out.println("Savename : " + savename);
+        System.out.println("Difficulty : " + difficulty);
+        System.out.println("Creation date : " + creationDate);
+        System.out.println("Last save : " + lastSave);
+        System.out.println("Phase : " + phase);
+        System.out.println("Time : " + time);
+    }
+    
+    public boolean isValid(){
+
+        /* La méthode renvoie un booléen selon si le pseudo et le nom de sauvegarde sont valides. */
+
+        boolean valid = true;
+        boolean isValidCaract;
+        for (char c : username.toCharArray()){
+            isValidCaract = false;
+            for (char car : validCaract){
+                if (car == c){
+                    isValidCaract = true;
+                    break;
+                }
+            }
+            if (!isValidCaract){
+                return false;
+            }
+        }
+        // Les caractères de USERNAME sont valides.
+        for (char c : savename.toCharArray()){
+            isValidCaract = false;
+            for (char car : validCaract){
+                if (car == c){
+                    isValidCaract = true;
+                    break;
+                }
+            }
+            if (!isValidCaract){
+                return false;
+            }
+        }
+        // Les caractères de SAVENAME sont valides.
+        return valid;
+    }
+
+    public boolean alreadyExists(){
 
         /* La méthode renvoie un booléen selon si une sauvegarde (Pseudo-NomSauvegarde) existe déjà */
 
@@ -18,7 +78,7 @@ public class Save{
         Path folder_path = Path.of(userDir, "Saves");
         File folder = new File(folder_path.toString());
         if (folder.exists()){
-            Path file_path = Path.of(folder_path.toString(), infos.get("USERNAME") + "-" + infos.get("SAVENAME") + ".txt");
+            Path file_path = Path.of(folder_path.toString(), username + "-" + savename + ".txt");
             File file = new File(file_path.toString());
             return file.exists();
         } else {
@@ -27,7 +87,7 @@ public class Save{
     }
 
     @SuppressWarnings("ConvertToTryWithResources")
-    public static boolean save(HashMap infos){
+    public boolean save(){
 
         /* La méthode sauvegarde la partie. ATTENTION : La méthode ne vérifie pas la validité des infos données. */
 
@@ -37,7 +97,7 @@ public class Save{
         if (!folder.exists()){
             folder.mkdir();
         }
-        Path file_path = Path.of(folder_path.toString(), infos.get("USERNAME") + "-" + infos.get("SAVENAME") + ".txt");
+        Path file_path = Path.of(folder_path.toString(), username + "-" + savename + ".txt");
         File file = new File(file_path.toString());
         if (file.exists()){
             file.delete();
@@ -49,26 +109,31 @@ public class Save{
         }
         try (FileWriter writer = new FileWriter(file);
             BufferedWriter bw = new BufferedWriter(writer);){
-            bw.write("USERNAME >>> " + (String) infos.get("USERNAME"));
+            bw.write("USERNAME >>> " + username);
             bw.newLine();
-            bw.write("SAVENAME >>> " + (String) infos.get("SAVENAME"));
+            bw.write("SAVENAME >>> " + savename);
             bw.newLine();
-            bw.write("DIFFICULTY >>> " + (String) infos.get("DIFFICULTY"));
+            bw.write("DIFFICULTY >>> " + difficulty);
             bw.newLine();
-            bw.write("CREATION DATE >>> " + (String) infos.get("CREATIONDATE"));
+            bw.write("CREATION DATE >>> " + creationDate);
             bw.newLine();
-            bw.write("LAST SAVE >>> " + (String) infos.get("LASTSAVE"));
+            bw.write("LAST SAVE >>> " + lastSave);
             bw.newLine();
-            bw.write("PHASE >>> " + (String) infos.get("PHASE"));
+            bw.write("PHASE >>> " + String.valueOf(phase));
             bw.newLine();
-            bw.write("TIME >>> " + (String) infos.get("TIME"));
+            int t = time;
+            int h = t/3600;
+            t -= h*3600;
+            int m = t/60;
+            t -= m*60;
+            bw.write("TIME >>> " + h + ":" + m + ":" + t);
             return true;
         } catch (IOException e){
             return false;
         }
     }
 
-    public static boolean delete(HashMap infos){
+    public boolean delete(){
 
         /* La méthode supprime la sauvegarde si elle existe et renvoie un booléen selon si la suppression a été effectuée ou non. (Si la sauvegarde existait avant ou non.) */
 
@@ -79,7 +144,7 @@ public class Save{
             folder.mkdir();
             return false;
         }
-        Path file_path = Path.of(folder_path.toString(), infos.get("USERNAME") + "-" + infos.get("SAVENAME") + ".txt");
+        Path file_path = Path.of(folder_path.toString(), username + "-" + savename + ".txt");
         File file = new File(file_path.toString());
         if (file.exists()){
             file.delete();
@@ -88,11 +153,11 @@ public class Save{
         return false;
     }
 
-    public static HashMap<String, String> getSave(String fileName){
+    public boolean getSave(){
 
-        /* Cette méthode renvoie un hashmap contenant toute les infos d'une partie sauvegardée. Si la partie n'existe pas : renvoie null. */
+        /* Cette méthode initialise toute les infos d'une partie sauvegardée. Renvoie un booléen selon si la partie existe ou non. */
 
-        HashMap<String, String> hm = new HashMap<>();
+        String fileName = username + "-" + savename;
         String userDir = System.getProperty("user.dir");
         Path folder_path = Path.of(userDir, "Saves");
         File folder = new File(folder_path.toString());
@@ -101,9 +166,7 @@ public class Save{
         }
         Path file_path = Path.of(folder_path.toString(), fileName + ".txt");
         File file = new File(file_path.toString());
-        if (!file.exists()){
-            hm = null;
-        } else {
+        if (file.exists()){
             try {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
                 String[] doc = new String[10]; // Pour l'instant 7 lignes suffisent, peut-être qu'une 8eme sera à ajouter pour l'intégrité
@@ -118,45 +181,34 @@ public class Save{
                 String elem;
                 String[] arr;
                 String l;
+                String[] arr2;
                 for (int j = 0; j < i; j++){
                     l = doc[j];
                     arr = l.split(">>>");
                     key = arr[0].replace(" ", "");
                     elem = arr[1].replace(" - ", ">>>").replace(" ", "").replace(">>>", " - ");
-                    hm.put(key, elem);
+                    switch (key){
+                        case "USERNAME" -> username = elem;
+                        case "SAVENAME" -> savename = elem;
+                        case "DIFFICULY" -> difficulty = elem;
+                        case "CREATIONDATE" -> creationDate = elem;
+                        case "LASTSAVE" -> lastSave = elem;
+                        case "PHASE" -> phase = Double.valueOf(elem);
+                        case "TIME" -> {
+                            arr2 = elem.split(":"); 
+                            time = Integer.parseInt(arr2[0]) * 3600 + Integer.parseInt(arr2[1]) * 60 + Integer.parseInt(arr2[2]);}
+                        default -> {
+                        }
+                    }
                 }
+                return true;
             } catch (IOException e) {
-                hm = null;
             }
         }
-        return hm;
+        return false;
     }
 
     public static void main(String[] args){
-        // TESTS
         
-        /*
-        HashMap<String, String> hm1 = new HashMap<>();
-        hm1.put("USERNAME", "ArtandProFr");
-        hm1.put("SAVENAME", "Premiere_Partie");
-        hm1.put("DIFFICULTY", "MOYENNE");
-        hm1.put("CREATIONDATE", "02/05/2026 - 22:46:00");
-        hm1.put("LASTSAVE", "02/05/2026 - 22:47:00");
-        hm1.put("PHASE", "1.2");
-        hm1.put("TIME", "00:01:00");
-        save(hm1);
-        
-        
-        HashMap<String, String> hm2 = getSave("ArtandProFr-Premiere_Partie");
-        if (hm2 != null && !hm2.isEmpty()){
-            for (Map.Entry<String, String> e : hm2.entrySet()){
-                System.out.println(e.getKey() + " >>> " + e.getValue());
-            }
-        } else {
-            System.out.println("hm2 is null");
-        }
-
-        System.out.println("hm1 == hm2 ? : " + hm1.equals(hm2));
-        */
     }
 }
