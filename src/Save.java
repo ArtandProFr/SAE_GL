@@ -384,9 +384,9 @@ public class Save{
         }
         Save[] f = new Save[count];
         int decal = 0;
-        for (int i = 0; i < arr.length; i++){
-            if (arr[i].username.equals(userFilter)){
-                f[decal] = arr[i];
+        for (Save s : arr){
+            if (s.username.equals(userFilter)){
+                f[decal] = s;
                 decal++;
             }
         }
@@ -405,9 +405,9 @@ public class Save{
         }
         Save[] f = new Save[count];
         int decal = 0;
-        for (int i = 0; i < arr.length; i++){
-            if (arr[i].difficulty.equals(diffFilter)){
-                f[decal] = arr[i];
+        for (Save s : arr){
+            if (s.difficulty.equals(diffFilter)){
+                f[decal] = s;
                 decal++;
             }
         }
