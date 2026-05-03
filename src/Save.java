@@ -212,7 +212,72 @@ public boolean savenameIsValid(){
         return false;
     }
 
-    public boolean getSave(){
+    public static Save getSave(String givenUsername, String givenSavename){
+        
+        /* Cette méthode renvoie un objet Save initialisé à partir d'un nom d'utilisateur et un nom de sauvegarde. */
+
+        String fileName = givenUsername + "-" + givenSavename;
+        return getSave(fileName);
+    }
+
+    public static Save getSave(String fileName){
+
+        /* Cette méthode renvoie un objet Save initialisé à partir d'un nom de fichier. */
+
+        if (!fileName.endsWith(".txt")){
+            fileName += ".txt";
+        }
+        Save s = new Save();
+        String userDir = System.getProperty("user.dir");
+        Path folder_path = Path.of(userDir, "Saves");
+        File folder = new File(folder_path.toString());
+        if (!folder.exists()){
+            folder.mkdir();
+        }
+        Path file_path = Path.of(folder_path.toString(), fileName);
+        File file = new File(file_path.toString());
+        if (file.exists()){
+            try {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
+                String[] doc = new String[10]; // Pour l'instant 7 lignes suffisent, peut-être qu'une 8eme sera à ajouter pour l'intégrité
+                int i = 0;
+                String line = reader.readLine();
+                while (line != null){
+                    doc[i] = line;
+                    line = reader.readLine();
+                    i++;
+                }
+                String key;
+                String elem;
+                String[] arr;
+                String l;
+                String[] arr2;
+                for (int j = 0; j < i; j++){
+                    l = doc[j];
+                    arr = l.split(">>>");
+                    key = arr[0].replace(" ", "");
+                    elem = arr[1].replace(" - ", ">>>").replace(" ", "").replace(">>>", " - ");
+                    switch (key){
+                        case "USERNAME" -> s.username = elem;
+                        case "SAVENAME" -> s.savename = elem;
+                        case "DIFFICULY" -> s.difficulty = elem;
+                        case "CREATIONDATE" -> s.creationDate = elem;
+                        case "LASTSAVE" -> s.lastSave = elem;
+                        case "PHASE" -> s.phase = Double.parseDouble(elem);
+                        case "TIME" -> {
+                            arr2 = elem.split(":"); 
+                            s.time = Integer.parseInt(arr2[0]) * 3600 + Integer.parseInt(arr2[1]) * 60 + Integer.parseInt(arr2[2]);}
+                        default -> {
+                        }
+                    }
+                }
+            } catch (IOException e) {
+            }
+        }
+        return s;
+    }
+
+    public boolean initSaveFromFile(){
 
         /* Cette méthode initialise toute les infos d'une partie sauvegardée. Renvoie un booléen selon si la partie existe ou non. */
 
@@ -267,16 +332,25 @@ public boolean savenameIsValid(){
         return false;
     }
 
+    public static Save[] getAllSaves(){
+
+        /* Cette méthode renvoie un tableau de toutes les parties sauvegardées. */
+        
+        String userDir = System.getProperty("user.dir");
+        Path folder_path = Path.of(userDir, "Saves");
+        File folder = new File(folder_path.toString());
+        if (!folder.exists()){
+            folder.mkdir();
+        }
+        String[] listeStr = folder.list();
+        Save[] liste = new Save[listeStr.length];
+        for (int i = 0; i < liste.length; i++){
+            liste[i] = getSave(listeStr[i]);
+        }
+        return liste;
+    }
+
     public static void main(String[] args){
-        /*
-        Save s = new Save();
-        s.modifySavename("");
-        s.modifyUsername("");
         
-        s.initializeSave();
-        
-        s.getSave();
-        s.showSave();
-        */
     }
 }
