@@ -67,6 +67,7 @@ public class Save{
         System.out.println("Last save : " + lastSave);
         System.out.println("Phase : " + phase);
         System.out.println("Time : " + time);
+        System.out.println("Est sauvegardée dans le dossier ? " + alreadyExists());
     }
 
     public boolean isValid(){
@@ -172,7 +173,19 @@ public boolean savenameIsValid(){
             t -= h*3600;
             int m = t/60;
             t -= m*60;
-            bw.write("TIME >>> " + h + ":" + m + ":" + t);
+            String c1 = "";
+            String c2 = "";
+            String c3 = "";
+            if (h < 10){
+                c1 = "0";
+            }
+            if (m < 10){
+                c2 = "0";
+            }
+            if (t < 10){
+                c3 = "0";
+            }
+            bw.write("TIME >>> " + c1 + h + ":" + c2 + m + ":" + c3 + t);
             return true;
         } catch (IOException e){
             return false;
@@ -255,6 +268,15 @@ public boolean savenameIsValid(){
     }
 
     public static void main(String[] args){
-
+        /*
+        Save s = new Save();
+        s.modifySavename("");
+        s.modifyUsername("");
+        
+        s.initializeSave();
+        
+        s.getSave();
+        s.showSave();
+        */
     }
 }
