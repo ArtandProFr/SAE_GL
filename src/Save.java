@@ -7,6 +7,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class Save{
 
@@ -18,9 +20,41 @@ public class Save{
     double phase = 0.0;
     int time = 0;
 
+    static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy - HH:mm:ss");
+
     static char[] validCaract = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
                           'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
                           '_', '#', '@', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+
+    public boolean initializeSave(){
+
+        /* La méthode initialise une sauvegarde si elle est valide et n'existe pas déjà en la stockant dans le dossier Saves. Elle renvoie un booléen selon si la création de la sauvegarde a réussi ou non. */
+
+        if (isValid() && !alreadyExists()){
+            creationDate = LocalDateTime.now().format(formatter);
+            lastSave = creationDate;
+            phase = 0.1;
+            time = 0;
+            return save();
+        }
+        return false;
+    }
+
+    public boolean modifyUsername(String newUsername){
+
+        /* La méthode modifie le pseudo et renvoie un booléen selon s'il est valide. */
+
+        username = newUsername;
+        return usernameIsValid();
+    }
+
+    public boolean modifySavename(String newSavename){
+
+        /* La méthode modifie le nom de sauvegarde et renvoie un booléen selon s'il est valide. */
+
+        savename = newSavename;
+        return savenameIsValid();
+    }
 
     public void showSave(){
 
@@ -34,12 +68,18 @@ public class Save{
         System.out.println("Phase : " + phase);
         System.out.println("Time : " + time);
     }
-    
+
     public boolean isValid(){
 
-        /* La méthode renvoie un booléen selon si le pseudo et le nom de sauvegarde sont valides. */
+        /* La méthode renvoie un booléen selon si le pseudo et le nom de sauvegarde est valide. */
 
-        boolean valid = true;
+        return usernameIsValid() && savenameIsValid();
+    }
+    
+    public boolean usernameIsValid(){
+
+        /* La méthode renvoie un booléen selon si le pseudo est valide. */
+
         boolean isValidCaract;
         for (char c : username.toCharArray()){
             isValidCaract = false;
@@ -53,22 +93,28 @@ public class Save{
                 return false;
             }
         }
-        // Les caractères de USERNAME sont valides.
-        for (char c : savename.toCharArray()){
-            isValidCaract = false;
-            for (char car : validCaract){
-                if (car == c){
-                    isValidCaract = true;
-                    break;
-                }
-            }
-            if (!isValidCaract){
-                return false;
+        return true;
+    }
+
+public boolean savenameIsValid(){
+
+    /* La méthode renvoie un booléen selon si le nom de sauvegarde est valide. */
+
+    boolean isValidCaract;
+    for (char c : savename.toCharArray()){
+        isValidCaract = false;
+        for (char car : validCaract){
+            if (car == c){
+                isValidCaract = true;
+                break;
             }
         }
-        // Les caractères de SAVENAME sont valides.
-        return valid;
+        if (!isValidCaract){
+            return false;
+        }
     }
+    return true;
+}
 
     public boolean alreadyExists(){
 
@@ -209,6 +255,6 @@ public class Save{
     }
 
     public static void main(String[] args){
-        
+
     }
 }
