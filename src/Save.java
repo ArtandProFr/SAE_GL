@@ -8,15 +8,14 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 public class Save{
 
     static String usernameBase = "Enter username here...";
     static String savenameBase = "Enter savename here...";
     static String difficultyBase = "Choose difficulty";
-    static String creationDateBase = "../../.... - ..:..:..";
-    static String lastSaveBase = "../../.... - ..:..:..";
+    static String creationDateBase = Time.toDateTimeFormat();
+    static String lastSaveBase = Time.toDateTimeFormat();
     static double phaseBase = 0.0;
     static int timeBase = 0;
     static String alteration = "YOUMUSTNOTCHEAT";
@@ -30,8 +29,6 @@ public class Save{
     double phase = phaseBase;
     int time = timeBase;
     int checksum = getChecksum();
-
-    static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy - HH:mm:ss");
 
     static char[] validCaract = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
                           'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
@@ -82,7 +79,7 @@ public class Save{
         /* La méthode initialise une sauvegarde si elle est valide et n'existe pas déjà en la stockant dans le dossier Saves. Elle renvoie un booléen selon si la création de la sauvegarde a réussi ou non. */
 
         if (isValidToStart() && !alreadyExists()){
-            creationDate = LocalDateTime.now().format(formatter);
+            creationDate = Time.toString(Time.now());
             lastSave = creationDate;
             phase = 0.1;
             time = 0;
@@ -112,9 +109,9 @@ public class Save{
 
         boolean valid = s.isValidToStart() && (!s.creationDate.equals(creationDateBase)) && (!s.lastSave.equals(lastSaveBase)) && (s.phase >= 0.1); // Vérification cas non-initial
         if (valid){
-            LocalDateTime creation = LocalDateTime.parse(s.creationDate, formatter);
-            LocalDateTime save = LocalDateTime.parse(s.lastSave, formatter);
-            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime creation = Time.toDateTimeFormat(s.creationDate, Time.dateTimeFormatter);
+            LocalDateTime save = Time.toDateTimeFormat(s.lastSave, Time.dateTimeFormatter);
+            LocalDateTime now = Time.now();
             valid = (creation.compareTo(save) <= 0) && (save.compareTo(now) <= 0); // Vérification intégrité des DateTime
             if (valid){
                 valid = (s.checksum == getChecksum(s));
@@ -262,7 +259,7 @@ public class Save{
         }
         try (FileWriter writer = new FileWriter(file);
             BufferedWriter bw = new BufferedWriter(writer);){
-            lastSave = LocalDateTime.now().format(formatter);
+            lastSave = Time.toString(Time.now());
             bw.newLine();
             bw.write("WARNING : Any manual modification will PERMANENTLY DELETE the save.");
             bw.newLine();
@@ -564,15 +561,8 @@ public class Save{
         arr[j] = temp;
     }
 
-    public static LocalDateTime getDateTime(String s){
-
-        /* Cette méthode renvoie le DateTime à partir d'une chaine de caractère. */
-
-        return LocalDateTime.parse(s, formatter);
-    }
-
     private static int compareLastSave(Save[] arr, int i, int j, int type){
-        return type * getDateTime(arr[i].lastSave).compareTo(getDateTime(arr[j].lastSave));
+        return type * Time.toDateTimeFormat(arr[i].lastSave, Time.dateTimeFormatter).compareTo(Time.toDateTimeFormat(arr[j].lastSave, Time.dateTimeFormatter));
     }
 
     private static void quicksortLastSave(Save[] arr, int debut, int fin, int type){
