@@ -416,7 +416,7 @@ public class Save{
         return f;
     }
 
-    public static void exchange(Save[] arr, int i, int j){
+    private static void exchange(Save[] arr, int i, int j){
 
         /* Cette méthode échange 2 éléments d'un tableau. */
 
@@ -432,11 +432,11 @@ public class Save{
         return LocalDateTime.parse(s, formatter);
     }
 
-    public static int compareLastSave(Save[] arr, int i, int j, int type){
+    private static int compareLastSave(Save[] arr, int i, int j, int type){
         return type * getDateTime(arr[i].lastSave).compareTo(getDateTime(arr[j].lastSave));
     }
 
-    public static void quicksortLastSave(Save[] arr, int debut, int fin, int type){
+    private static void quicksortLastSave(Save[] arr, int debut, int fin, int type){
 
         /* Cette méthode est une itération de l'algorithme Quicksort appliqué à un tableau de save sur le paramètre LastSave. */
 
