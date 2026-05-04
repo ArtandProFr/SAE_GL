@@ -12,13 +12,21 @@ import java.time.format.DateTimeFormatter;
 
 public class Save{
 
-    String username = "Enter username here...";
-    String savename = "Enter savename here...";
-    String difficulty = "Choose difficulty";
-    String creationDate = "";
-    String lastSave = "";
-    double phase = 0.0;
-    int time = 0;
+    static String usernameBase = "Enter username here...";
+    static String savenameBase = "Enter savename here...";
+    static String difficultyBase = "Choose difficulty";
+    static String creationDateBase = "";
+    static String lastSaveBase = "";
+    static double phaseBase = 0.0;
+    static int timeBase = 0;
+
+    String username = usernameBase;
+    String savename = savenameBase;
+    String difficulty = difficultyBase;
+    String creationDate = creationDateBase;
+    String lastSave = lastSaveBase;
+    double phase = phaseBase;
+    int time = timeBase;
 
     static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy - HH:mm:ss");
 
@@ -32,7 +40,7 @@ public class Save{
 
         /* La méthode initialise une sauvegarde si elle est valide et n'existe pas déjà en la stockant dans le dossier Saves. Elle renvoie un booléen selon si la création de la sauvegarde a réussi ou non. */
 
-        if (isValid() && !alreadyExists()){
+        if (isValidToStart() && !alreadyExists()){
             creationDate = LocalDateTime.now().format(formatter);
             lastSave = creationDate;
             phase = 0.1;
@@ -80,9 +88,9 @@ public class Save{
         System.out.println("Est sauvegardée dans le dossier ? " + alreadyExists());
     }
 
-    public boolean isValid(){
+    public boolean isValidToStart(){
 
-        /* La méthode renvoie un booléen selon si le pseudo et le nom de sauvegarde est valide. */
+        /* La méthode renvoie un booléen selon si le pseudo, le nom de sauvegarde et la difficulté est valide. */
 
         return usernameIsValid() && savenameIsValid() && difficultyIsValid();
     }
