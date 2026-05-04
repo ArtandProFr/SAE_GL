@@ -15,10 +15,12 @@ public class Save{
     static String usernameBase = "Enter username here...";
     static String savenameBase = "Enter savename here...";
     static String difficultyBase = "Choose difficulty";
-    static String creationDateBase = "";
-    static String lastSaveBase = "";
+    static String creationDateBase = "../../.... - ..:..:..";
+    static String lastSaveBase = "../../.... - ..:..:..";
     static double phaseBase = 0.0;
     static int timeBase = 0;
+    static String alteration = "YOUMUSTNOTCHEAT";
+    static int nb_ligne_save = 15;
 
     String username = usernameBase;
     String savename = savenameBase;
@@ -27,6 +29,7 @@ public class Save{
     String lastSave = lastSaveBase;
     double phase = phaseBase;
     int time = timeBase;
+    int checksum = getChecksum();
 
     static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy - HH:mm:ss");
 
@@ -35,6 +38,44 @@ public class Save{
                           '_', '#', '@', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
     
     static String[] difficulties = {"Easy", "Normal", "Hard"};
+
+    public static void reset(Save s){
+        s.username = usernameBase;
+        s.savename = savenameBase;
+        s.difficulty = difficultyBase;
+        s.creationDate = creationDateBase;
+        s.lastSave = lastSaveBase;
+        s.phase = phaseBase;
+        s.time = timeBase;
+        s.checksum = s.getChecksum();
+    }
+
+    public void reset(){
+        reset(this);
+    }
+
+    private static int getChecksum(Save s){
+
+        /* Cette méthode renvoie la chaine de caractère associée au checksum de la Save passé en paramètre. */
+
+        String cs = "";
+        cs += s.username;
+        cs += s.savename;
+        cs += s.difficulty;
+        cs += s.creationDate;
+        cs += s.lastSave;
+        cs += String.valueOf(s.phase);
+        cs += String.valueOf(s.time);
+        cs += alteration;
+        return cs.hashCode();
+    }
+
+    public int getChecksum(){
+        
+        /* Cette méthode renvoie la chaine de caractère associée au checksum de la Save. */
+
+        return getChecksum(this);
+    }
 
     public boolean initializeSave(){
 
@@ -48,6 +89,46 @@ public class Save{
             return save();
         }
         return false;
+    }
+
+    public static boolean isInitial(Save s){
+
+        /* Cette méthode renvoie un booléen selon si la Save est à l'état initial. */
+
+        return ((s.username.equals(usernameBase)) && (s.savename.equals(savenameBase)) && (s.difficulty.equals(difficultyBase)) && (s.creationDate.equals(creationDateBase)) && (s.lastSave.equals(lastSaveBase)) && (s.phase == phaseBase) && (s.time == timeBase) && (s.checksum == getChecksum(s)));
+    }
+
+    public boolean isInitial(){
+
+        /* Cette méthode renvoie un booléen selon si la Save est à l'état initial. */
+
+        return isInitial(this);
+    }
+
+    public static boolean isValid(Save s){
+
+        /* Cette méthode renvoie si la partie est valide, intègre et sans triche. */
+        /* ATTENTION : l'utilisation de LocalDateTime peut entraîner la suppression d'une sauvegarde créée dans un autre fuseau horaire ("retour dans le passé"). */
+
+        boolean valid = s.isValidToStart() && (!s.creationDate.equals(creationDateBase)) && (!s.lastSave.equals(lastSaveBase)) && (s.phase >= 0.1); // Vérification cas non-initial
+        if (valid){
+            LocalDateTime creation = LocalDateTime.parse(s.creationDate, formatter);
+            LocalDateTime save = LocalDateTime.parse(s.lastSave, formatter);
+            LocalDateTime now = LocalDateTime.now();
+            valid = (creation.compareTo(save) <= 0) && (save.compareTo(now) <= 0); // Vérification intégrité des DateTime
+            if (valid){
+                valid = (s.checksum == getChecksum(s));
+            }
+        }
+        return valid;
+    }
+
+    public boolean isValid(){
+
+        /* Cette méthode renvoie si la partie est valide, intègre et sans triche. */
+        /* ATTENTION : l'utilisation de LocalDateTime peut entraîner la suppression d'une sauvegarde créée dans un autre fuseau horaire ("retour dans le passé"). */
+
+        return isValid(this);
     }
 
     public boolean modifyUsername(String newUsername){
@@ -85,6 +166,7 @@ public class Save{
         System.out.println("Last save : " + lastSave);
         System.out.println("Phase : " + phase);
         System.out.println("Time : " + time);
+        System.out.println("Checksum : " + checksum);
         System.out.println("Est sauvegardée dans le dossier ? " + alreadyExists());
     }
 
@@ -180,6 +262,11 @@ public class Save{
         }
         try (FileWriter writer = new FileWriter(file);
             BufferedWriter bw = new BufferedWriter(writer);){
+            lastSave = LocalDateTime.now().format(formatter);
+            bw.newLine();
+            bw.write("WARNING : Any manual modification will PERMANENTLY DELETE the save.");
+            bw.newLine();
+            bw.newLine();
             bw.write("USERNAME >>> " + username);
             bw.newLine();
             bw.write("SAVENAME >>> " + savename);
@@ -210,13 +297,15 @@ public class Save{
                 c3 = "0";
             }
             bw.write("TIME >>> " + c1 + h + ":" + c2 + m + ":" + c3 + t);
+            bw.newLine();
+            bw.write("CHECKSUM >>> " + String.valueOf(getChecksum()));
             return true;
         } catch (IOException e){
             return false;
         }
     }
 
-    public boolean delete(){
+    public static boolean delete(Save s){
 
         /* La méthode supprime la sauvegarde si elle existe et renvoie un booléen selon si la suppression a été effectuée ou non. (Si la sauvegarde existait avant ou non.) */
 
@@ -227,7 +316,7 @@ public class Save{
             folder.mkdir();
             return false;
         }
-        Path file_path = Path.of(folder_path.toString(), username + "-" + savename + ".txt");
+        Path file_path = Path.of(folder_path.toString(), s.username + "-" + s.savename + ".txt");
         File file = new File(file_path.toString());
         if (file.exists()){
             file.delete();
@@ -236,9 +325,16 @@ public class Save{
         return false;
     }
 
+    public boolean delete(){
+
+        /* La méthode supprime la sauvegarde si elle existe et renvoie un booléen selon si la suppression a été effectuée ou non. (Si la sauvegarde existait avant ou non.) */
+
+        return delete(this);
+    }
+
     public static Save getSave(String givenUsername, String givenSavename){
         
-        /* Cette méthode renvoie un objet Save initialisé à partir d'un nom d'utilisateur et un nom de sauvegarde. */
+        /* Cette méthode renvoie un objet Save initialisé à partir d'un nom d'utilisateur et un nom de sauvegarde. Supprime la sauvegarde et reset si non-intègre. */
 
         String fileName = givenUsername + "-" + givenSavename;
         return getSave(fileName);
@@ -246,7 +342,7 @@ public class Save{
 
     public static Save getSave(String fileName){
 
-        /* Cette méthode renvoie un objet Save initialisé à partir d'un nom de fichier. */
+        /* Cette méthode renvoie un objet Save initialisé à partir d'un nom de fichier. Supprime la sauvegarde et reset si non-intègre. */
 
         if (!fileName.endsWith(".txt")){
             fileName += ".txt";
@@ -262,14 +358,17 @@ public class Save{
         File file = new File(file_path.toString());
         if (file.exists()){
             try {
-                BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
-                String[] doc = new String[10]; // Pour l'instant 7 lignes suffisent, peut-être qu'une 8eme sera à ajouter pour l'intégrité
-                int i = 0;
-                String line = reader.readLine();
-                while (line != null){
-                    doc[i] = line;
-                    line = reader.readLine();
-                    i++;
+                String[] doc;
+                int i;
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"))) {
+                    doc = new String[nb_ligne_save];
+                    i = 0;
+                    String line = reader.readLine();
+                    while (line != null){
+                        doc[i] = line;
+                        line = reader.readLine();
+                        i++;
+                    }
                 }
                 String key;
                 String elem;
@@ -280,22 +379,33 @@ public class Save{
                     l = doc[j];
                     arr = l.split(">>>");
                     key = arr[0].replace(" ", "");
-                    elem = arr[1].replace(" - ", ">>>").replace(" ", "").replace(">>>", " - ");
-                    switch (key){
-                        case "USERNAME" -> s.username = elem;
-                        case "SAVENAME" -> s.savename = elem;
-                        case "DIFFICULTY" -> s.difficulty = elem;
-                        case "CREATIONDATE" -> s.creationDate = elem;
-                        case "LASTSAVE" -> s.lastSave = elem;
-                        case "PHASE" -> s.phase = Double.parseDouble(elem);
-                        case "TIME" -> {
-                            arr2 = elem.split(":"); 
-                            s.time = Integer.parseInt(arr2[0]) * 3600 + Integer.parseInt(arr2[1]) * 60 + Integer.parseInt(arr2[2]);}
-                        default -> {
+                    if (arr.length > 1){
+                        elem = arr[1].replace(" - ", ">>>").replace(" ", "").replace(">>>", " - ");
+                        switch (key){
+                            case "USERNAME" -> s.username = elem;
+                            case "SAVENAME" -> s.savename = elem;
+                            case "DIFFICULTY" -> s.difficulty = elem;
+                            case "CREATIONDATE" -> s.creationDate = elem;
+                            case "LASTSAVE" -> s.lastSave = elem;
+                            case "PHASE" -> s.phase = Double.parseDouble(elem);
+                            case "TIME" -> {
+                                arr2 = elem.split(":"); 
+                                s.time = Integer.parseInt(arr2[0]) * 3600 + Integer.parseInt(arr2[1]) * 60 + Integer.parseInt(arr2[2]);}
+                            case "CHECKSUM" -> s.checksum = Integer.parseInt(elem);
+                            default -> {
+                            }
                         }
                     }
                 }
+                if (!s.isValid()){
+                    file.delete();
+                    s.reset();
+                }
             } catch (IOException e) {
+                if (!s.isValid()){
+                    file.delete();
+                    s.reset();
+                }
             }
         }
         return s;
@@ -303,7 +413,7 @@ public class Save{
 
     public boolean initSaveFromFile(){
 
-        /* Cette méthode initialise toute les infos d'une partie sauvegardée. Renvoie un booléen selon si la partie existe ou non. */
+        /* Cette méthode initialise toute les infos d'une partie sauvegardée. Renvoie un booléen selon si la partie existe ou non. Supprime la sauvegarde et reset si non-intègre. */
 
         String fileName = username + "-" + savename;
         String userDir = System.getProperty("user.dir");
@@ -316,15 +426,18 @@ public class Save{
         File file = new File(file_path.toString());
         if (file.exists()){
             try {
-                BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
-                String[] doc = new String[10]; // Pour l'instant 7 lignes suffisent, peut-être qu'une 8eme sera à ajouter pour l'intégrité
-                int i = 0;
-                String line = reader.readLine();
-                while (line != null){
-                    doc[i] = line;
-                    line = reader.readLine();
-                    i++;
-                }
+                String[] doc;
+                int i;
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"))) {
+                    doc = new String[nb_ligne_save]; // Pour l'instant 7 lignes suffisent, peut-être qu'une 8eme sera à ajouter pour l'intégrité
+                    i = 0;
+                    String line = reader.readLine();
+                    while (line != null){
+                        doc[i] = line;
+                        line = reader.readLine();
+                        i++;
+                    }
+                } 
                 String key;
                 String elem;
                 String[] arr;
@@ -334,23 +447,36 @@ public class Save{
                     l = doc[j];
                     arr = l.split(">>>");
                     key = arr[0].replace(" ", "");
-                    elem = arr[1].replace(" - ", ">>>").replace(" ", "").replace(">>>", " - ");
-                    switch (key){
-                        case "USERNAME" -> username = elem;
-                        case "SAVENAME" -> savename = elem;
-                        case "DIFFICULTY" -> difficulty = elem;
-                        case "CREATIONDATE" -> creationDate = elem;
-                        case "LASTSAVE" -> lastSave = elem;
-                        case "PHASE" -> phase = Double.parseDouble(elem);
-                        case "TIME" -> {
-                            arr2 = elem.split(":"); 
-                            time = Integer.parseInt(arr2[0]) * 3600 + Integer.parseInt(arr2[1]) * 60 + Integer.parseInt(arr2[2]);}
-                        default -> {
+                    if (arr.length > 1){
+                        elem = arr[1].replace(" - ", ">>>").replace(" ", "").replace(">>>", " - ");
+                        switch (key){
+                            case "USERNAME" -> username = elem;
+                            case "SAVENAME" -> savename = elem;
+                            case "DIFFICULTY" -> difficulty = elem;
+                            case "CREATIONDATE" -> creationDate = elem;
+                            case "LASTSAVE" -> lastSave = elem;
+                            case "PHASE" -> phase = Double.parseDouble(elem);
+                            case "TIME" -> {
+                                arr2 = elem.split(":"); 
+                                time = Integer.parseInt(arr2[0]) * 3600 + Integer.parseInt(arr2[1]) * 60 + Integer.parseInt(arr2[2]);}
+                            case "CHECKSUM" -> checksum = Integer.parseInt(elem);
+                            default -> {
+                            }
                         }
                     }
                 }
                 return true;
             } catch (IOException e) {
+                if (!isValid()){
+                    file.delete();
+                    reset();
+                    return false;
+                }
+            }
+            if (!isValid()){
+                file.delete();
+                reset();
+                return false;
             }
         }
         return false;
@@ -358,7 +484,7 @@ public class Save{
 
     public static Save[] getAllSaves(){
 
-        /* Cette méthode renvoie un tableau de toutes les parties sauvegardées. */
+        /* Cette méthode renvoie un tableau de toutes les parties sauvegardées. Supprime les parties non-valides / non-intègres. Supprime les sauvegardes si non-intègres.*/
         
         String userDir = System.getProperty("user.dir");
         Path folder_path = Path.of(userDir, "Saves");
@@ -368,10 +494,23 @@ public class Save{
         }
         String[] listeStr = folder.list();
         Save[] liste = new Save[listeStr.length];
+        int count = 0;
         for (int i = 0; i < liste.length; i++){
-            liste[i] = getSave(listeStr[i]);
+            Save s = getSave(listeStr[i]);
+            if (!isInitial(s)){
+                count += 1;
+            }
         }
-        return liste;
+        Save[] finalListe = new Save[count];
+        int decal = 0;
+        for (int i = 0; i < liste.length; i++){
+            Save s = getSave(listeStr[i]);
+            if (!s.isInitial()){
+                finalListe[decal] = s;
+                decal++;
+            }
+        }
+        return finalListe;
     }
 
     public static Save[] playerFilter(Save[] arr, String userFilter){
