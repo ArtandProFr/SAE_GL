@@ -95,12 +95,12 @@ public class Save{
         return usernameIsValid() && savenameIsValid() && difficultyIsValid();
     }
     
-    public boolean usernameIsValid(){
+    public static boolean stringIsValid(String str){
 
-        /* La méthode renvoie un booléen selon si le pseudo est valide. */
+        /* Cette méthode renvoie si une chaîne de caractère respecte les caractères valides ou non. */
 
         boolean isValidCaract;
-        for (char c : username.toCharArray()){
+        for (char c : str.toCharArray()){
             isValidCaract = false;
             for (char car : validCaract){
                 if (car == c){
@@ -113,26 +113,20 @@ public class Save{
             }
         }
         return true;
+    } 
+
+    public boolean usernameIsValid(){
+
+        /* La méthode renvoie un booléen selon si le pseudo est valide. */
+
+        return stringIsValid(username);
     }
 
     public boolean savenameIsValid(){
 
         /* La méthode renvoie un booléen selon si le nom de sauvegarde est valide. */
 
-        boolean isValidCaract;
-        for (char c : savename.toCharArray()){
-            isValidCaract = false;
-            for (char car : validCaract){
-                if (car == c){
-                    isValidCaract = true;
-                    break;
-                }
-            }
-            if (!isValidCaract){
-                return false;
-            }
-        }
-        return true;
+        return stringIsValid(savename);
     }
 
     public boolean difficultyIsValid(){
