@@ -79,7 +79,7 @@ public class Save{
         /* La méthode initialise une sauvegarde si elle est valide et n'existe pas déjà en la stockant dans le dossier Saves. Elle renvoie un booléen selon si la création de la sauvegarde a réussi ou non. */
 
         if (isValidToStart() && !alreadyExists()){
-            creationDate = Time.toString(Time.now());
+            creationDate = Time.dateTimeToString(Time.now());
             lastSave = creationDate;
             phase = 0.1;
             time = 0;
@@ -259,7 +259,7 @@ public class Save{
         }
         try (FileWriter writer = new FileWriter(file);
             BufferedWriter bw = new BufferedWriter(writer);){
-            lastSave = Time.toString(Time.now());
+            lastSave = Time.dateTimeToString(Time.now());
             bw.newLine();
             bw.write("WARNING : Any manual modification will PERMANENTLY DELETE the save.");
             bw.newLine();
@@ -276,24 +276,7 @@ public class Save{
             bw.newLine();
             bw.write("PHASE >>> " + String.valueOf(phase));
             bw.newLine();
-            int t = time;
-            int h = t/3600;
-            t -= h*3600;
-            int m = t/60;
-            t -= m*60;
-            String c1 = "";
-            String c2 = "";
-            String c3 = "";
-            if (h < 10){
-                c1 = "0";
-            }
-            if (m < 10){
-                c2 = "0";
-            }
-            if (t < 10){
-                c3 = "0";
-            }
-            bw.write("TIME >>> " + c1 + h + ":" + c2 + m + ":" + c3 + t);
+            bw.write("TIME >>> " + Time.chronoToString(time));
             bw.newLine();
             bw.write("CHECKSUM >>> " + String.valueOf(getChecksum()));
             return true;
@@ -371,7 +354,6 @@ public class Save{
                 String elem;
                 String[] arr;
                 String l;
-                String[] arr2;
                 for (int j = 0; j < i; j++){
                     l = doc[j];
                     arr = l.split(">>>");
@@ -385,9 +367,7 @@ public class Save{
                             case "CREATIONDATE" -> s.creationDate = elem;
                             case "LASTSAVE" -> s.lastSave = elem;
                             case "PHASE" -> s.phase = Double.parseDouble(elem);
-                            case "TIME" -> {
-                                arr2 = elem.split(":"); 
-                                s.time = Integer.parseInt(arr2[0]) * 3600 + Integer.parseInt(arr2[1]) * 60 + Integer.parseInt(arr2[2]);}
+                            case "TIME" -> s.time = Time.chronoToInt(elem);
                             case "CHECKSUM" -> s.checksum = Integer.parseInt(elem);
                             default -> {
                             }
@@ -439,7 +419,6 @@ public class Save{
                 String elem;
                 String[] arr;
                 String l;
-                String[] arr2;
                 for (int j = 0; j < i; j++){
                     l = doc[j];
                     arr = l.split(">>>");
@@ -453,9 +432,7 @@ public class Save{
                             case "CREATIONDATE" -> creationDate = elem;
                             case "LASTSAVE" -> lastSave = elem;
                             case "PHASE" -> phase = Double.parseDouble(elem);
-                            case "TIME" -> {
-                                arr2 = elem.split(":"); 
-                                time = Integer.parseInt(arr2[0]) * 3600 + Integer.parseInt(arr2[1]) * 60 + Integer.parseInt(arr2[2]);}
+                            case "TIME" -> time = Time.chronoToInt(elem);
                             case "CHECKSUM" -> checksum = Integer.parseInt(elem);
                             default -> {
                             }
