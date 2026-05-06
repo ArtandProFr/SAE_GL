@@ -18,7 +18,6 @@ public class Save{
     static double phaseBase = 0.0;
     static int timeBase = 0;
     static String alteration = "YOUMUSTNOTCHEAT";
-    static int nb_ligne_save = 15;
 
     String username = usernameBase;
     String savename = savenameBase;
@@ -324,6 +323,8 @@ public class Save{
             fileName += ".txt";
         }
         Save s = new Save();
+        String user = s.username;
+        String save = s.savename;
         String userDir = System.getProperty("user.dir");
         Path folder_path = Path.of(userDir, "Saves");
         File folder = new File(folder_path.toString());
@@ -335,23 +336,20 @@ public class Save{
         if (file.exists()){
             try {
                 String[] doc;
-                int i;
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"))) {
-                    doc = new String[nb_ligne_save];
-                    i = 0;
+                    
+                    String docStr = "";
                     String line = reader.readLine();
                     while (line != null){
-                        doc[i] = line;
+                        docStr += line+"\n";
                         line = reader.readLine();
-                        i++;
                     }
+                    doc = docStr.split("\n");
                 }
                 String key;
                 String elem;
                 String[] arr;
-                String l;
-                for (int j = 0; j < i; j++){
-                    l = doc[j];
+                for (String l : doc){
                     arr = l.split(">>>");
                     key = arr[0].replace(" ", "");
                     if (arr.length > 1){
@@ -368,6 +366,10 @@ public class Save{
                             default -> {
                             }
                         }
+                    }
+                    if (!user.equals(s.username) || !save.equals(s.savename)){
+                        file.delete();
+                        s.reset();
                     }
                 }
                 if (!s.isValid()){
@@ -389,6 +391,8 @@ public class Save{
         /* Cette méthode initialise toute les infos d'une partie sauvegardée. Renvoie un booléen selon si la partie existe ou non. Supprime la sauvegarde et reset si non-intègre. */
 
         String fileName = username + "-" + savename;
+        String user = username;
+        String save = savename;
         String userDir = System.getProperty("user.dir");
         Path folder_path = Path.of(userDir, "Saves");
         File folder = new File(folder_path.toString());
@@ -400,23 +404,19 @@ public class Save{
         if (file.exists()){
             try {
                 String[] doc;
-                int i;
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"))) {
-                    doc = new String[nb_ligne_save]; // Pour l'instant 7 lignes suffisent, peut-être qu'une 8eme sera à ajouter pour l'intégrité
-                    i = 0;
+                    String docStr = "";
                     String line = reader.readLine();
                     while (line != null){
-                        doc[i] = line;
+                        docStr += line + "\n";
                         line = reader.readLine();
-                        i++;
                     }
+                    doc = docStr.split("\n");
                 } 
                 String key;
                 String elem;
                 String[] arr;
-                String l;
-                for (int j = 0; j < i; j++){
-                    l = doc[j];
+                for (String l : doc){
                     arr = l.split(">>>");
                     key = arr[0].replace(" ", "");
                     if (arr.length > 1){
@@ -434,6 +434,11 @@ public class Save{
                             }
                         }
                     }
+                }
+                if (!user.equals(username) || !save.equals(savename)){
+                    file.delete();
+                    reset();
+                    return false;
                 }
                 return true;
             } catch (IOException e) {
