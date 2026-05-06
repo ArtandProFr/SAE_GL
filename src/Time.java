@@ -1,9 +1,53 @@
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
 public class Time{
 
     static DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy - HH:mm:ss");
+
+    public static LocalDateTime instantToDateTime(long instant){
+
+        /* Cette méthode renvoie un DateTime relatif à l'instant (timestamp) et au lieu actuel. */
+
+        return LocalDateTime.ofInstant(Instant.ofEpochMilli(instant), ZoneId.systemDefault());
+    }
+
+    public static long dateTimeToInstant(LocalDateTime dateTime){
+
+        /* Cette méthode renvoie l'instant (timestamp) relatif au LocalDateTime et au lieu actuel. */
+
+        return dateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+    }
+
+    public static long instantFromString(String dateTime, DateTimeFormatter formatter){
+
+        /* Cette méthode renvoie l'instant (timestamp) lié à une heure en chaine de caractere selon le format. */
+
+        return dateTimeToInstant(toDateTimeFormat(dateTime, formatter));
+    }
+
+    public static long instantFromString(String dateTime){
+
+        /* Cette méthode renvoie l'instant (timestamp) lié à une heure en chaine de caractere selon le format par défaut. */
+
+        return instantFromString(dateTime, dateTimeFormatter);
+    }
+
+    public static String stringFromInstant(long dateTime, DateTimeFormatter formatter){
+
+        /* Cette méthode renvoie la chaîne de caractère en fonction de l'instant et du format. */
+
+        return dateTimeToString(instantToDateTime(dateTime), formatter);
+    }
+
+    public static String stringFromInstant(long dateTime){
+
+        /* Cette méthode renvoie la chaîne de caractère en fonction de l'instant et du format. */
+
+        return stringFromInstant(dateTime, dateTimeFormatter);
+    }
 
     public static String chronoToString(int secondes){
 
@@ -73,11 +117,11 @@ public class Time{
         return toDateTimeFormat(str, dateTimeFormatter);
     }
 
-    public static LocalDateTime now(){
+    public static long now(){
         
-        /* Cette méthode renvoie le DateTime correspondant à l'instant NOW. */
+        /* Cette méthode renvoie l'instant correspondant à l'instant NOW. */
 
-        return LocalDateTime.now();
+        return System.currentTimeMillis();
     }
 
     public static void main(String[] args) {

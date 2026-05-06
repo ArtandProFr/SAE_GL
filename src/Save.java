@@ -7,15 +7,14 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
-import java.time.LocalDateTime;
 
 public class Save{
 
     static String usernameBase = "Enter username here...";
     static String savenameBase = "Enter savename here...";
     static String difficultyBase = "Choose difficulty";
-    static String creationDateBase = Time.toDateTimeFormat();
-    static String lastSaveBase = Time.toDateTimeFormat();
+    static long lastSaveBase = -1;
+    static long creationDateBase = -1;
     static double phaseBase = 0.0;
     static int timeBase = 0;
     static String alteration = "YOUMUSTNOTCHEAT";
@@ -24,8 +23,8 @@ public class Save{
     String username = usernameBase;
     String savename = savenameBase;
     String difficulty = difficultyBase;
-    String creationDate = creationDateBase;
-    String lastSave = lastSaveBase;
+    long creationDate = creationDateBase;
+    long lastSave = lastSaveBase;
     double phase = phaseBase;
     int time = timeBase;
     int checksum = getChecksum();
@@ -59,8 +58,8 @@ public class Save{
         cs += s.username;
         cs += s.savename;
         cs += s.difficulty;
-        cs += s.creationDate;
-        cs += s.lastSave;
+        cs += String.valueOf(s.creationDate);
+        cs += String.valueOf(s.lastSave);
         cs += String.valueOf(s.phase);
         cs += String.valueOf(s.time);
         cs += alteration;
@@ -79,7 +78,7 @@ public class Save{
         /* La méthode initialise une sauvegarde si elle est valide et n'existe pas déjà en la stockant dans le dossier Saves. Elle renvoie un booléen selon si la création de la sauvegarde a réussi ou non. */
 
         if (isValidToStart() && !alreadyExists()){
-            creationDate = Time.dateTimeToString(Time.now());
+            creationDate = Time.now();
             lastSave = creationDate;
             phase = 0.1;
             time = 0;
@@ -92,7 +91,7 @@ public class Save{
 
         /* Cette méthode renvoie un booléen selon si la Save est à l'état initial. */
 
-        return ((s.username.equals(usernameBase)) && (s.savename.equals(savenameBase)) && (s.difficulty.equals(difficultyBase)) && (s.creationDate.equals(creationDateBase)) && (s.lastSave.equals(lastSaveBase)) && (s.phase == phaseBase) && (s.time == timeBase) && (s.checksum == getChecksum(s)));
+        return ((s.username.equals(usernameBase)) && (s.savename.equals(savenameBase)) && (s.difficulty.equals(difficultyBase)) && (s.creationDate == creationDateBase) && (s.lastSave == lastSaveBase) && (s.phase == phaseBase) && (s.time == timeBase) && (s.checksum == getChecksum(s)));
     }
 
     public boolean isInitial(){
@@ -107,12 +106,9 @@ public class Save{
         /* Cette méthode renvoie si la partie est valide, intègre et sans triche. */
         /* ATTENTION : l'utilisation de LocalDateTime peut entraîner la suppression d'une sauvegarde créée dans un autre fuseau horaire ("retour dans le passé"). */
 
-        boolean valid = s.isValidToStart() && (!s.creationDate.equals(creationDateBase)) && (!s.lastSave.equals(lastSaveBase)) && (s.phase >= 0.1); // Vérification cas non-initial
+        boolean valid = s.isValidToStart() && !(s.creationDate == creationDateBase) && !(s.lastSave == lastSaveBase) && (s.phase >= 0.1); // Vérification cas non-initial
         if (valid){
-            LocalDateTime creation = Time.toDateTimeFormat(s.creationDate, Time.dateTimeFormatter);
-            LocalDateTime save = Time.toDateTimeFormat(s.lastSave, Time.dateTimeFormatter);
-            LocalDateTime now = Time.now();
-            valid = (creation.compareTo(save) <= 0) && (save.compareTo(now) <= 0); // Vérification intégrité des DateTime
+            valid = (s.creationDate <= s.lastSave) && (s.lastSave <= Time.now()); // Vérification intégrité des DateTime
             if (valid){
                 valid = (s.checksum == getChecksum(s));
             }
@@ -159,8 +155,8 @@ public class Save{
         System.out.println("Username : " + username);
         System.out.println("Savename : " + savename);
         System.out.println("Difficulty : " + difficulty);
-        System.out.println("Creation date : " + creationDate);
-        System.out.println("Last save : " + lastSave);
+        System.out.println("Creation date : " + Time.stringFromInstant(creationDate));
+        System.out.println("Last save : " + Time.stringFromInstant(lastSave));
         System.out.println("Phase : " + phase);
         System.out.println("Time : " + time);
         System.out.println("Checksum : " + checksum);
@@ -259,7 +255,7 @@ public class Save{
         }
         try (FileWriter writer = new FileWriter(file);
             BufferedWriter bw = new BufferedWriter(writer);){
-            lastSave = Time.dateTimeToString(Time.now());
+            lastSave = Time.now();
             bw.newLine();
             bw.write("WARNING : Any manual modification will PERMANENTLY DELETE the save.");
             bw.newLine();
@@ -364,8 +360,8 @@ public class Save{
                             case "USERNAME" -> s.username = elem;
                             case "SAVENAME" -> s.savename = elem;
                             case "DIFFICULTY" -> s.difficulty = elem;
-                            case "CREATIONDATE" -> s.creationDate = elem;
-                            case "LASTSAVE" -> s.lastSave = elem;
+                            case "CREATIONDATE" -> s.creationDate = Long.parseLong(elem);
+                            case "LASTSAVE" -> s.lastSave = Long.parseLong(elem);
                             case "PHASE" -> s.phase = Double.parseDouble(elem);
                             case "TIME" -> s.time = Time.chronoToInt(elem);
                             case "CHECKSUM" -> s.checksum = Integer.parseInt(elem);
@@ -429,8 +425,8 @@ public class Save{
                             case "USERNAME" -> username = elem;
                             case "SAVENAME" -> savename = elem;
                             case "DIFFICULTY" -> difficulty = elem;
-                            case "CREATIONDATE" -> creationDate = elem;
-                            case "LASTSAVE" -> lastSave = elem;
+                            case "CREATIONDATE" -> creationDate = Long.parseLong(elem);
+                            case "LASTSAVE" -> lastSave = Long.parseLong(elem);
                             case "PHASE" -> phase = Double.parseDouble(elem);
                             case "TIME" -> time = Time.chronoToInt(elem);
                             case "CHECKSUM" -> checksum = Integer.parseInt(elem);
@@ -539,7 +535,11 @@ public class Save{
     }
 
     private static int compareLastSave(Save[] arr, int i, int j, int type){
-        return type * Time.toDateTimeFormat(arr[i].lastSave, Time.dateTimeFormatter).compareTo(Time.toDateTimeFormat(arr[j].lastSave, Time.dateTimeFormatter));
+        if (arr[i].lastSave <= arr[j].lastSave){
+            return type * -1;
+        } else {
+            return type * 1;
+        }
     }
 
     private static void quicksortLastSave(Save[] arr, int debut, int fin, int type){
@@ -573,6 +573,9 @@ public class Save{
     }
 
     public static void main(String[] args){
-        
+        Save[] l = getAllSaves();
+        for (Save s : l){
+            s.showSave();
+        }
     }
 }
