@@ -1,3 +1,21 @@
+
+/*
+        GAME_NAME
+        
+        Etablissement : INSA Hauts-de-France
+        Formation : Sciences et Humanités pour l'Ingénieur (SHpI)
+        Année d'étude : 2A
+        Module : SAE Génie Logiciel / Responsable : M. Kolski
+        Encadrement : M. Benameur, M. Boudia, M. Kolski, Mme Mourali
+        Année scolaire : 2025 - 2026
+
+        Groupe 2:
+        DWORNICZAK Arthur
+        GAMON Thomas
+        OUERHANI Farès
+        PERROT Roxane
+ */
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -5,7 +23,6 @@ import java.nio.file.*;
 
 public class FileManager {
 
-    public static String gameName = "GAME NAME";
     public static final Path userDir = Path.of(System.getProperty("user.dir"));
 
     public String path = "";
@@ -81,7 +98,7 @@ public class FileManager {
         if (!file.exists() || !isFile()){
             return false;
         }
-        return readFile(file.toPath()).contains(gameName);
+        return readFile(file.toPath()).contains(GameInfos.GAMENAME);
     }
 
     public void delete(){

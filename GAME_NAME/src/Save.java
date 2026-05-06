@@ -1,4 +1,21 @@
 
+/*
+        GAME_NAME
+        
+        Etablissement : INSA Hauts-de-France
+        Formation : Sciences et Humanités pour l'Ingénieur (SHpI)
+        Année d'étude : 2A
+        Module : SAE Génie Logiciel / Responsable : M. Kolski
+        Encadrement : M. Benameur, M. Boudia, M. Kolski, Mme Mourali
+        Année scolaire : 2025 - 2026
+
+        Groupe 2:
+        DWORNICZAK Arthur
+        GAMON Thomas
+        OUERHANI Farès
+        PERROT Roxane
+ */
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
