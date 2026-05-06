@@ -273,6 +273,9 @@ public class Save{
             BufferedWriter bw = new BufferedWriter(writer);){
             lastSave = Time.now();
             bw.newLine();
+            bw.write(GameInfos.GAMENAME);
+            bw.newLine();
+            bw.newLine();
             bw.write("WARNING : Any manual modification will PERMANENTLY DELETE the save.");
             bw.newLine();
             bw.newLine();
