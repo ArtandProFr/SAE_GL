@@ -20,15 +20,25 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.util.Set;
 
 public class FileManager {
 
     public static final Path userDir = Path.of(System.getProperty("user.dir"));
+    public static final Set<String> ImageExtensions = Set.of(".png", ".jpg",".jpeg",".apng",".avif",".gif",".svg",".webp",".bmp",".ico",".tiff",".odi");;
+    public static final Set<String> TextExtensions = Set.of(".odm",".odt",".doc",".docx",".txt",".rtf");
+    public static final Set<String> DataExtensions = Set.of(".csv",".ods",".odb",".json",".sql");
+    public static final Set<String> LogExtensions = Set.of(".log", ".git");
+    public static final Set<String> ScriptExtensions = Set.of(".py",".c",".java",".js",".mjs",".sql",".sh",".zsh",".ps1",".rb",".php",".lua",".html",".r",".cpp",".cs",".ts",".tsx",".swift",".dart",".go");
+    public static final Set<String> ExecutableExtensions = Set.of(".bin",".elf",".exe",".sdc",".bat");
+    public static final Set<String> PageExtensions = Set.of(".pdf",".ps",".html",".xhtml",".xml",".php");
+    public static final Set<String> SoundExtensions = Set.of(".flac",".mp3",".wav",".ogg",".wma",".aac");
+    public static final Set<String> VideoExtensions = Set.of(".mpeg",".avi",".mp4",".flv",".ogm");
 
     public String path = "";
     public File file = null;
 
-    public static String toString(Path p){
+    public static String pathToString(Path p){
 
         /* Renvoie le chemin sous forme de chaine de caractère. */
 
@@ -39,7 +49,7 @@ public class FileManager {
 
         /* Renvoie un fichier à partir d'un chemin. */
 
-        return getFile(toString(p));
+        return getFile(pathToString(p));
     }
 
     public static File getFile(String s){
@@ -60,7 +70,7 @@ public class FileManager {
 
         /* Cette méthode initialise un fichier/dossier à l'aide du chemin. */
 
-        setFile(toString(p));
+        setFile(pathToString(p));
     }
 
     public static boolean isFile(File f){
@@ -91,18 +101,43 @@ public class FileManager {
         return !isFile();
     }
 
-    public boolean isGameFile(){
+    public static String getExtension(File f){
+
+        /* Cette méthode renvoie l'extension d'un fichier. */
+
+        if (f.exists()){
+            String p = pathToString(f.toPath());
+            String[] arr = p.split("/");
+            p = arr[arr.length-1];
+            arr = p.split("\\.");
+            if (arr.length > 1){
+                return arr[1];
+            } else {
+                return null;
+            }
+        } else {
+            return null;
+        }
+    }
+
+    public boolean isGameFile(File f){
 
         /* Cette méthode renvoie un booléen selon si le document est un fichier du jeu. */
 
-        if (!file.exists() || !isFile()){
+        if (!f.exists() || !f.isFile()){
             return false;
         }
-        return readFile(file.toPath()).contains(GameInfos.GAMENAME);
+        String ext = getExtension(f);
+        if (TextExtensions.contains(ext) || ScriptExtensions.contains(ext)){
+            return readFile(f.toPath()).contains(GameInfos.GAMENAME);
+        } else return ImageExtensions.contains(ext) || VideoExtensions.contains(ext) || SoundExtensions.contains(ext);
     }
 
-    public void delete(){
-        
+    public boolean delete(FileManager f){
+
+        /* Cette méthode supprime le fichier associé au FileManager et renvoie un booléen selon s'il existait ou non. */
+
+        return f.file.delete();
     }
 
     public static Path findRelative(Path source, String relative){
