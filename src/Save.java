@@ -16,14 +16,10 @@
         PERROT Roxane
  */
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.file.Path;
 
 public class Save{
 
@@ -89,18 +85,25 @@ public class Save{
         return getChecksum(this);
     }
 
+    public static boolean initializeSave(Save s){
+
+        /* La méthode initialise une sauvegarde si elle est valide et n'existe pas déjà en la stockant dans le dossier Saves. Elle renvoie un booléen selon si la création de la sauvegarde a réussi ou non. */
+
+        if (s.isValidToStart() && !s.alreadyExists()){
+            s.creationDate = Time.now();
+            s.lastSave = s.creationDate;
+            s.phase = 0.1;
+            s.time = 0;
+            return s.save();
+        }
+        return false;
+    }
+
     public boolean initializeSave(){
 
         /* La méthode initialise une sauvegarde si elle est valide et n'existe pas déjà en la stockant dans le dossier Saves. Elle renvoie un booléen selon si la création de la sauvegarde a réussi ou non. */
 
-        if (isValidToStart() && !alreadyExists()){
-            creationDate = Time.now();
-            lastSave = creationDate;
-            phase = 0.1;
-            time = 0;
-            return save();
-        }
-        return false;
+        return initializeSave(this);
     }
 
     public static boolean isInitial(Save s){
@@ -179,11 +182,18 @@ public class Save{
         System.out.println("Est sauvegardée dans le dossier ? " + alreadyExists());
     }
 
+    public static boolean isValidToStart(Save s){
+
+        /* La méthode renvoie un booléen selon si le pseudo, le nom de sauvegarde et la difficulté est valide. */
+
+        return s.usernameIsValid() && s.savenameIsValid() && s.difficultyIsValid();
+    }
+
     public boolean isValidToStart(){
 
         /* La méthode renvoie un booléen selon si le pseudo, le nom de sauvegarde et la difficulté est valide. */
 
-        return usernameIsValid() && savenameIsValid() && difficultyIsValid();
+        return isValidToStart(this);
     }
     
     public static boolean stringIsValid(String str){
@@ -206,61 +216,82 @@ public class Save{
         return true;
     } 
 
-    public boolean usernameIsValid(){
+    public static boolean usernameIsValid(Save s){
 
         /* La méthode renvoie un booléen selon si le pseudo est valide. */
 
-        return stringIsValid(username);
+        return stringIsValid(s.username);
     }
 
-    public boolean savenameIsValid(){
+    public static boolean savenameIsValid(Save s){
 
         /* La méthode renvoie un booléen selon si le nom de sauvegarde est valide. */
 
-        return stringIsValid(savename);
+        return stringIsValid(s.savename);
     }
 
-    public boolean difficultyIsValid(){
+    public static boolean difficultyIsValid(Save s){
 
     /* La méthode renvoie un booléen selon si la difficulté est valide. */
 
-    for (String s : difficulties){
-        if (s.equals(difficulty)){
+    for (String str : difficulties){
+        if (str.equals(s.difficulty)){
             return true;
         }
     }
     return false;
     }
 
-    public boolean alreadyExists(){
+    public boolean usernameIsValid(){
+
+        /* La méthode renvoie un booléen selon si le pseudo est valide. */
+
+        return usernameIsValid(this);
+    }
+
+    public boolean savenameIsValid(){
+
+        /* La méthode renvoie un booléen selon si le nom de sauvegarde est valide. */
+
+        return savenameIsValid(this);
+    }
+
+    public boolean difficultyIsValid(){
+
+    /* La méthode renvoie un booléen selon si la difficulté est valide. */
+
+    return difficultyIsValid(this);
+    }
+
+    public static boolean alreadyExists(Save s){
 
         /* La méthode renvoie un booléen selon si une sauvegarde (Pseudo-NomSauvegarde) existe déjà */
 
-        String userDir = System.getProperty("user.dir");
-        Path folder_path = Path.of(userDir, "Saves");
-        File folder = new File(folder_path.toString());
+        File folder = new File (FileManager.findRelativeFromUserDir("Saves").toString());
         if (folder.exists()){
-            Path file_path = Path.of(folder_path.toString(), username + "-" + savename + ".txt");
-            File file = new File(file_path.toString());
+            File file = new File(FileManager.findRelative(folder.toPath(), s.username + "-" + s.savename + ".txt").toString());
             return file.exists();
         } else {
             return false;
         }
     }
 
-    @SuppressWarnings("ConvertToTryWithResources")
-    public boolean save(){
+    public boolean alreadyExists(){
+        
+        /* La méthode renvoie un booléen selon si une sauvegarde (Pseudo-NomSauvegarde) existe déjà */
+
+        return alreadyExists(this);
+    }
+
+    public static boolean save(Save s){
 
         /* La méthode sauvegarde la partie. ATTENTION : La méthode ne vérifie pas la validité des infos données. */
 
-        String userDir = System.getProperty("user.dir");
-        Path folder_path = Path.of(userDir, "Saves");
-        File folder = new File(folder_path.toString());
+        File folder = new File (FileManager.findRelativeFromUserDir("Saves").toString());
         if (!folder.exists()){
             folder.mkdir();
         }
-        Path file_path = Path.of(folder_path.toString(), username + "-" + savename + ".txt");
-        File file = new File(file_path.toString());
+        File file = new File(FileManager.findRelative(folder.toPath(), s.username + "-" + s.savename + ".txt").toString());
         if (file.exists()){
             file.delete();
         }
@@ -271,7 +302,7 @@ public class Save{
         }
         try (FileWriter writer = new FileWriter(file);
             BufferedWriter bw = new BufferedWriter(writer);){
-            lastSave = Time.now();
+            s.lastSave = Time.now();
             bw.newLine();
             bw.write(GameInfos.GAMENAME);
             bw.newLine();
@@ -279,40 +310,44 @@ public class Save{
             bw.write("WARNING : Any manual modification will PERMANENTLY DELETE the save.");
             bw.newLine();
             bw.newLine();
-            bw.write("USERNAME >>> " + username);
+            bw.write("USERNAME >>> " + s.username);
             bw.newLine();
-            bw.write("SAVENAME >>> " + savename);
+            bw.write("SAVENAME >>> " + s.savename);
             bw.newLine();
-            bw.write("DIFFICULTY >>> " + difficulty);
+            bw.write("DIFFICULTY >>> " + s.difficulty);
             bw.newLine();
-            bw.write("CREATION DATE >>> " + creationDate);
+            bw.write("CREATION DATE >>> " + s.creationDate);
             bw.newLine();
-            bw.write("LAST SAVE >>> " + lastSave);
+            bw.write("LAST SAVE >>> " + s.lastSave);
             bw.newLine();
-            bw.write("PHASE >>> " + String.valueOf(phase));
+            bw.write("PHASE >>> " + String.valueOf(s.phase));
             bw.newLine();
-            bw.write("TIME >>> " + Time.chronoToString(time));
+            bw.write("TIME >>> " + Time.chronoToString(s.time));
             bw.newLine();
-            bw.write("CHECKSUM >>> " + String.valueOf(getChecksum()));
+            bw.write("CHECKSUM >>> " + String.valueOf(s.getChecksum()));
             return true;
         } catch (IOException e){
             return false;
         }
     }
 
+    public boolean save(){
+
+        /* La méthode sauvegarde la partie. ATTENTION : La méthode ne vérifie pas la validité des infos données. */
+
+        return save(this);
+    }
+
     public static boolean delete(Save s){
 
         /* La méthode supprime la sauvegarde si elle existe et renvoie un booléen selon si la suppression a été effectuée ou non. (Si la sauvegarde existait avant ou non.) */
 
-        String userDir = System.getProperty("user.dir");
-        Path folder_path = Path.of(userDir, "Saves");
-        File folder = new File(folder_path.toString());
+        File folder = new File (FileManager.findRelativeFromUserDir("Saves").toString());
         if (!folder.exists()){
             folder.mkdir();
             return false;
         }
-        Path file_path = Path.of(folder_path.toString(), s.username + "-" + s.savename + ".txt");
-        File file = new File(file_path.toString());
+        File file = new File(FileManager.findRelative(folder.toPath(), s.username + "-" + s.savename + ".txt").toString());
         if (file.exists()){
             file.delete();
             return true;
@@ -343,32 +378,24 @@ public class Save{
             fileName += ".txt";
         }
         Save s = new Save();
-        String user = s.username;
-        String save = s.savename;
-        String userDir = System.getProperty("user.dir");
-        Path folder_path = Path.of(userDir, "Saves");
-        File folder = new File(folder_path.toString());
+        String[] arr = fileName.split("/");
+        String str = arr[arr.length-1];
+        arr = str.split("\\.");
+        str = arr[0];
+        arr = str.split("-");
+        String user = arr[0];
+        String save = arr[1];
+        File folder = new File (FileManager.findRelativeFromUserDir("Saves").toString());
         if (!folder.exists()){
             folder.mkdir();
         }
-        Path file_path = Path.of(folder_path.toString(), fileName);
-        File file = new File(file_path.toString());
+        File file = new File(FileManager.findRelative(folder.toPath(), s.username + "-" + s.savename + ".txt").toString());
         if (file.exists()){
-            try {
-                String[] doc;
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"))) {
-                    
-                    String docStr = "";
-                    String line = reader.readLine();
-                    while (line != null){
-                        docStr += line+"\n";
-                        line = reader.readLine();
-                    }
-                    doc = docStr.split("\n");
-                }
+            String docStr = FileManager.readFile(file.toPath());
+            if (docStr != null){
+                String[] doc = docStr.split("\n");
                 String key;
                 String elem;
-                String[] arr;
                 for (String l : doc){
                     arr = l.split(">>>");
                     key = arr[0].replace(" ", "");
@@ -396,7 +423,7 @@ public class Save{
                     file.delete();
                     s.reset();
                 }
-            } catch (IOException e) {
+            } else {
                 if (!s.isValid()){
                     file.delete();
                     s.reset();
@@ -406,33 +433,22 @@ public class Save{
         return s;
     }
 
-    public boolean initSaveFromFile(){
+    public static boolean initSaveFromFile(Save s){
 
         /* Cette méthode initialise toute les infos d'une partie sauvegardée. Renvoie un booléen selon si la partie existe ou non. Supprime la sauvegarde et reset si non-intègre. */
 
-        String fileName = username + "-" + savename;
-        String user = username;
-        String save = savename;
-        String userDir = System.getProperty("user.dir");
-        Path folder_path = Path.of(userDir, "Saves");
-        File folder = new File(folder_path.toString());
+        String fileName = s.username + "-" + s.savename;
+        String user = s.username;
+        String save = s.savename;
+        File folder = new File (FileManager.findRelativeFromUserDir("Saves"+"/"+fileName).toString());
         if (!folder.exists()){
             folder.mkdir();
         }
-        Path file_path = Path.of(folder_path.toString(), fileName + ".txt");
-        File file = new File(file_path.toString());
+        File file = new File(FileManager.findRelative(folder.toPath(), s.username + "-" + s.savename + ".txt").toString());
         if (file.exists()){
-            try {
-                String[] doc;
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"))) {
-                    String docStr = "";
-                    String line = reader.readLine();
-                    while (line != null){
-                        docStr += line + "\n";
-                        line = reader.readLine();
-                    }
-                    doc = docStr.split("\n");
-                } 
+            String docStr = FileManager.readFile(file.toPath());
+            if (docStr != null){
+                String[] doc = docStr.split("\n");
                 String key;
                 String elem;
                 String[] arr;
@@ -442,48 +458,53 @@ public class Save{
                     if (arr.length > 1){
                         elem = arr[1].replace(" - ", ">>>").replace(" ", "").replace(">>>", " - ");
                         switch (key){
-                            case "USERNAME" -> username = elem;
-                            case "SAVENAME" -> savename = elem;
-                            case "DIFFICULTY" -> difficulty = elem;
-                            case "CREATIONDATE" -> creationDate = Long.parseLong(elem);
-                            case "LASTSAVE" -> lastSave = Long.parseLong(elem);
-                            case "PHASE" -> phase = Double.parseDouble(elem);
-                            case "TIME" -> time = Time.chronoToInt(elem);
-                            case "CHECKSUM" -> checksum = Integer.parseInt(elem);
+                            case "USERNAME" -> s.username = elem;
+                            case "SAVENAME" -> s.savename = elem;
+                            case "DIFFICULTY" -> s.difficulty = elem;
+                            case "CREATIONDATE" -> s.creationDate = Long.parseLong(elem);
+                            case "LASTSAVE" -> s.lastSave = Long.parseLong(elem);
+                            case "PHASE" -> s.phase = Double.parseDouble(elem);
+                            case "TIME" -> s.time = Time.chronoToInt(elem);
+                            case "CHECKSUM" -> s.checksum = Integer.parseInt(elem);
                             default -> {
                             }
                         }
                     }
                 }
-                if (!user.equals(username) || !save.equals(savename)){
+                if (!user.equals(s.username) || !save.equals(s.savename)){
                     file.delete();
-                    reset();
+                    s.reset();
                     return false;
                 }
                 return true;
-            } catch (IOException e) {
-                if (!isValid()){
+            } else {
+                if (!s.isValid()){
                     file.delete();
-                    reset();
+                    s.reset();
                     return false;
                 }
             }
-            if (!isValid()){
+            if (!s.isValid()){
                 file.delete();
-                reset();
+                s.reset();
                 return false;
             }
         }
         return false;
     }
 
+    public boolean initializeSaveFromFile(){
+
+        /* Cette méthode initialise toute les infos d'une partie sauvegardée. Renvoie un booléen selon si la partie existe ou non. Supprime la sauvegarde et reset si non-intègre. */
+
+        return initSaveFromFile(this);
+    }
+
     public static Save[] getAllSaves(){
 
         /* Cette méthode renvoie un tableau de toutes les parties sauvegardées. Supprime les parties non-valides / non-intègres. Supprime les sauvegardes si non-intègres.*/
         
-        String userDir = System.getProperty("user.dir");
-        Path folder_path = Path.of(userDir, "Saves");
-        File folder = new File(folder_path.toString());
+        File folder = new File (FileManager.findRelativeFromUserDir("Saves").toString());
         if (!folder.exists()){
             folder.mkdir();
         }
@@ -598,9 +619,6 @@ public class Save{
     }
 
     public static void main(String[] args){
-        Save[] l = getAllSaves();
-        for (Save s : l){
-            s.showSave();
-        }
+        
     }
 }
