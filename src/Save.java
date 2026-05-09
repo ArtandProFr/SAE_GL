@@ -414,14 +414,14 @@ public class Save{
 
         /* Cette méthode initialise toute les infos d'une partie sauvegardée. Renvoie un booléen selon si la partie existe ou non. Supprime la sauvegarde et reset si non-intègre. */
 
-        String fileName = s.username + "-" + s.savename;
+        String fileName = s.username + "-" + s.savename + ".txt";
         String user = s.username;
         String save = s.savename;
-        File folder = new File (FileManager.findRelativeFromUserDir("Saves"+"/"+fileName).toString());
+        File folder = new File (FileManager.findRelativeFromUserDir("Saves").toString());
         if (!folder.exists()){
             FileManager.createFolder(folder);
         }
-        File file = new File(FileManager.findRelative(folder.toPath(), s.username + "-" + s.savename + ".txt").toString());
+        File file = new File(FileManager.findRelative(folder.toPath(), fileName).toString());
         if (file.exists()){
             String docStr = FileManager.readFile(file.toPath());
             if (docStr != null){
@@ -593,6 +593,25 @@ public class Save{
         if (arr.length > 1){
             quicksortLastSave(arr, 0, arr.length - 1, type);
         }
+    }
+
+    public static boolean createLeaderboard(){
+
+        /* Cette méthode crée le fichier leaderboard.csv. */
+
+        File folder = new File (FileManager.findRelativeFromUserDir("Saves").toString());
+        if (!folder.exists()){
+            FileManager.createFolder(folder);
+        }
+        File file = new File(FileManager.findRelative(folder.toPath(), "leaderboard.txt").toString());
+        if (!file.exists()){
+            if (FileManager.createFile(file)){
+                String comment = "#" + GameInfos.GAMENAME+"\n";
+                String labels = "USERNAME;SAVENAME;DIFFICULTY;TIME;CHECKSUM\n";
+                FileManager.writeFile(file.toPath(), comment+labels);
+            }
+        }
+        return false;
     }
 
     public static void main(String[] args){
