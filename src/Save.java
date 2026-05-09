@@ -341,6 +341,13 @@ public class Save{
         return delete(this);
     }
 
+    public static boolean clearSaves(){
+        for (Save s : getAllSaves()){
+            s.delete();
+        }
+        return (getAllSaves() == null || getAllSaves().length == 0);
+    }
+
     public static Save getSave(String givenUsername, String givenSavename){
         
         /* Cette méthode renvoie un objet Save initialisé à partir d'un nom d'utilisateur et un nom de sauvegarde. Supprime la sauvegarde et reset si non-intègre. */
