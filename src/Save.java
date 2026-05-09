@@ -217,14 +217,14 @@ public class Save{
 
         /* La méthode renvoie un booléen selon si le pseudo est valide. */
 
-        return stringIsValid(s.username);
+        return stringIsValid(s.username) && !s.username.equals("USERNAME");
     }
 
     public static boolean savenameIsValid(Save s){
 
         /* La méthode renvoie un booléen selon si le nom de sauvegarde est valide. */
 
-        return stringIsValid(s.savename);
+        return stringIsValid(s.savename) && !s.savename.equals("SAVENAME");
     }
 
     public static boolean difficultyIsValid(Save s){
@@ -595,7 +595,7 @@ public class Save{
         }
     }
 
-    public static boolean createLeaderboard(){
+    public static boolean createScoreboard(boolean rewrite){
 
         /* Cette méthode crée le fichier leaderboard.csv. */
 
@@ -603,15 +603,227 @@ public class Save{
         if (!folder.exists()){
             FileManager.createFolder(folder);
         }
-        File file = new File(FileManager.findRelative(folder.toPath(), "leaderboard.txt").toString());
-        if (!file.exists()){
+        File file = new File(FileManager.findRelative(folder.toPath(), "scoreboard.txt").toString());
+        if (!file.exists() || rewrite){
             if (FileManager.createFile(file)){
                 String comment = "#" + GameInfos.GAMENAME+"\n";
-                String labels = "USERNAME;SAVENAME;DIFFICULTY;TIME;CHECKSUM\n";
+                String labels = "USERNAME;DIFFICULTY;TIME;DATE;CHECKSUM\n";
                 FileManager.writeFile(file.toPath(), comment+labels);
+                return true;
             }
         }
         return false;
+    }
+
+    private static boolean createScoreboard(){
+        
+        /* Cette méthode crée le fichier leaderboard.csv. */
+
+        return createScoreboard(false);
+    }
+
+    private static long getChecksumScoreboard(String user, String diff, int t, long d){
+
+        /* Cette méthode renvoie le checksum d'une ligne du scoreboard. */
+
+        String cs = "";
+        cs += user;
+        cs += diff;
+        cs += String.valueOf(t);
+        cs += String.valueOf(d);
+        cs += alteration;
+        return cs.hashCode();
+    }
+
+    public static String[] getScoreboard(){
+
+        /* Cette méthode renvoie le scoreboard sous forme de liste de chaine de caractere; */
+
+        File folder = new File (FileManager.findRelativeFromUserDir("Saves").toString());
+        if (!folder.exists()){
+            FileManager.createFolder(folder);
+        } else {
+            createScoreboard();
+            return null;
+        }
+        File file = new File(FileManager.findRelative(folder.toPath(), "scoreboard.txt").toString());
+        if (file.exists()){
+            checkIntegrityScoreboard();
+            String docStr = FileManager.readFile(file.toPath());
+            String[] docCplt = docStr.split("\n");
+            int nb_lig = 0;
+            for (String l : docCplt){
+                if (!l.startsWith("#") && !l.equals("") && l.contains(";") && !l.contains("USERNAME")){
+                    nb_lig++;
+                }
+            }
+            int decal = 0;
+            String[] doc = new String[nb_lig];
+            String l;
+            for (int i = 0; i < docCplt.length; i++){
+                l = docCplt[i];
+                if (!l.startsWith("#") && !l.equals("") && l.contains(";") && !l.contains("USERNAME")){
+                    doc[i-decal] = l;
+                    decal++;
+                }
+            }
+            return doc;
+        } else {
+            createScoreboard();
+            return null;
+        }
+    }
+
+    public static Save[] scoreboardToSaves(){
+
+        /* Cette méthode renvoie le scoreboard sous forme de tableau de Save. (À n'utiliser que pour faciliter l'affichage et la lisibilité du code.) */
+
+        String[] arrStr = getScoreboard();
+        Save[] arr = new Save[arrStr.length];
+        int i = 0;
+        String[] lArr;
+        for (String l : arrStr){
+            arr[i] = new Save();
+            lArr = l.split(";");
+            arr[i].username = lArr[0];
+            arr[i].difficulty = lArr[1];
+            arr[i].time = Integer.parseInt(lArr[2]);
+            arr[i].lastSave = Long.parseLong(lArr[3]);
+            i++;
+        }
+        return arr;
+    }
+
+    private static boolean isValidScoreboard(String line){
+
+        /* Cette méthode renvoie si la ligne du scoreboard est valide ou non. */
+
+        String[] d = line.split(";");
+        if (d.length != 5){
+            return false;
+        }
+        String cs_file = d[4];
+        long cs_verif_long = getChecksumScoreboard(d[0], d[1], Integer.parseInt(d[2]), Long.parseLong(d[3]));
+        String cs_verif = String.valueOf(cs_verif_long);
+        return cs_file.equals(cs_verif) && Long.parseLong(d[3]) <= Time.now();
+    }
+
+    private static void checkIntegrityScoreboard(){
+
+        /* Cette méthode supprime les lignes du scoreboard non-valides. */
+
+        for (String l : getScoreboard()){
+            if (!isValidScoreboard(l)){
+                deleteLineFromScoreboard(l);
+            }
+        }
+    }
+
+    private static boolean deleteLineFromScoreboard(String l){
+
+        /* Cette méthode supprime la ligne du scoreboard associée à une ligne. */
+
+        String[] arr = l.split(";");
+        Save s = new Save();
+        s.username = arr[0];
+        s.difficulty = arr[1];
+        return deleteLineFromScoreboard(s);
+    }
+
+    public static boolean deleteLineFromScoreboard(Save s){
+        
+        /* Cette méthode supprime la ligne du scoreboard associée à une sauvegarde. */
+
+        String[] doc = getScoreboard();
+        if (doc == null){
+            return false;
+        }
+        if (alreadySavedInScoreboard(s)){
+            createScoreboard(true);
+            File folder = new File (FileManager.findRelativeFromUserDir("Saves").toString());
+            File file = new File(FileManager.findRelative(folder.toPath(), "scoreboard.txt").toString());
+            for (String l : doc){
+                if (!l.contains(s.username+";"+s.difficulty)){
+                    FileManager.appendToFile(file.toPath(), l+"\n");
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public static boolean clearScoreboard(){
+
+        /* Cette méthode supprime tous les scores. */
+
+        return createScoreboard(true);
+    }
+
+    private static boolean addLineToScoreboard(String s){
+
+        /* Cette méthode rajoute une ligne à la fin du scoreboard. */
+
+        File folder = new File (FileManager.findRelativeFromUserDir("Saves").toString());
+        File file = new File(FileManager.findRelative(folder.toPath(), "scoreboard.txt").toString());
+        checkIntegrityScoreboard();
+        return FileManager.appendToFile(file.toPath(), s + "\n");
+    }
+
+    private static boolean addLineToScoreboard(Save s){
+
+        /* Cette méthode rajoute une ligne à la fin du scoreboard. */
+
+        String str = s.username + ";" + s.difficulty + ";" + String.valueOf(s.time) + ";" + String.valueOf(s.lastSave) + ";" + String.valueOf(getChecksumScoreboard(s.username, s.difficulty, s.time, s.lastSave));
+        return addLineToScoreboard(str);
+    }
+
+    public static boolean updateLine(Save s){
+
+        /* Cette méthode met à jour le scoreboard en fonction de la sauvegarde. */
+
+        createScoreboard();
+        checkIntegrityScoreboard();
+        if (!alreadySavedInScoreboard(s)){
+            return addLineToScoreboard(s);
+        }
+        String[] sc = getScoreboard();
+        String[] arr;
+        for (String sc1 : sc) {
+            if (sc1.contains(s.username+";"+s.difficulty)) {
+                arr = sc1.split(";");
+                if (Integer.parseInt(arr[2]) > s.time){
+                    deleteLineFromScoreboard(s);
+                    addLineToScoreboard(s);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static boolean alreadySavedInScoreboard(Save s){
+
+        /* Cette méthode renvoie si le scoreboard possède déjà une ligne avec la même clé. */
+
+        if (!createScoreboard()) {
+            return false;
+        }
+        checkIntegrityScoreboard();
+        for (String l : getScoreboard()){
+            if (l.contains(s.username+";"+s.difficulty)){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static void showScoreboard(){
+
+        /* Cette méthode affiche le scoreboard. */
+
+        for (String l : getScoreboard()){
+            System.out.println(l);
+        }
     }
 
     public static void main(String[] args){

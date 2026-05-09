@@ -181,14 +181,16 @@ public class FileManager {
         }
     }
 
-    public static void appendToFile(Path path, String content) {
+    public static boolean appendToFile(Path path, String content) {
 
         /* Cette méthode ajoute du texte à la fin d'un fichier existant. */
 
         try {
             Files.writeString(path, content, StandardCharsets.UTF_8, StandardOpenOption.APPEND);
+            return true;
         } catch (IOException e) {
         }
+        return false;
     }
 
     public static boolean createFolder(Path folderPath) {
