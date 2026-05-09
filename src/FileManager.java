@@ -191,36 +191,39 @@ public class FileManager {
         }
     }
 
-    public static void createFolder(Path folderPath) {
+    public static boolean createFolder(Path folderPath) {
 
         /* Cette méthode crée un dossier si celui-ci n'existe pas. */
 
         try {
             Files.createDirectories(folderPath);
+            return true;
         } catch (IOException e) {
+            return false;
         }
     }
 
-    public static void createFolder(File f){
+    public static boolean createFolder(File f){
         
         /* Cette méthode crée un dossier si celui-ci n'existe pas. */
         
         if (isFolder(f) && !exists(f)){
-            f.mkdir();
+            return f.mkdir();
         }
+        return false;
     }
 
-    public static void createFile(File f){
+    public static boolean createFile(File f){
 
         /* Cette méthode crée un fichier si celui-ci n'existe pas. */
 
         if (isFile(f) && !exists(f)){
             try {
-                f.createNewFile();
+                return f.createNewFile();
             } catch (IOException e){
-                
             }
         }
+        return false;
     }
 
     public static boolean exists(File f){

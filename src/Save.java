@@ -16,10 +16,7 @@
         PERROT Roxane
  */
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 
 public class Save{
 
@@ -295,40 +292,22 @@ public class Save{
         if (file.exists()){
             file.delete();
         }
-        try {
-            file.createNewFile();
-        } catch (IOException e){
+        if (!FileManager.createFile(file)){
             return false;
         }
-        try (FileWriter writer = new FileWriter(file);
-            BufferedWriter bw = new BufferedWriter(writer);){
-            s.lastSave = Time.now();
-            bw.newLine();
-            bw.write(GameInfos.GAMENAME);
-            bw.newLine();
-            bw.newLine();
-            bw.write("WARNING : Any manual modification will PERMANENTLY DELETE the save.");
-            bw.newLine();
-            bw.newLine();
-            bw.write("USERNAME >>> " + s.username);
-            bw.newLine();
-            bw.write("SAVENAME >>> " + s.savename);
-            bw.newLine();
-            bw.write("DIFFICULTY >>> " + s.difficulty);
-            bw.newLine();
-            bw.write("CREATION DATE >>> " + s.creationDate);
-            bw.newLine();
-            bw.write("LAST SAVE >>> " + s.lastSave);
-            bw.newLine();
-            bw.write("PHASE >>> " + String.valueOf(s.phase));
-            bw.newLine();
-            bw.write("TIME >>> " + Time.chronoToString(s.time));
-            bw.newLine();
-            bw.write("CHECKSUM >>> " + String.valueOf(s.getChecksum()));
-            return true;
-        } catch (IOException e){
-            return false;
-        }
+        s.lastSave = Time.now();
+        String doc = "";
+        doc += "\n"+GameInfos.GAMENAME+"\n\n";
+        doc += "WARNING : Any manual modification will PERMANENTLY DELETE the save.\n\n";
+        doc += "USERNAME >>> " + s.username + "\n";
+        doc += "SAVENAME >>> " + s.savename + "\n";
+        doc += "DIFFICULTY >>> " + s.difficulty + "\n";
+        doc += "CREATION DATE >>> " + s.creationDate + "\n";
+        doc += "LAST SAVE >>> " + s.lastSave + "\n";
+        doc += "PHASE >>> " + String.valueOf(s.phase) + "\n";
+        doc += "TIME >>> " + Time.chronoToString(s.time) + "\n";
+        doc += "CHECKSUM >>> " + String.valueOf(s.getChecksum());
+        return FileManager.writeFile(file.toPath(), doc);
     }
 
     public boolean save(){
@@ -386,9 +365,7 @@ public class Save{
         String user = arr[0];
         String save = arr[1];
         File folder = new File (FileManager.findRelativeFromUserDir("Saves").toString());
-        if (!folder.exists()){
-            folder.mkdir();
-        }
+        FileManager.createFolder(folder);
         File file = new File(FileManager.findRelative(folder.toPath(), s.username + "-" + s.savename + ".txt").toString());
         if (file.exists()){
             String docStr = FileManager.readFile(file.toPath());
@@ -442,7 +419,7 @@ public class Save{
         String save = s.savename;
         File folder = new File (FileManager.findRelativeFromUserDir("Saves"+"/"+fileName).toString());
         if (!folder.exists()){
-            folder.mkdir();
+            FileManager.createFolder(folder);
         }
         File file = new File(FileManager.findRelative(folder.toPath(), s.username + "-" + s.savename + ".txt").toString());
         if (file.exists()){
@@ -506,7 +483,7 @@ public class Save{
         
         File folder = new File (FileManager.findRelativeFromUserDir("Saves").toString());
         if (!folder.exists()){
-            folder.mkdir();
+            FileManager.createFolder(folder);
         }
         String[] listeStr = folder.list();
         Save[] liste = new Save[listeStr.length];
