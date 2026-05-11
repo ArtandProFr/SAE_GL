@@ -360,21 +360,21 @@ public class Save{
 
         /* Cette méthode renvoie un objet Save initialisé à partir d'un nom de fichier. Supprime la sauvegarde et reset si non-intègre. */
 
-        if (!fileName.endsWith(".txt")){
+        if (!fileName.contains(".")){
             fileName += ".txt";
         }
-        Save s = new Save();
-        String[] arr = fileName.split("/");
-        String str = arr[arr.length-1];
-        arr = str.split("\\.");
-        str = arr[0];
-        arr = str.split("-");
-        String user = arr[0];
-        String save = arr[1];
         File folder = new File (FileManager.findRelativeFromUserDir("Saves").toString());
         FileManager.createFolder(folder);
-        File file = new File(FileManager.findRelative(folder.toPath(), s.username + "-" + s.savename + ".txt").toString());
-        if (file.exists()){
+        File file = new File(FileManager.findRelative(folder.toPath(), fileName).toString());
+        Save s = new Save();
+        if (file.exists() && FileManager.isGameFile(file) && file.toPath().endsWith(".txt") && !fileName.equals("scoreboard.txt") && fileName.contains("-")){
+            String[] arr = fileName.split("/");
+            String str = arr[arr.length-1];
+            arr = str.split("\\.");
+            str = arr[0];
+            arr = str.split("-");
+            String user = arr[0];
+            String save = arr[1];
             String docStr = FileManager.readFile(file.toPath());
             if (docStr != null){
                 String[] doc = docStr.split("\n");
@@ -413,6 +413,9 @@ public class Save{
                     s.reset();
                 }
             }
+        }
+        if (s.isInitial()){
+            s = null;
         }
         return s;
     }
@@ -497,7 +500,7 @@ public class Save{
         int count = 0;
         for (int i = 0; i < liste.length; i++){
             Save s = getSave(listeStr[i]);
-            if (!isInitial(s)){
+            if (s != null && !isInitial(s)){
                 count += 1;
             }
         }
@@ -505,7 +508,7 @@ public class Save{
         int decal = 0;
         for (int i = 0; i < liste.length; i++){
             Save s = getSave(listeStr[i]);
-            if (!s.isInitial()){
+            if (s != null && !s.isInitial()){
                 finalListe[decal] = s;
                 decal++;
             }

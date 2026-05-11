@@ -120,7 +120,7 @@ public class FileManager {
         }
     }
 
-    public boolean isGameFile(File f){
+    public static boolean isGameFile(File f){
 
         /* Cette méthode renvoie un booléen selon si le document est un fichier du jeu. */
 
