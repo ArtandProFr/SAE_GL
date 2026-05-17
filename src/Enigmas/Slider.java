@@ -1,0 +1,57 @@
+
+import java.util.HashMap;
+
+public class Slider{
+
+    public static final String RED = "RED";
+    public static final String BLUE = "BLUE";
+    public static final String YELLOW = "YELLOW";
+    public static final String COL_RED = "#B30707";
+    public static final String COL_BLUE = "#0710B3";
+    public static final String COL_YELLOW = "#B37007";
+    public static final HashMap<String, String> COLORS = getHashMapColor(RED, BLUE, YELLOW, COL_RED, COL_BLUE, COL_YELLOW);
+
+    public double[] coord;
+    public double rayon;
+    public boolean state;
+    public String color;
+
+    public Slider(){
+
+        /* Constructeur dans le cas de l'énigme MOVING_BALLS */
+
+    }
+
+    public Slider(String color){
+
+        /* Constructeur dans le cas de l'énigme MOVING_LIGHTS */
+
+        this.color = color;
+    }
+
+    private static HashMap<String, String> getHashMapColor(String red, String blue, String yellow, String colRed, String colBlue, String colYellow){
+
+        /* Cette méthode initialise le hashmap de couleurs (nom --> HEX). */
+
+        HashMap<String, String> hs = new HashMap<>();
+        hs.put(red, colRed);
+        hs.put(blue, colBlue);
+        hs.put(yellow, colYellow);
+        return hs;
+    }
+
+    public void setDrawingInfo(double[] coord, double rayon){
+
+        /* Cette méthode initialise les infos pour l'affichage. */
+
+        this.rayon = rayon;
+        setCoord(coord);
+    }
+
+    public void setCoord(double[] coord){
+
+        /* Cette méthode modifie les coordonnées. */
+
+        this.coord = coord;
+    }
+}
