@@ -10,6 +10,9 @@ public class Slider{
     public static final String COL_BLUE = "#0710B3";
     public static final String COL_YELLOW = "#B37007";
     public static final HashMap<String, String> COLORS = getHashMapColor(RED, BLUE, YELLOW, COL_RED, COL_BLUE, COL_YELLOW);
+    public static final Slider SL_RED = new Slider(RED);
+    public static final Slider SL_BLUE = new Slider(BLUE);
+    public static final Slider SL_YELLOW = new Slider(YELLOW);
 
     public double[] coord;
     public double rayon;
@@ -27,6 +30,13 @@ public class Slider{
         /* Constructeur dans le cas de l'énigme MOVING_LIGHTS */
 
         this.color = color;
+    }
+
+    public Slider(Slider s){
+
+        /* Constructeur par recopie, utile pour MOVING_LIGHTS */
+
+        this.color = s.color;
     }
 
     private static HashMap<String, String> getHashMapColor(String red, String blue, String yellow, String colRed, String colBlue, String colYellow){
