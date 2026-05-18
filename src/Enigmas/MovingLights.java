@@ -17,7 +17,7 @@ public class MovingLights {
         this.taille = slides.length;
         this.coord = coord;
         this.taille_tot = taille;
-        this.taille_case = taille_tot/this.taille;
+        this.taille_case = this.taille_tot/this.taille;
         this.initSliders(sliders);
         this.initSlides(slides);
         this.debut = getCopy(this.sliders);
