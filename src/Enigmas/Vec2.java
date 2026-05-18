@@ -10,4 +10,7 @@ public class Vec2{
         double dy = this.y - point.y;
         return Math.sqrt(dx * dx + dy * dy);
     }
+    public static double dist(Vec2 p1, Vec2 p2){
+        return p1.distanceTo(p2);
+    }
 }
