@@ -1,0 +1,16 @@
+# Dossiers de builds (selon IDE)
+bin/
+out/
+target/
+
+# Dossiers de configuration d'IDE
+.idea/
+.vscode/
+.settings/
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+
+# Parties Sauvegardées
+Saves/
