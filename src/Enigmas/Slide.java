@@ -22,7 +22,7 @@ public class Slide{
     private static final HashSet<String> HTDOWN = combineHashSet(HHORI, HDOWN);
     private static final HashSet<String> HTUP = combineHashSet(HHORI, HUP);
 
-    public double[] coord;
+    public Vec2 coord;
     public double taille;
     public boolean isGoal;
     public HashSet<String> directions;
@@ -126,7 +126,7 @@ public class Slide{
         this.isGoal = isGoal;
     }
 
-    public void setDrawingInfo(double[] coord, double taille){
+    public void setDrawingInfo(Vec2 coord, double taille){
 
         /* Initialisation des variables nécessaire à l'affichage. */
 

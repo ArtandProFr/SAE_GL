@@ -14,7 +14,7 @@ public class Slider{
     public static final Slider SL_BLUE = new Slider(BLUE);
     public static final Slider SL_YELLOW = new Slider(YELLOW);
 
-    public double[] coord;
+    public Vec2 coord;
     public double rayon;
     public boolean state;
     public String color;
@@ -50,7 +50,7 @@ public class Slider{
         return hs;
     }
 
-    public void setDrawingInfo(double[] coord, double rayon){
+    public void setDrawingInfo(Vec2 coord, double rayon){
 
         /* Cette méthode initialise les infos pour l'affichage. */
 
@@ -58,7 +58,7 @@ public class Slider{
         setCoord(coord);
     }
 
-    public void setCoord(double[] coord){
+    public void setCoord(Vec2 coord){
 
         /* Cette méthode modifie les coordonnées. */
 
