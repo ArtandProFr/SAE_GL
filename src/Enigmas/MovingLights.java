@@ -8,7 +8,7 @@ public class MovingLights {
     public int[] selection;
     public Slider[][] sliders;
     public Slide[][] slides;
-    private Slider[][] debut;
+    private final Slider[][] debut;
 
     public MovingLights(Vec2 coord, double taille, Object[][] sliders, Slide[][] slides){
 
@@ -27,6 +27,9 @@ public class MovingLights {
     }
 
     public void update(Vec2 mouseCoord, boolean leftClick, boolean leftRelease){
+
+        /* Cette méthode actualise l'énigme en fonction des actions du joueur. */
+
         if (!this.win){
             if (selection == null && leftClick){
                 for (int j = 0; j < sliders.length; j++){
@@ -72,22 +75,40 @@ public class MovingLights {
                     for (int[] possib : lp){ // Haut, Bas, Gauche, Droite
                         int dj = possib[0];
                         int di = possib[1];
-                        /*
-                        ni, nj = i + di, j + dj
-                        if 0 <= ni < self.taille and 0 <= nj < self.taille:
-                            if self.sliders[nj][ni] is None: # Case vide
-                                dest_x = self.coord[0] - self.taille_tot/2 + (ni + 0.5) * self.taille_case
-                                dest_y = self.coord[1] - self.taille_tot/2 + (nj + 0.5) * self.taille_case
+                        
+                        int ni = i + di;
+                        int nj = j + dj;
+
+                        if (0 <= ni && ni < taille && 0 <= nj  && nj < taille){
+                            if (sliders[nj][ni] == null){ // Case vide
+                                double dest_x = coord.x - taille_tot/2 + (ni + 0.5) * taille_case;
+                                double dest_y = coord.y - taille_tot/2 + (nj + 0.5) * taille_case;
                                 
-                                # Si le slider dépasse la moitié de la case suivante
-                                if mod.dist2(sl.coord, (dest_x, dest_y)) < (self.taille_case / 2):
-                                    self.sliders[nj][ni] = sl
-                                    self.sliders[j][i] = None
-                                    self.selection = (ni, nj)
-                                    break
-                        */
+                                // Si le slider dépasse la moitié de la case suivante
+                                if (Vec2.dist(sl.coord, new Vec2(dest_x, dest_y)) < (taille_case / 2)){
+                                    sliders[nj][ni] = sl;
+                                    sliders[j][i] = null;
+                                    selection = new int[]{ni, nj};
+                                    break;
+                                }
+                            }
+                        }
+                        
                     }
                 }
+            }
+            if (selection != null && leftRelease && sliders[selection[1]][selection[0]] != null){
+                int i = selection[0];
+                int j = selection[1];
+                double x = coord.x-taille_tot/2 + (i+1/2) * taille_case;
+                double y = coord.y-taille_tot/2 + (j+1/2) * taille_case;
+                sliders[j][i].setCoord(new Vec2(x, y));
+                selection = null;
+            }
+            updAllSliders();
+            if (verifWin()){
+                win = true;
+                slidersToGoodCoord();
             }
         }
     }
