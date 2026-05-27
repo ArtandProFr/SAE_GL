@@ -26,7 +26,27 @@ import java.util.Set;
 
 public class FileManager {
 
-    public static final Path userDir = Path.of(System.getProperty("user.dir"));
+    /**
+     * Dossier de données utilisateur (sauvegardes, scoreboard, etc.).
+     *
+     * Auparavant ce chemin pointait vers {@code System.getProperty("user.dir")},
+     * ce qui ne fonctionnait pas une fois l'application empaquetée (les
+     * ressources d'un JAR sont en lecture seule). On utilise désormais un
+     * dossier caché dans le répertoire personnel de l'utilisateur : ce dossier
+     * est inscriptible sur toutes les plateformes (Windows / macOS / Linux).
+     */
+    public static final Path userDir = Path.of(System.getProperty("user.home"), ".sae_game");
+
+    static {
+        // S'assure que le dossier de données et le sous-dossier "Saves"
+        // existent au démarrage, avant toute lecture ou écriture.
+        try {
+            Files.createDirectories(userDir.resolve("Saves"));
+        } catch (IOException ignored) {
+            // Si la création échoue (droits insuffisants), les opérations
+            // de sauvegarde renverront simplement false plus tard.
+        }
+    }
     public static final Set<String> ImageExtensions = Set.of(".png", ".jpg",".jpeg",".apng",".avif",".gif",".svg",".webp",".bmp",".ico",".tiff",".odi");;
     public static final Set<String> TextExtensions = Set.of(".odm",".odt",".doc",".docx",".txt",".rtf");
     public static final Set<String> DataExtensions = Set.of(".csv",".ods",".odb",".json",".sql");

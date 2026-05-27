@@ -1,5 +1,6 @@
 package com.roxane.app;
 
+import javafx.embed.swing.SwingNode;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -87,13 +88,7 @@ public class NewGameScreen {
         createButton.setOnAction(e -> {
             String name = saveNameField.getText().isBlank() ? "MA_PARTIE" : saveNameField.getText().trim();
             System.out.println("Nouvelle sauvegarde creee: " + name);
-            // Lancement du jeu Swing (Thomas) dans une fenetre separee.
-            // SwingUtilities.invokeLater garantit le respect du thread Swing (EDT).
-            javax.swing.SwingUtilities.invokeLater(() -> {
-                com.sae.game.Jeu jeu = new com.sae.game.Jeu();
-                jeu.setTitle("Escape Game - " + name);
-                jeu.setVisible(true);
-            });
+            launchSwingGameInScene(name);
         });
 
         Bouton backListButton = new Bouton(Translations.t("RETOUR LISTE"));
@@ -122,5 +117,53 @@ public class NewGameScreen {
         Scene scene = new Scene(root, 1280, 720);
         scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
         stage.setScene(scene);
+    }
+
+    /**
+     * Affiche le jeu Swing ({@link com.sae.game.Jeu}) à l'intérieur de la
+     * fenêtre JavaFX courante, sans ouvrir de seconde fenêtre.
+     *
+     * <p>Pour cela on utilise {@link SwingNode} qui sert de pont entre le
+     * graphe JavaFX et les composants Swing. Le {@code JPanel} interne du
+     * jeu est créé sur l'Event Dispatch Thread Swing via
+     * {@link javax.swing.SwingUtilities#invokeLater}, puis attaché au
+     * {@code SwingNode}. Un petit bouton "RETOUR MENU" en surimpression
+     * JavaFX permet de revenir à l'écran précédent.
+     */
+    private void launchSwingGameInScene(String partyName) {
+        SwingNode swingNode = new SwingNode();
+
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            com.sae.game.Jeu jeu = new com.sae.game.Jeu();
+            // La JFrame n'est jamais affichée : on récupère uniquement son JPanel.
+            swingNode.setContent(jeu.getGamePanel());
+        });
+
+        StackPane gameRoot = new StackPane(swingNode);
+        gameRoot.setStyle("-fx-background-color: black;");
+
+        // Bouton "RETOUR MENU" overlay JavaFX (en haut à droite).
+        Bouton backButton = new Bouton(Translations.t("RETOUR MENU"));
+        backButton.getStyleClass().add("small-action-button");
+        backButton.setPrefWidth(180);
+        if (minecraftFont != null) {
+            backButton.setFont(Font.font(minecraftFont.getFamily(), 14));
+        }
+        backButton.setOnAction(ev -> onBackToMenu.run());
+
+        HBox topBar = new HBox(backButton);
+        topBar.setAlignment(Pos.TOP_RIGHT);
+        topBar.setPadding(new Insets(12));
+        topBar.setMouseTransparent(false);
+        topBar.setPickOnBounds(false);
+
+        StackPane.setAlignment(topBar, Pos.TOP_RIGHT);
+        gameRoot.getChildren().add(topBar);
+
+        Settings.getInstance().applyBrightness(gameRoot);
+        Scene gameScene = new Scene(gameRoot, 1280, 720);
+        gameScene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
+        stage.setScene(gameScene);
+        stage.setTitle("Escape Game - " + partyName);
     }
 }

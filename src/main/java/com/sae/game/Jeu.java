@@ -39,7 +39,11 @@ public class Jeu extends JFrame {
     public Jeu() {
         setTitle("Mon Application SAE");
         setSize(800, 600);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        // DISPOSE_ON_CLOSE plutôt que EXIT_ON_CLOSE : si la JFrame est utilisée
+        // seule (lancement standalone via main), elle se ferme sans tuer toute
+        // l'application. Quand on embarque seulement le JPanel dans un SwingNode
+        // JavaFX, la JFrame n'est de toute façon jamais affichée.
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
 
         backgroundPanel = new BackgroundPanel("image_accueil.jpg");
@@ -194,6 +198,16 @@ public class Jeu extends JFrame {
         });
 
         setContentPane(backgroundPanel);
+    }
+
+    /**
+     * Retourne le panneau de jeu pour permettre son intégration dans un
+     * conteneur Swing externe — typiquement un {@code javafx.embed.swing.SwingNode}
+     * afin d'afficher le jeu Swing à l'intérieur d'une scène JavaFX, sans
+     * avoir à ouvrir une seconde fenêtre.
+     */
+    public JPanel getGamePanel() {
+        return backgroundPanel;
     }
 
     private void mettreAJourTexteChambre() {
