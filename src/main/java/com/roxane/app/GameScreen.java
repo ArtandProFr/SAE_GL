@@ -44,7 +44,7 @@ public class GameScreen {
         Settings.getInstance().applyBrightness(root);
 
         Scene gameScene = new Scene(root, 1280, 720);
-        gameScene.getStylesheets().add("style.css");
+        gameScene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
         stage.setScene(gameScene);
     }
 

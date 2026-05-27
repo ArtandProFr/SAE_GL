@@ -137,7 +137,7 @@ public class MainApp extends Application {
         Settings.getInstance().applyBrightness(root);
 
         Scene scene = new Scene(root, 1280, 720);
-        scene.getStylesheets().add("style.css");
+        scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
 
         primaryStage.setTitle("Escape Game");
         primaryStage.setScene(scene);

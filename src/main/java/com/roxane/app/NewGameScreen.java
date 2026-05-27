@@ -87,7 +87,13 @@ public class NewGameScreen {
         createButton.setOnAction(e -> {
             String name = saveNameField.getText().isBlank() ? "MA_PARTIE" : saveNameField.getText().trim();
             System.out.println("Nouvelle sauvegarde creee: " + name);
-            onBackToList.run();
+            // Lancement du jeu Swing (Thomas) dans une fenetre separee.
+            // SwingUtilities.invokeLater garantit le respect du thread Swing (EDT).
+            javax.swing.SwingUtilities.invokeLater(() -> {
+                com.sae.game.Jeu jeu = new com.sae.game.Jeu();
+                jeu.setTitle("Escape Game - " + name);
+                jeu.setVisible(true);
+            });
         });
 
         Bouton backListButton = new Bouton(Translations.t("RETOUR LISTE"));
@@ -114,7 +120,7 @@ public class NewGameScreen {
         StackPane root = new StackPane(backgroundImageView, content);
         Settings.getInstance().applyBrightness(root);
         Scene scene = new Scene(root, 1280, 720);
-        scene.getStylesheets().add("style.css");
+        scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
         stage.setScene(scene);
     }
 }
