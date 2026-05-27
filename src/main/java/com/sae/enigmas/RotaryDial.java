@@ -1,3 +1,5 @@
+package com.sae.enigmas;
+
 public class RotaryDial{
 
     public static final int[] EMPTY_LIST = new int[] {};

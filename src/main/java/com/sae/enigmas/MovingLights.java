@@ -1,3 +1,5 @@
+package com.sae.enigmas;
+
 public class MovingLights {
     public static final double LIGHT_RADIUS = 1.0/3.0;
     public int taille;

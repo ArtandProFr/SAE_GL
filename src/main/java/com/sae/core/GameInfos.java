@@ -1,3 +1,5 @@
+package com.sae.core;
+
 
 /*
         GAME_NAME

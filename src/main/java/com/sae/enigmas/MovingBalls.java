@@ -1,3 +1,5 @@
+package com.sae.enigmas;
+
 
 public class MovingBalls{
     public static final double BALL_RADIUS = 1.0/3.0;

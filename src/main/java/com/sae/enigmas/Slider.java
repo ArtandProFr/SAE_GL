@@ -1,3 +1,5 @@
+package com.sae.enigmas;
+
 
 import java.util.HashMap;
 

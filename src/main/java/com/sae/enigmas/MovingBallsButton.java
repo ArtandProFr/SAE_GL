@@ -1,3 +1,5 @@
+package com.sae.enigmas;
+
 public class MovingBallsButton {
     public Vec2 coord;
     public double taille;
