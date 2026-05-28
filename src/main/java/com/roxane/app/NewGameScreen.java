@@ -122,23 +122,11 @@ public class NewGameScreen {
     /**
      * Affiche le jeu Swing ({@link com.sae.game.Jeu}) à l'intérieur de la
      * fenêtre JavaFX courante, sans ouvrir de seconde fenêtre.
-     *
-     * <p>Pour cela on utilise {@link SwingNode} qui sert de pont entre le
-     * graphe JavaFX et les composants Swing. Le {@code JPanel} interne du
-     * jeu est créé sur l'Event Dispatch Thread Swing via
-     * {@link javax.swing.SwingUtilities#invokeLater}, puis attaché au
-     * {@code SwingNode}. Un petit bouton "RETOUR MENU" en surimpression
-     * JavaFX permet de revenir à l'écran précédent.
      */
     private void launchSwingGameInScene(String partyName) {
         SwingNode swingNode = new SwingNode();
 
-        javax.swing.SwingUtilities.invokeLater(() -> {
-            com.sae.game.Jeu jeu = new com.sae.game.Jeu();
-            // La JFrame n'est jamais affichée : on récupère uniquement son JPanel.
-            swingNode.setContent(jeu.getGamePanel());
-        });
-
+        // On instancie la scène JavaFX de jeu d'abord pour y avoir accès dans l'écouteur
         StackPane gameRoot = new StackPane(swingNode);
         gameRoot.setStyle("-fx-background-color: black;");
 
@@ -163,6 +151,29 @@ public class NewGameScreen {
         Settings.getInstance().applyBrightness(gameRoot);
         Scene gameScene = new Scene(gameRoot, 1280, 720);
         gameScene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
+
+        // Lancement et configuration de la partie Swing sur l'Event Dispatch Thread (EDT)
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            com.sae.game.Jeu jeu = new com.sae.game.Jeu();
+            
+            // BRANCHEMENT DU CURSEUR JAVAFX :
+            // On écoute les requêtes de survol envoyées par le code de la classe Jeu
+            jeu.setCursorChangeListener(surElementInteractif -> {
+                // On force le changement de curseur sur le Thread JavaFX principal
+                javafx.application.Platform.runLater(() -> {
+                    if (surElementInteractif) {
+                        gameScene.setCursor(javafx.scene.Cursor.HAND);
+                    } else {
+                        gameScene.setCursor(javafx.scene.Cursor.DEFAULT);
+                    }
+                });
+            });
+
+            // Attachement du JPanel du jeu au SwingNode
+            swingNode.setContent(jeu.getGamePanel());
+        });
+
+        // Application de la scène sur le Stage
         stage.setScene(gameScene);
         stage.setTitle("Escape Game - " + partyName);
     }
