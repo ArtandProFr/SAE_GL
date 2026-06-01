@@ -31,17 +31,20 @@ public class Jeu extends JFrame {
     // Index de progression dans le tableau des phases
     private int indexPhaseActuelle = 0;
     
+    // Variables pour le système de dialogue immersif
+    private boolean corpsExamine = false;
+    private boolean dialogueActif = false;
+    private int indexDialogue = 0;
+    private String[] textesDialogue = {
+        "Arthur... ? Oh non, il ne respire plus. Son corps est déjà froid...",
+        "Regarde ses lèvres... elles ont une étrange teinte bleutée. Un empoisonnement ? C'est impensable...",
+        "Je n'ai pas le choix. Je dois fouiller l'appartement et trouver les indices qui mèneront au coupable."
+    };
+
     private BackgroundPanel backgroundPanel;
     private JLabel txtExplicatif;
-    
-    private boolean possedeObjet = false;
-    private boolean inventaireSelectionne = false;
-    private int sceneActuelleObjet = 0; 
-    private String universActuelObjet = "PIERRE"; 
-
-    private double objetRatioX = 0.50; 
-    private double objetRatioY = 0.50;
-    private final int TAILLE_OBJET = 20; 
+    private JButton btnGauche;
+    private JButton btnDroite;
 
     public Jeu() {
         setTitle("Mon Escape Game SAE");
@@ -53,22 +56,29 @@ public class Jeu extends JFrame {
         backgroundPanel.setLayout(null); 
 
         txtExplicatif = new JLabel();
-        txtExplicatif.setFont(new Font("Arial", Font.BOLD, 18));
+        txtExplicatif.setFont(new Font("Arial", Font.BOLD, 15)); 
         txtExplicatif.setForeground(Color.WHITE);
         mettreAJourTexteChambre();
 
-        JButton btnGauche = new JButton("<");
+        btnGauche = new JButton("<");
         btnGauche.setFont(new Font("Arial", Font.BOLD, 20));
         btnGauche.addActionListener(event -> {
+            if (!corpsExamine && universActuel.equals("SALON") && indexDecor == 0) return;
+
             indexDecor = (indexDecor - 1 + decorsActuels.length) % decorsActuels.length;
             backgroundPanel.setNewImage(decorsActuels[indexDecor]);
             mettreAJourTexteChambre();
             recalculerCurseurImmediat();
         });
 
-        JButton btnDroite = new JButton(">");
+        btnDroite = new JButton(">");
         btnDroite.setFont(new Font("Arial", Font.BOLD, 20));
         btnDroite.addActionListener(event -> {
+            if (!corpsExamine && universActuel.equals("SALON") && indexDecor == 0) {
+                txtExplicatif.setText("Je devrais d'abord aller voir ce qu'a Arthur sur le canapé...");
+                return;
+            }
+
             indexDecor = (indexDecor + 1) % decorsActuels.length;
             backgroundPanel.setNewImage(decorsActuels[indexDecor]);
             mettreAJourTexteChambre();
@@ -85,30 +95,55 @@ public class Jeu extends JFrame {
                 Rectangle imgBounds = backgroundPanel.getImageBounds();
                 int iw = imgBounds.width;
                 int ih = imgBounds.height;
+                
+                // GESTION DU CLIC SUR LE DIALOGUE ACTIF
+                if (dialogueActif) {
+                    int zoneDialogueY = backgroundPanel.getHeight() - 110;
+                    if (e.getY() >= zoneDialogueY) {
+                        indexDialogue++;
+                        if (indexDialogue < textesDialogue.length) {
+                            backgroundPanel.repaint(); 
+                        } else {
+                            dialogueActif = false;
+                            corpsExamine = true;
+                            avancerPhaseTest(); 
+                            btnGauche.setVisible(true);
+                            btnDroite.setVisible(true);
+                            mettreAJourTexteChambre();
+                        }
+                        recalculerCurseurImmediat();
+                        return;
+                    }
+                }
+
                 if (!imgBounds.contains(e.getPoint())) return;
 
                 int mouseXInImg = e.getX() - imgBounds.x;
                 int mouseYInImg = e.getY() - imgBounds.y;
+                Point clicDansImg = new Point(mouseXInImg, mouseYInImg);
 
-                Rectangle porte1 = new Rectangle((int)(iw * 0.24), (int)(ih * 0.25), (int)(iw * 0.08), (int)(ih * 0.3));
-                Rectangle porte2 = new Rectangle((int)(iw * 0.39), (int)(ih * 0.21), (int)(iw * 0.05), (int)(ih * 0.25));
-                Rectangle porte3 = new Rectangle((int)(iw * 0.56), (int)(ih * 0.22), (int)(iw * 0.06), (int)(ih * 0.2));
+                // Zone cliquable sur le canapé
+                Rectangle zoneCorpsArthur = new Rectangle((int)(iw * 0.22), (int)(ih * 0.36), (int)(iw * 0.23), (int)(ih * 0.20));
 
-                Rectangle porteSortiePierre = new Rectangle((int)(iw * 0.22), (int)(ih * 0.23), (int)(iw * 0.15), (int)(ih * 0.47));
-                Rectangle zonePorteLouis = new Rectangle((int)(iw * 0.16), (int)(ih * 0.13), (int)(iw * 0.14), (int)(ih * 0.53));
-                Rectangle zonePorteJacques = new Rectangle((int)(iw * 0.74), (int)(ih * 0.26), (int)(iw * 0.13), (int)(ih * 0.43));
-
-                int invX = backgroundPanel.getWidth() - 210;
-                int invY = backgroundPanel.getHeight() - 80;
-                Rectangle case1Inventaire = new Rectangle(invX, invY, 55, 55);
-
-                if (possedeObjet && case1Inventaire.contains(e.getPoint())) {
-                    inventaireSelectionne = !inventaireSelectionne;
+                if (!corpsExamine && !dialogueActif && universActuel.equals("SALON") && indexDecor == 0 && zoneCorpsArthur.contains(clicDansImg)) {
+                    dialogueActif = true;
+                    indexDialogue = 0;
+                    btnGauche.setVisible(false); 
+                    btnDroite.setVisible(false);
                     backgroundPanel.repaint();
                     return;
                 }
 
-                Point clicDansImg = new Point(mouseXInImg, mouseYInImg);
+                if (dialogueActif) return;
+
+                // Zones des portes du Salon 2
+                Rectangle porte1 = new Rectangle((int)(iw * 0.28), (int)(ih * 0.25), (int)(iw * 0.07), (int)(ih * 0.28));
+                Rectangle porte2 = new Rectangle((int)(iw * 0.40), (int)(ih * 0.24), (int)(iw * 0.05), (int)(ih * 0.25));
+                Rectangle porte3 = new Rectangle((int)(iw * 0.54), (int)(ih * 0.23), (int)(iw * 0.05), (int)(ih * 0.24));
+
+                Rectangle porteSortiePierre = new Rectangle((int)(iw * 0.2), (int)(ih * 0.35), (int)(iw * 0.12), (int)(ih * 0.33));
+                Rectangle zonePorteLouis = new Rectangle((int)(iw * 0.20), (int)(ih * 0.33), (int)(iw * 0.14), (int)(ih * 0.36));
+                Rectangle zonePorteJacques = new Rectangle((int)(iw * 0.73), (int)(ih * 0.24), (int)(iw * 0.15), (int)(ih * 0.50));
 
                 if (universActuel.equals("SALON") && indexDecor == 1) {
                     if (porte1.contains(clicDansImg)) { transitionner("LOUIS", decorsLouis); return; }
@@ -125,34 +160,18 @@ public class Jeu extends JFrame {
                 if (universActuel.equals("JACQUES") && indexDecor == 1 && zonePorteJacques.contains(clicDansImg)) {
                     transitionnerRetourSalon(); return;
                 }
-
-                int objX = (int) (iw * objetRatioX) - (TAILLE_OBJET / 2);
-                int objY = (int) (ih * objetRatioY) - (TAILLE_OBJET / 2);
-                Rectangle zonePointRougeDynamique = new Rectangle(objX, objY, TAILLE_OBJET, TAILLE_OBJET);
-
-                if (!possedeObjet && universActuel.equals(universActuelObjet) && indexDecor == sceneActuelleObjet && zonePointRougeDynamique.contains(clicDansImg)) {
-                    possedeObjet = true;
-                    universActuelObjet = "INVENTAIRE";
-                    sceneActuelleObjet = -1; 
-                    recalculerCurseurImmediat();
-                    return;
-                }
-
-                if (possedeObjet && inventaireSelectionne) {
-                    objetRatioX = (double) mouseXInImg / iw;
-                    objetRatioY = (double) mouseYInImg / ih;
-                    possedeObjet = false;
-                    inventaireSelectionne = false;
-                    sceneActuelleObjet = indexDecor; 
-                    universActuelObjet = universActuel; 
-                    recalculerCurseurImmediat();
-                }
             }
         });
 
         backgroundPanel.addMouseMotionListener(new MouseAdapter() {
             @Override
             public void mouseMoved(MouseEvent e) {
+                if (dialogueActif && e.getY() >= backgroundPanel.getHeight() - 110) {
+                    backgroundPanel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+                    notifierChangementCurseur(true);
+                    return;
+                }
+
                 Rectangle imgBounds = backgroundPanel.getImageBounds();
                 if (!imgBounds.contains(e.getPoint())) {
                     notifierChangementCurseur(false);
@@ -168,22 +187,16 @@ public class Jeu extends JFrame {
         setContentPane(backgroundPanel);
     }
 
-    /** Permet au contrôleur JavaFX d'écouter les demandes de changement de curseur */
     public void setCursorChangeListener(CursorChangeListener listener) {
         this.cursorChangeListener = listener;
     }
 
-    // Surcharge pour Roxane
     public void setCursorChangeListener(Object... args) {}
 
-    /**
-     // Met à jour la phase de l'enquête.
-     // Appelle cette méthode manuellement dans ton code (ex: lors d'une action clé) pour avancer.
-     */
     private void avancerPhaseTest() {
         Phase phaseActuelle = Phase.TOUTES_LES_PHASES[indexPhaseActuelle];
         if (phaseActuelle.estJeuFini()) {
-            System.out.println("[INFO] Méthode estJeuFini() = true ! Le jeu est complété.");
+            System.out.println("[INFO] Le jeu est complété.");
             return;
         }
         if (indexPhaseActuelle < Phase.TOUTES_LES_PHASES.length - 1) {
@@ -193,34 +206,33 @@ public class Jeu extends JFrame {
     }
 
     private void verifierEtMettreAJourCurseur(Point clicDansImg) {
+        if (dialogueActif) return; 
+
         Rectangle imgBounds = backgroundPanel.getImageBounds();
         int iw = imgBounds.width;
         int ih = imgBounds.height;
 
         boolean surElementInteractif = false;
 
+        if (!corpsExamine && universActuel.equals("SALON") && indexDecor == 0) {
+            Rectangle zoneCorpsArthur = new Rectangle((int)(iw * 0.22), (int)(ih * 0.36), (int)(iw * 0.23), (int)(ih * 0.20));
+            if (zoneCorpsArthur.contains(clicDansImg)) surElementInteractif = true;
+        }
+
         if (universActuel.equals("SALON") && indexDecor == 1) {
-            Rectangle porte1 = new Rectangle((int)(iw * 0.24), (int)(ih * 0.25), (int)(iw * 0.08), (int)(ih * 0.3));
-            Rectangle porte2 = new Rectangle((int)(iw * 0.39), (int)(ih * 0.21), (int)(iw * 0.05), (int)(ih * 0.25));
-            Rectangle porte3 = new Rectangle((int)(iw * 0.56), (int)(ih * 0.22), (int)(iw * 0.06), (int)(ih * 0.2));
+            Rectangle porte1 = new Rectangle((int)(iw * 0.28), (int)(ih * 0.25), (int)(iw * 0.07), (int)(ih * 0.28));
+            Rectangle porte2 = new Rectangle((int)(iw * 0.40), (int)(ih * 0.24), (int)(iw * 0.05), (int)(ih * 0.25));
+            Rectangle porte3 = new Rectangle((int)(iw * 0.54), (int)(ih * 0.23), (int)(iw * 0.05), (int)(ih * 0.24));
             if (porte1.contains(clicDansImg) || porte2.contains(clicDansImg) || porte3.contains(clicDansImg)) surElementInteractif = true;
         }
 
         if (indexDecor == 1) {
-            if (universActuel.equals("PIERRE") && (new Rectangle((int)(iw * 0.22), (int)(ih * 0.23), (int)(iw * 0.15), (int)(ih * 0.47))).contains(clicDansImg)) surElementInteractif = true;
-            if (universActuel.equals("LOUIS") && (new Rectangle((int)(iw * 0.16), (int)(ih * 0.13), (int)(iw * 0.14), (int)(ih * 0.53))).contains(clicDansImg)) surElementInteractif = true;
-            if (universActuel.equals("JACQUES") && (new Rectangle((int)(iw * 0.74), (int)(ih * 0.26), (int)(iw * 0.13), (int)(ih * 0.43))).contains(clicDansImg)) surElementInteractif = true;
+            if (universActuel.equals("PIERRE") && (new Rectangle((int)(iw * 0.2), (int)(ih * 0.35), (int)(iw * 0.12), (int)(ih * 0.33))).contains(clicDansImg)) surElementInteractif = true;
+            if (universActuel.equals("LOUIS") && (new Rectangle((int)(iw * 0.20), (int)(ih * 0.33), (int)(iw * 0.14), (int)(ih * 0.36))).contains(clicDansImg)) surElementInteractif = true;
+            if (universActuel.equals("JACQUES") && (new Rectangle((int)(iw * 0.73), (int)(ih * 0.24), (int)(iw * 0.15), (int)(ih * 0.50))).contains(clicDansImg)) surElementInteractif = true;
         }
 
-        int objX = (int) (iw * objetRatioX) - (TAILLE_OBJET / 2);
-        int objY = (int) (ih * objetRatioY) - (TAILLE_OBJET / 2);
-        Rectangle zonePointRougeDynamique = new Rectangle(objX, objY, TAILLE_OBJET, TAILLE_OBJET);
-        if (!possedeObjet && universActuel.equals(universActuelObjet) && indexDecor == sceneActuelleObjet && zonePointRougeDynamique.contains(clicDansImg)) {
-            surElementInteractif = true;
-        }
-
-        backgroundPanel.setCursor(new Cursor(surElementInteractif ? Cursor.HAND_CURSOR : Cursor.DEFAULT_CURSOR));
-        notifierChangementCurseur(surElementInteractif);
+        backgroundPanel.setSetCursorDirect(surElementInteractif);
     }
 
     private void notifierChangementCurseur(boolean surElementInteractif) {
@@ -274,8 +286,13 @@ public class Jeu extends JFrame {
 
     private void mettreAJourTexteChambre() {
         if (txtExplicatif != null) {
+            if (!corpsExamine && universActuel.equals("SALON") && indexDecor == 0) {
+                txtExplicatif.setText("Le Salon | Arthur est allongé sur le canapé... Il ne bouge plus. Je devrais l'examiner.");
+                return;
+            }
+
             switch (universActuel) {
-                case "SALON" -> txtExplicatif.setText(indexDecor == 0 ? "Le Salon - Cuisine" : "Le Salon - Les Portes");
+                case "SALON" -> txtExplicatif.setText(indexDecor == 0 ? "Le Salon - Cuisine  |  Trouve les indices qui te mèneront au coupable." : "Le Salon - Les Portes  |  Trouve les indices qui te mèneront au coupable.");
                 case "PIERRE" -> txtExplicatif.setText("Chambre de Pierre (Porte 2)");
                 case "LOUIS" -> txtExplicatif.setText("Chambre de Louis (Porte 1)");
                 case "JACQUES" -> txtExplicatif.setText("Chambre de Jacques (Porte 3)");
@@ -289,6 +306,11 @@ public class Jeu extends JFrame {
         private int imgHeightOriginal = 1;
 
         public BackgroundPanel(String path) { setNewImage(path); }
+
+        public void setSetCursorDirect(boolean hand) {
+            setCursor(new Cursor(hand ? Cursor.HAND_CURSOR : Cursor.DEFAULT_CURSOR));
+            notifierChangementCurseur(hand);
+        }
 
         public void setNewImage(String path) {
             URL url = getClass().getClassLoader().getResource(IMG_DIR + path);
@@ -329,33 +351,28 @@ public class Jeu extends JFrame {
             Rectangle r = getImageBounds();
             if (backgroundImage != null) g2d.drawImage(backgroundImage, r.x, r.y, r.width, r.height, this);
 
-            if (!possedeObjet && universActuel.equals(universActuelObjet) && indexDecor == sceneActuelleObjet) {
-                int objX = r.x + (int) (r.width * objetRatioX) - (TAILLE_OBJET / 2);
-                int objY = r.y + (int) (r.height * objetRatioY) - (TAILLE_OBJET / 2);
-                g2d.setColor(Color.RED);
-                g2d.fillOval(objX, objY, TAILLE_OBJET, TAILLE_OBJET);
-            }
+            if (dialogueActif) {
+                int boxH = 90;
+                int boxY = getHeight() - boxH - 20;
+                int boxX = 20;
+                int boxW = getWidth() - 40;
 
-            dessinerMiniMap(g2d);
+                g2d.setColor(new Color(0, 0, 0, 210));
+                g2d.fillRoundRect(boxX, boxY, boxW, boxH, 15, 15);
 
-            int invX = getWidth() - 210;
-            int invY = getHeight() - 80;
-            for (int i = 0; i < 3; i++) {
-                g2d.setColor(new Color(255, 255, 255, 180));
-                g2d.fillRect(invX + (i * 65), invY, 55, 55);
-                g2d.setColor(Color.DARK_GRAY);
-                g2d.drawRect(invX + (i * 65), invY, 55, 55);
-            }
+                g2d.setColor(new Color(255, 255, 255, 150));
+                g2d.setStroke(new BasicStroke(2));
+                g2d.drawRoundRect(boxX, boxY, boxW, boxH, 15, 15);
 
-            if (inventaireSelectionne) {
-                g2d.setColor(Color.YELLOW);
-                g2d.setStroke(new BasicStroke(3));
-                g2d.drawRect(invX, invY, 55, 55);
-                g2d.setStroke(new BasicStroke(1));
-            }
-            if (possedeObjet) {
-                g2d.setColor(Color.RED);
-                g2d.fillOval(invX + 17, invY + 17, 20, 20);
+                g2d.setColor(Color.WHITE);
+                g2d.setFont(new Font("Arial", Font.PLAIN, 15));
+                g2d.drawString(textesDialogue[indexDialogue], boxX + 25, boxY + 40);
+
+                g2d.setFont(new Font("Arial", Font.ITALIC | Font.BOLD, 11));
+                g2d.setColor(new Color(46, 204, 113));
+                g2d.drawString("[ Cliquer pour continuer > ]", boxX + boxW - 170, boxY + boxH - 15);
+            } else {
+                dessinerMiniMap(g2d);
             }
             repositionnerComposants(r);
         }
@@ -413,7 +430,7 @@ public class Jeu extends JFrame {
                     if (txt.equals("<")) c.setBounds(r.x + 20, r.y + (int)(r.height * 0.45), 60, 60);
                     else if (txt.equals(">")) c.setBounds(r.x + r.width - 80, r.y + (int)(r.height * 0.45), 60, 60);
                 } else if (c instanceof JLabel) {
-                    c.setBounds(r.x + 20, r.y + 20, 350, 30);
+                    c.setBounds(r.x + 20, r.y + 20, 650, 30);
                 }
             }
         }
