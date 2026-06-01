@@ -1,5 +1,7 @@
 package com.sae.game;
 
+import com.sae.core.Phase; // Importation de la classe Phase depuis le dossier core
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
@@ -25,6 +27,9 @@ public class Jeu extends JFrame {
     private String[] decorsActuels = decorsSalon; 
     private int indexDecor = 0;
     private String universActuel = "SALON"; 
+    
+    // Index de progression dans le tableau des phases
+    private int indexPhaseActuelle = 0;
     
     private BackgroundPanel backgroundPanel;
     private JLabel txtExplicatif;
@@ -168,6 +173,25 @@ public class Jeu extends JFrame {
         this.cursorChangeListener = listener;
     }
 
+    // Surcharge pour Roxane
+    public void setCursorChangeListener(Object... args) {}
+
+    /**
+     // Met à jour la phase de l'enquête.
+     // Appelle cette méthode manuellement dans ton code (ex: lors d'une action clé) pour avancer.
+     */
+    private void avancerPhaseTest() {
+        Phase phaseActuelle = Phase.TOUTES_LES_PHASES[indexPhaseActuelle];
+        if (phaseActuelle.estJeuFini()) {
+            System.out.println("[INFO] Méthode estJeuFini() = true ! Le jeu est complété.");
+            return;
+        }
+        if (indexPhaseActuelle < Phase.TOUTES_LES_PHASES.length - 1) {
+            indexPhaseActuelle++;
+            System.out.println("[PROGRESSION] Passage à la Phase " + Phase.TOUTES_LES_PHASES[indexPhaseActuelle].getNumero());
+        }
+    }
+
     private void verifierEtMettreAJourCurseur(Point clicDansImg) {
         Rectangle imgBounds = backgroundPanel.getImageBounds();
         int iw = imgBounds.width;
@@ -195,10 +219,7 @@ public class Jeu extends JFrame {
             surElementInteractif = true;
         }
 
-        // 1. On change le curseur côté Swing (au cas où)
         backgroundPanel.setCursor(new Cursor(surElementInteractif ? Cursor.HAND_CURSOR : Cursor.DEFAULT_CURSOR));
-        
-        // 2. On envoie l'ordre à JavaFX via le listener
         notifierChangementCurseur(surElementInteractif);
     }
 
@@ -262,7 +283,6 @@ public class Jeu extends JFrame {
         }
     }
 
-    // Le code interne de BackgroundPanel (paintComponent, dessinerMiniMap, etc.) reste identique à votre version précédente...
     class BackgroundPanel extends JPanel {
         private Image backgroundImage;
         private int imgWidthOriginal = 1;
