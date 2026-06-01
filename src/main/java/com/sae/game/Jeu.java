@@ -1,6 +1,7 @@
 package com.sae.game;
 
-import com.sae.core.Phase; // Importation de la classe Phase depuis le dossier core
+import com.sae.core.Phase;         // Importation de la classe Phase depuis core
+import com.sae.enigmas.EnigmeVerre; // Notre classe de gestion des verres dans com.sae.enigmas
 
 import javax.swing.*;
 import java.awt.*;
@@ -31,15 +32,15 @@ public class Jeu extends JFrame {
     // Index de progression dans le tableau des phases
     private int indexPhaseActuelle = 0;
     
-    // Variables pour le système de dialogue immersif
-    private boolean corpsExamine = false;
+    // Instance de notre gestionnaire d'énigme des verres
+    private EnigmeVerre enigmeVerre = new EnigmeVerre();
+    
+    // Variables d'état pour le bandeau de dialogue
     private boolean dialogueActif = false;
-    private int indexDialogue = 0;
-    private String[] textesDialogue = {
-        "Arthur... ? Oh non, il ne respire plus. Son corps est déjà froid...",
-        "Regarde ses lèvres... elles ont une étrange teinte bleutée. Un empoisonnement ? C'est impensable...",
-        "Je n'ai pas le choix. Je dois fouiller l'appartement et trouver les indices qui mèneront au coupable."
-    };
+    private int indexDialogueArthur = 0;
+    private String texteDialogueCourant = "";
+
+    private boolean modeEnigmeEmpreinteActive = false;
 
     private BackgroundPanel backgroundPanel;
     private JLabel txtExplicatif;
@@ -63,7 +64,7 @@ public class Jeu extends JFrame {
         btnGauche = new JButton("<");
         btnGauche.setFont(new Font("Arial", Font.BOLD, 20));
         btnGauche.addActionListener(event -> {
-            if (!corpsExamine && universActuel.equals("SALON") && indexDecor == 0) return;
+            if (!enigmeVerre.isCorpsExamine() && universActuel.equals("SALON") && indexDecor == 0) return;
 
             indexDecor = (indexDecor - 1 + decorsActuels.length) % decorsActuels.length;
             backgroundPanel.setNewImage(decorsActuels[indexDecor]);
@@ -74,7 +75,7 @@ public class Jeu extends JFrame {
         btnDroite = new JButton(">");
         btnDroite.setFont(new Font("Arial", Font.BOLD, 20));
         btnDroite.addActionListener(event -> {
-            if (!corpsExamine && universActuel.equals("SALON") && indexDecor == 0) {
+            if (!enigmeVerre.isCorpsExamine() && universActuel.equals("SALON") && indexDecor == 0) {
                 txtExplicatif.setText("Je devrais d'abord aller voir ce qu'a Arthur sur le canapé...");
                 return;
             }
@@ -96,19 +97,31 @@ public class Jeu extends JFrame {
                 int iw = imgBounds.width;
                 int ih = imgBounds.height;
                 
-                // GESTION DU CLIC SUR LE DIALOGUE ACTIF
+                // GESTION DU CLIC SUR LE DIALOGUE ACTIF (Défilement / Fermeture)
                 if (dialogueActif) {
                     int zoneDialogueY = backgroundPanel.getHeight() - 110;
                     if (e.getY() >= zoneDialogueY) {
-                        indexDialogue++;
-                        if (indexDialogue < textesDialogue.length) {
-                            backgroundPanel.repaint(); 
+                        if (!enigmeVerre.isCorpsExamine()) {
+                            indexDialogueArthur++;
+                            if (indexDialogueArthur < enigmeVerre.getTextesArthur().length) {
+                                backgroundPanel.repaint(); 
+                            } else {
+                                dialogueActif = false;
+                                enigmeVerre.setCorpsExamine(true);
+                                avancerPhaseTest(); 
+                                btnGauche.setVisible(true);
+                                btnDroite.setVisible(true);
+                                mettreAJourTexteChambre();
+                            }
                         } else {
                             dialogueActif = false;
-                            corpsExamine = true;
-                            avancerPhaseTest(); 
-                            btnGauche.setVisible(true);
-                            btnDroite.setVisible(true);
+                            if (enigmeVerre.tousVerresTrouves() && !modeEnigmeEmpreinteActive) {
+                                lancerEnigmeEmpreintes();
+                            }
+                            if (!modeEnigmeEmpreinteActive) {
+                                btnGauche.setVisible(true);
+                                btnDroite.setVisible(true);
+                            }
                             mettreAJourTexteChambre();
                         }
                         recalculerCurseurImmediat();
@@ -122,28 +135,38 @@ public class Jeu extends JFrame {
                 int mouseYInImg = e.getY() - imgBounds.y;
                 Point clicDansImg = new Point(mouseXInImg, mouseYInImg);
 
-                // Zone cliquable sur le canapé
-                Rectangle zoneCorpsArthur = new Rectangle((int)(iw * 0.22), (int)(ih * 0.36), (int)(iw * 0.23), (int)(ih * 0.20));
-
-                if (!corpsExamine && !dialogueActif && universActuel.equals("SALON") && indexDecor == 0 && zoneCorpsArthur.contains(clicDansImg)) {
-                    dialogueActif = true;
-                    indexDialogue = 0;
-                    btnGauche.setVisible(false); 
-                    btnDroite.setVisible(false);
-                    backgroundPanel.repaint();
-                    return;
+                // --- CLIC SUR LE CORPS D'ARTHUR (Salon 1) ---
+                if (universActuel.equals("SALON") && indexDecor == 0) {
+                    Rectangle zoneCorpsArthur = new Rectangle((int)(iw * 0.22), (int)(ih * 0.36), (int)(iw * 0.23), (int)(ih * 0.20));
+                    if (!enigmeVerre.isCorpsExamine() && !dialogueActif && zoneCorpsArthur.contains(clicDansImg)) {
+                        dialogueActif = true;
+                        indexDialogueArthur = 0;
+                        btnGauche.setVisible(false); 
+                        btnDroite.setVisible(false);
+                        backgroundPanel.repaint();
+                        return;
+                    }
                 }
 
-                if (dialogueActif) return;
+                // --- FOUILLE DES VERRES (Déléguée à EnigmeVerre) ---
+                if (enigmeVerre.isCorpsExamine() && !dialogueActif) {
+                    int idVerreClique = enigmeVerre.obtenirIdVerreClique(universActuel, indexDecor, clicDansImg, iw, ih);
+                    if (idVerreClique != -1) {
+                        ouvrirDialogueVerre(idVerreClique);
+                        return;
+                    }
+                }
 
-                // Zones des portes du Salon 2
-                Rectangle porte1 = new Rectangle((int)(iw * 0.28), (int)(ih * 0.25), (int)(iw * 0.07), (int)(ih * 0.28));
-                Rectangle porte2 = new Rectangle((int)(iw * 0.40), (int)(ih * 0.24), (int)(iw * 0.05), (int)(ih * 0.25));
-                Rectangle porte3 = new Rectangle((int)(iw * 0.54), (int)(ih * 0.23), (int)(iw * 0.05), (int)(ih * 0.24));
+                if (dialogueActif || modeEnigmeEmpreinteActive) return;
 
-                Rectangle porteSortiePierre = new Rectangle((int)(iw * 0.2), (int)(ih * 0.35), (int)(iw * 0.12), (int)(ih * 0.33));
-                Rectangle zonePorteLouis = new Rectangle((int)(iw * 0.20), (int)(ih * 0.33), (int)(iw * 0.14), (int)(ih * 0.36));
-                Rectangle zonePorteJacques = new Rectangle((int)(iw * 0.73), (int)(ih * 0.24), (int)(iw * 0.15), (int)(ih * 0.50));
+                // --- ZONES DES PORTES ET DEPLACEMENTS ---
+                Rectangle porte1 = new Rectangle((int)(iw * 0.24), (int)(ih * 0.25), (int)(iw * 0.08), (int)(ih * 0.3));
+                Rectangle porte2 = new Rectangle((int)(iw * 0.39), (int)(ih * 0.21), (int)(iw * 0.05), (int)(ih * 0.25));
+                Rectangle porte3 = new Rectangle((int)(iw * 0.56), (int)(ih * 0.22), (int)(iw * 0.06), (int)(ih * 0.2));
+
+                Rectangle porteSortiePierre = new Rectangle((int)(iw * 0.22), (int)(ih * 0.23), (int)(iw * 0.15), (int)(ih * 0.47));
+                Rectangle zonePorteLouis = new Rectangle((int)(iw * 0.16), (int)(ih * 0.13), (int)(iw * 0.14), (int)(ih * 0.53));
+                Rectangle zonePorteJacques = new Rectangle((int)(iw * 0.74), (int)(ih * 0.26), (int)(iw * 0.13), (int)(ih * 0.43));
 
                 if (universActuel.equals("SALON") && indexDecor == 1) {
                     if (porte1.contains(clicDansImg)) { transitionner("LOUIS", decorsLouis); return; }
@@ -187,6 +210,41 @@ public class Jeu extends JFrame {
         setContentPane(backgroundPanel);
     }
 
+    private void ouvrirDialogueVerre(int idVerre) {
+        texteDialogueCourant = enigmeVerre.inspecterVerre(idVerre);
+        dialogueActif = true;
+        btnGauche.setVisible(false);
+        btnDroite.setVisible(false);
+        backgroundPanel.repaint();
+    }
+
+    private void lancerEnigmeEmpreintes() {
+        modeEnigmeEmpreinteActive = true;
+        
+        String input = JOptionPane.showInputDialog(this, 
+            "Énigme : Faites correspondre les lignes papillaires de l'empreinte.\n" +
+            "À quel colocataire appartient cette empreinte digitale ? (Saisir : Pierre)", 
+            "Analyseur d'Empreintes v1.0", JOptionPane.QUESTION_MESSAGE);
+            
+        if (input != null && input.equalsIgnoreCase("Pierre")) {
+            JOptionPane.showMessageDialog(this, 
+                "CORRECT ! L'empreinte correspond à 99.8% avec celle de Pierre.\n" +
+                "Nouveau lieu débloqué : Chambre de Pierre !", 
+                "Analyse Réussie", JOptionPane.INFORMATION_MESSAGE);
+                
+            modeEnigmeEmpreinteActive = false;
+            btnGauche.setVisible(true);
+            btnDroite.setVisible(true);
+            avancerPhaseTest(); 
+            mettreAJourTexteChambre();
+        } else {
+            JOptionPane.showMessageDialog(this, 
+                "ÉCHEC ! L'alignement des empreintes est incorrect. Réessaye.", 
+                "Erreur d'Analyse", JOptionPane.ERROR_MESSAGE);
+            lancerEnigmeEmpreintes();
+        }
+    }
+
     public void setCursorChangeListener(CursorChangeListener listener) {
         this.cursorChangeListener = listener;
     }
@@ -195,10 +253,7 @@ public class Jeu extends JFrame {
 
     private void avancerPhaseTest() {
         Phase phaseActuelle = Phase.TOUTES_LES_PHASES[indexPhaseActuelle];
-        if (phaseActuelle.estJeuFini()) {
-            System.out.println("[INFO] Le jeu est complété.");
-            return;
-        }
+        if (phaseActuelle.estJeuFini()) return;
         if (indexPhaseActuelle < Phase.TOUTES_LES_PHASES.length - 1) {
             indexPhaseActuelle++;
             System.out.println("[PROGRESSION] Passage à la Phase " + Phase.TOUTES_LES_PHASES[indexPhaseActuelle].getNumero());
@@ -206,7 +261,7 @@ public class Jeu extends JFrame {
     }
 
     private void verifierEtMettreAJourCurseur(Point clicDansImg) {
-        if (dialogueActif) return; 
+        if (dialogueActif || modeEnigmeEmpreinteActive) return; 
 
         Rectangle imgBounds = backgroundPanel.getImageBounds();
         int iw = imgBounds.width;
@@ -214,22 +269,30 @@ public class Jeu extends JFrame {
 
         boolean surElementInteractif = false;
 
-        if (!corpsExamine && universActuel.equals("SALON") && indexDecor == 0) {
+        // Arthur (Salon 1)
+        if (!enigmeVerre.isCorpsExamine() && universActuel.equals("SALON") && indexDecor == 0) {
             Rectangle zoneCorpsArthur = new Rectangle((int)(iw * 0.22), (int)(ih * 0.36), (int)(iw * 0.23), (int)(ih * 0.20));
             if (zoneCorpsArthur.contains(clicDansImg)) surElementInteractif = true;
         }
 
+        // Vérification des verres (Déléguée à EnigmeVerre)
+        if (enigmeVerre.survolentUnVerre(universActuel, indexDecor, clicDansImg, iw, ih)) {
+            surElementInteractif = true;
+        }
+
+        // Portes du Salon 2
         if (universActuel.equals("SALON") && indexDecor == 1) {
-            Rectangle porte1 = new Rectangle((int)(iw * 0.28), (int)(ih * 0.25), (int)(iw * 0.07), (int)(ih * 0.28));
-            Rectangle porte2 = new Rectangle((int)(iw * 0.40), (int)(ih * 0.24), (int)(iw * 0.05), (int)(ih * 0.25));
-            Rectangle porte3 = new Rectangle((int)(iw * 0.54), (int)(ih * 0.23), (int)(iw * 0.05), (int)(ih * 0.24));
+            Rectangle porte1 = new Rectangle((int)(iw * 0.24), (int)(ih * 0.25), (int)(iw * 0.08), (int)(ih * 0.3));
+            Rectangle porte2 = new Rectangle((int)(iw * 0.39), (int)(ih * 0.21), (int)(iw * 0.05), (int)(ih * 0.25));
+            Rectangle porte3 = new Rectangle((int)(iw * 0.56), (int)(ih * 0.22), (int)(iw * 0.06), (int)(ih * 0.2));
             if (porte1.contains(clicDansImg) || porte2.contains(clicDansImg) || porte3.contains(clicDansImg)) surElementInteractif = true;
         }
 
+        // Portes de sortie des chambres
         if (indexDecor == 1) {
-            if (universActuel.equals("PIERRE") && (new Rectangle((int)(iw * 0.2), (int)(ih * 0.35), (int)(iw * 0.12), (int)(ih * 0.33))).contains(clicDansImg)) surElementInteractif = true;
-            if (universActuel.equals("LOUIS") && (new Rectangle((int)(iw * 0.20), (int)(ih * 0.33), (int)(iw * 0.14), (int)(ih * 0.36))).contains(clicDansImg)) surElementInteractif = true;
-            if (universActuel.equals("JACQUES") && (new Rectangle((int)(iw * 0.73), (int)(ih * 0.24), (int)(iw * 0.15), (int)(ih * 0.50))).contains(clicDansImg)) surElementInteractif = true;
+            if (universActuel.equals("PIERRE") && (new Rectangle((int)(iw * 0.22), (int)(ih * 0.23), (int)(iw * 0.15), (int)(ih * 0.47))).contains(clicDansImg)) surElementInteractif = true;
+            if (universActuel.equals("LOUIS") && (new Rectangle((int)(iw * 0.16), (int)(ih * 0.13), (int)(iw * 0.14), (int)(ih * 0.53))).contains(clicDansImg)) surElementInteractif = true;
+            if (universActuel.equals("JACQUES") && (new Rectangle((int)(iw * 0.74), (int)(ih * 0.26), (int)(iw * 0.13), (int)(ih * 0.43))).contains(clicDansImg)) surElementInteractif = true;
         }
 
         backgroundPanel.setSetCursorDirect(surElementInteractif);
@@ -286,16 +349,23 @@ public class Jeu extends JFrame {
 
     private void mettreAJourTexteChambre() {
         if (txtExplicatif != null) {
-            if (!corpsExamine && universActuel.equals("SALON") && indexDecor == 0) {
+            if (!enigmeVerre.isCorpsExamine() && universActuel.equals("SALON") && indexDecor == 0) {
                 txtExplicatif.setText("Le Salon | Arthur est allongé sur le canapé... Il ne bouge plus. Je devrais l'examiner.");
                 return;
             }
 
+            Phase p = Phase.TOUTES_LES_PHASES[indexPhaseActuelle];
+            String progressionStr = "  |  [" + p.getNumero() + "] " + p.getDescription() + " (" + p.getPourcentage() + "%)";
+
+            if (p.getNumero().equals("1.1")) {
+                progressionStr = "  |  Fouille l'appartement : Trouvez les 5 verres rouges (" + enigmeVerre.compterVerresTrouves() + "/5)";
+            }
+
             switch (universActuel) {
-                case "SALON" -> txtExplicatif.setText(indexDecor == 0 ? "Le Salon - Cuisine  |  Trouve les indices qui te mèneront au coupable." : "Le Salon - Les Portes  |  Trouve les indices qui te mèneront au coupable.");
-                case "PIERRE" -> txtExplicatif.setText("Chambre de Pierre (Porte 2)");
-                case "LOUIS" -> txtExplicatif.setText("Chambre de Louis (Porte 1)");
-                case "JACQUES" -> txtExplicatif.setText("Chambre de Jacques (Porte 3)");
+                case "SALON" -> txtExplicatif.setText(indexDecor == 0 ? "Le Salon - Cuisine" + progressionStr : "Le Salon - Les Portes" + progressionStr);
+                case "PIERRE" -> txtExplicatif.setText("Chambre de Pierre" + progressionStr);
+                case "LOUIS" -> txtExplicatif.setText("Chambre de Louis" + progressionStr);
+                case "JACQUES" -> txtExplicatif.setText("Chambre de Jacques" + progressionStr);
             }
         }
     }
@@ -366,7 +436,9 @@ public class Jeu extends JFrame {
 
                 g2d.setColor(Color.WHITE);
                 g2d.setFont(new Font("Arial", Font.PLAIN, 15));
-                g2d.drawString(textesDialogue[indexDialogue], boxX + 25, boxY + 40);
+                
+                String texteAAfficher = (!enigmeVerre.isCorpsExamine()) ? enigmeVerre.getTextesArthur()[indexDialogueArthur] : texteDialogueCourant;
+                g2d.drawString(texteAAfficher, boxX + 25, boxY + 40);
 
                 g2d.setFont(new Font("Arial", Font.ITALIC | Font.BOLD, 11));
                 g2d.setColor(new Color(46, 204, 113));
