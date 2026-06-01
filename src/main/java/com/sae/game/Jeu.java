@@ -90,13 +90,13 @@ public class Jeu extends JFrame {
                 int mouseXInImg = e.getX() - imgBounds.x;
                 int mouseYInImg = e.getY() - imgBounds.y;
 
-                Rectangle porte1 = new Rectangle((int)(iw * 0.28), (int)(ih * 0.25), (int)(iw * 0.07), (int)(ih * 0.28));
-                Rectangle porte2 = new Rectangle((int)(iw * 0.40), (int)(ih * 0.24), (int)(iw * 0.05), (int)(ih * 0.25));
-                Rectangle porte3 = new Rectangle((int)(iw * 0.54), (int)(ih * 0.23), (int)(iw * 0.05), (int)(ih * 0.24));
+                Rectangle porte1 = new Rectangle((int)(iw * 0.24), (int)(ih * 0.25), (int)(iw * 0.08), (int)(ih * 0.3));
+                Rectangle porte2 = new Rectangle((int)(iw * 0.39), (int)(ih * 0.21), (int)(iw * 0.05), (int)(ih * 0.25));
+                Rectangle porte3 = new Rectangle((int)(iw * 0.56), (int)(ih * 0.22), (int)(iw * 0.06), (int)(ih * 0.2));
 
-                Rectangle porteSortiePierre = new Rectangle((int)(iw * 0.2), (int)(ih * 0.35), (int)(iw * 0.12), (int)(ih * 0.33));
-                Rectangle zonePorteLouis = new Rectangle((int)(iw * 0.20), (int)(ih * 0.33), (int)(iw * 0.14), (int)(ih * 0.36));
-                Rectangle zonePorteJacques = new Rectangle((int)(iw * 0.73), (int)(ih * 0.24), (int)(iw * 0.15), (int)(ih * 0.50));
+                Rectangle porteSortiePierre = new Rectangle((int)(iw * 0.22), (int)(ih * 0.23), (int)(iw * 0.15), (int)(ih * 0.47));
+                Rectangle zonePorteLouis = new Rectangle((int)(iw * 0.16), (int)(ih * 0.13), (int)(iw * 0.14), (int)(ih * 0.53));
+                Rectangle zonePorteJacques = new Rectangle((int)(iw * 0.74), (int)(ih * 0.26), (int)(iw * 0.13), (int)(ih * 0.43));
 
                 int invX = backgroundPanel.getWidth() - 210;
                 int invY = backgroundPanel.getHeight() - 80;
@@ -200,16 +200,16 @@ public class Jeu extends JFrame {
         boolean surElementInteractif = false;
 
         if (universActuel.equals("SALON") && indexDecor == 1) {
-            Rectangle porte1 = new Rectangle((int)(iw * 0.28), (int)(ih * 0.25), (int)(iw * 0.07), (int)(ih * 0.28));
-            Rectangle porte2 = new Rectangle((int)(iw * 0.40), (int)(ih * 0.24), (int)(iw * 0.05), (int)(ih * 0.25));
-            Rectangle porte3 = new Rectangle((int)(iw * 0.54), (int)(ih * 0.23), (int)(iw * 0.05), (int)(ih * 0.24));
+            Rectangle porte1 = new Rectangle((int)(iw * 0.24), (int)(ih * 0.25), (int)(iw * 0.08), (int)(ih * 0.3));
+            Rectangle porte2 = new Rectangle((int)(iw * 0.39), (int)(ih * 0.21), (int)(iw * 0.05), (int)(ih * 0.25));
+            Rectangle porte3 = new Rectangle((int)(iw * 0.56), (int)(ih * 0.22), (int)(iw * 0.06), (int)(ih * 0.2));
             if (porte1.contains(clicDansImg) || porte2.contains(clicDansImg) || porte3.contains(clicDansImg)) surElementInteractif = true;
         }
 
         if (indexDecor == 1) {
-            if (universActuel.equals("PIERRE") && (new Rectangle((int)(iw * 0.2), (int)(ih * 0.35), (int)(iw * 0.12), (int)(ih * 0.33))).contains(clicDansImg)) surElementInteractif = true;
-            if (universActuel.equals("LOUIS") && (new Rectangle((int)(iw * 0.20), (int)(ih * 0.33), (int)(iw * 0.14), (int)(ih * 0.36))).contains(clicDansImg)) surElementInteractif = true;
-            if (universActuel.equals("JACQUES") && (new Rectangle((int)(iw * 0.73), (int)(ih * 0.24), (int)(iw * 0.15), (int)(ih * 0.50))).contains(clicDansImg)) surElementInteractif = true;
+            if (universActuel.equals("PIERRE") && (new Rectangle((int)(iw * 0.22), (int)(ih * 0.23), (int)(iw * 0.15), (int)(ih * 0.47))).contains(clicDansImg)) surElementInteractif = true;
+            if (universActuel.equals("LOUIS") && (new Rectangle((int)(iw * 0.16), (int)(ih * 0.13), (int)(iw * 0.14), (int)(ih * 0.53))).contains(clicDansImg)) surElementInteractif = true;
+            if (universActuel.equals("JACQUES") && (new Rectangle((int)(iw * 0.74), (int)(ih * 0.26), (int)(iw * 0.13), (int)(ih * 0.43))).contains(clicDansImg)) surElementInteractif = true;
         }
 
         int objX = (int) (iw * objetRatioX) - (TAILLE_OBJET / 2);
