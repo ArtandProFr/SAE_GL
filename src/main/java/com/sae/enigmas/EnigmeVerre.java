@@ -29,23 +29,21 @@ public class EnigmeVerre {
 
     public String[] getTextesArthur() { return textesArthur; }
 
-    /** * Vérifie si un clic touche un verre non trouvé selon l'univers et le décor actuel.
-     * Retourne l'ID du verre (0 à 4) ou -1 si aucun verre n'est touché.
-     */
+    /** Vérifie si un clic touche un verre non trouvé selon l'univers et le décor actuel */
     public int obtenirIdVerreClique(String univers, int indexDecor, Point clic, int iw, int ih) {
         if (!corpsExamine) return -1;
 
         // Salon 1 (Premier décor)
         if (univers.equals("SALON") && indexDecor == 0) {
-            if (new Rectangle((int)(iw * 0.09), (int)(ih * 0.52), (int)(iw * 0.02), (int)(ih * 0.04)).contains(clic) && !verresTrouves[0]) return 0;
+            if (new Rectangle((int)(iw * 0.09), (int)(ih * 0.55), (int)(iw * 0.02), (int)(ih * 0.04)).contains(clic) && !verresTrouves[0]) return 0;
             if (new Rectangle((int)(iw * 0.51), (int)(ih * 0.45), (int)(iw * 0.02), (int)(ih * 0.04)).contains(clic) && !verresTrouves[1]) return 1;
             if (new Rectangle((int)(iw * 0.58), (int)(ih * 0.33), (int)(iw * 0.02), (int)(ih * 0.04)).contains(clic) && !verresTrouves[2]) return 2;
         }
         
         // Salon 2 (Deuxième décor)
         if (univers.equals("SALON") && indexDecor == 1) {
-            if (new Rectangle((int)(iw * 0.49), (int)(ih * 0.41), (int)(iw * 0.02), (int)(ih * 0.04)).contains(clic) && !verresTrouves[3]) return 3;
-            if (new Rectangle((int)(iw * 0.48), (int)(ih * 0.46), (int)(iw * 0.02), (int)(ih * 0.04)).contains(clic) && !verresTrouves[4]) return 4;
+            if (new Rectangle((int)(iw * 0.51), (int)(ih * 0.41), (int)(iw * 0.02), (int)(ih * 0.04)).contains(clic) && !verresTrouves[3]) return 3;
+            if (new Rectangle((int)(iw * 0.49), (int)(ih * 0.46), (int)(iw * 0.02), (int)(ih * 0.04)).contains(clic) && !verresTrouves[4]) return 4;
         }
         return -1;
     }
