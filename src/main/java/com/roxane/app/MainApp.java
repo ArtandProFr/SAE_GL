@@ -1,5 +1,7 @@
 package com.roxane.app;
 
+import com.sae.core.GameInfos;
+
 import javafx.application.Application;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -24,6 +26,7 @@ public class MainApp extends Application {
     public void start(Stage stage) {
         this.primaryStage = stage;
 
+
         // Charger la police Minecraft
         minecraftFont = null;
         minecraftFontTitle = null;
@@ -32,27 +35,30 @@ public class MainApp extends Application {
             // Essayer de charger via InputStream
             var fontStream = getClass().getResourceAsStream("/fonts/Minecraft.ttf");
             if (fontStream != null) {
-                System.out.println("Font stream found, attempting to load");
+                //System.out.println("Font stream found, attempting to load");
                 minecraftFont = Font.loadFont(fontStream, 16);
                 
                 fontStream = getClass().getResourceAsStream("/fonts/Minecraft.ttf");
                 minecraftFontTitle = Font.loadFont(fontStream, 84);
-                
+                /*
                 System.out.println("Font loaded from stream: " + minecraftFont);
                 if (minecraftFont == null) {
                     System.out.println("Font stream returned null");
                 }
+                */
             } else {
-                System.out.println("Font stream not found");
+                //System.out.println("Font stream not found");
             }
         } catch (Exception e) {
+            /*
             System.out.println("Error loading font: " + e.getMessage());
             e.printStackTrace();
+            */
         }
         
         // Fallback si la police Minecraft échoue
         if (minecraftFont == null) {
-            System.out.println("Using fallback font");
+            //System.out.println("Using fallback font");
             minecraftFont = Font.font("Arial", 16);
             minecraftFontTitle = Font.font("Arial", 84);
         }
@@ -87,7 +93,7 @@ public class MainApp extends Application {
 
         Button playButton = new Button(Translations.t("LANCER UNE PARTIE"));
         Button settingsButton = new Button(Translations.t("PARAMETRES"));
-        Button bestTimeButton = new Button(Translations.t("MEILLEUR TEMPS"));
+        Button bestTimeButton = new Button(Translations.t("MEILLEURS TEMPS"));
 
         if (minecraftFont != null) {
             playButton.setFont(minecraftFont);
@@ -139,8 +145,18 @@ public class MainApp extends Application {
         Scene scene = new Scene(root, 1280, 720);
         scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
 
-        primaryStage.setTitle("Escape Game");
+        primaryStage.setTitle(Translations.t(GameInfos.GAMENAME_TYPE_2));
         primaryStage.setScene(scene);
+        try{
+            // 1. Charger l'image depuis les ressources de ton projet
+            String iconPath = "/icons/icon3.png";
+            Image icone = new Image(getClass().getResourceAsStream(iconPath));
+            
+            // 2. Ajouter l'image aux icônes du Stage
+            this.primaryStage.getIcons().add(icone);
+        } catch(Exception e){
+
+        }
         primaryStage.show();
     }
 

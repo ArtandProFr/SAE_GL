@@ -1,15 +1,37 @@
 package com.sae.game;
 
-import com.sae.core.Phase;
-import com.sae.enigmas.EnigmeVerre;
-import com.sae.enigmas.EnigmeEmpreinteUI;
-import com.sae.enigmas.ChambrePierreManager;
-
-import javax.swing.*;
-import java.awt.*;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Cursor;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.MouseInfo;
+import java.awt.Point;
+import java.awt.PointerInfo;
+import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URL;
+
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
+
+import com.roxane.app.Translations;
+import com.sae.core.GameInfos;
+import com.sae.core.Phase;
+import com.sae.core.Save;
+import com.sae.enigmas.ChambrePierreManager;
+import com.sae.enigmas.EnigmeEmpreinteUI;
+import com.sae.enigmas.EnigmeVerre;
 
 public class Jeu extends JFrame {
 
@@ -28,7 +50,7 @@ public class Jeu extends JFrame {
     private String[] decorsActuels = decorsSalon; 
     private int indexDecor = 0;
     private String universActuel = "SALON"; 
-    private int indexPhaseActuelle = 0;
+    //private int indexPhaseActuelle = 0;
     
     private EnigmeVerre enigmeVerre = new EnigmeVerre();
     
@@ -43,8 +65,14 @@ public class Jeu extends JFrame {
     private JButton btnDroite;
     private JButton btnQuitterZoom;
 
-    public Jeu() {
-        setTitle("Mon Escape Game SAE");
+    private Save save;
+    private Phase phase;
+
+    public Jeu(Save save) {
+        this.save = save;
+        phase = new Phase(save.getPhase());
+        this.save.save();
+        setTitle(Translations.t(GameInfos.GAMENAME_TYPE_2));
         setSize(800, 600);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
@@ -272,9 +300,9 @@ public class Jeu extends JFrame {
     public void setCursorChangeListener(CursorChangeListener listener) { this.cursorChangeListener = listener; }
 
     private void avancerPhaseTest() {
-        if (indexPhaseActuelle < Phase.TOUTES_LES_PHASES.length - 1) {
-            indexPhaseActuelle++;
-        }
+        phase.nextPhase();
+        save.setPhase(phase.getNumero());
+        save.save();
     }
 
     private void verifierEtMettreAJourCurseur(Point clicDansImg) {
@@ -366,8 +394,7 @@ public class Jeu extends JFrame {
                 return;
             }
 
-            Phase p = Phase.TOUTES_LES_PHASES[indexPhaseActuelle];
-            String progressionStr = "  |  Fouille : " + p.getDescription();
+            String progressionStr = "  |  Fouille : " + phase.getDescription();
 
             // AJOUT : Si le corps a été examiné mais que tous les verres ne sont pas trouvés, on force le compteur (X/5)
             if (enigmeVerre.isCorpsExamine() && !enigmeVerre.tousVerresTrouves()) {
@@ -488,6 +515,6 @@ public class Jeu extends JFrame {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new Jeu().setVisible(true));
+        //SwingUtilities.invokeLater(() -> new Jeu().setVisible(true));
     }
 }

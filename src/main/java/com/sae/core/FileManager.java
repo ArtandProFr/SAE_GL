@@ -21,21 +21,15 @@ package com.sae.core;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Set;
 
 public class FileManager {
 
-    /**
-     * Dossier de données utilisateur (sauvegardes, scoreboard, etc.).
-     *
-     * Auparavant ce chemin pointait vers {@code System.getProperty("user.dir")},
-     * ce qui ne fonctionnait pas une fois l'application empaquetée (les
-     * ressources d'un JAR sont en lecture seule). On utilise désormais un
-     * dossier caché dans le répertoire personnel de l'utilisateur : ce dossier
-     * est inscriptible sur toutes les plateformes (Windows / macOS / Linux).
-     */
-    public static final Path userDir = Path.of(System.getProperty("user.home"), ".sae_game");
+    //public static final Path userDir = Path.of(System.getProperty("user.home"), ".sae_game");
+    public static final Path userDir = Path.of(System.getProperty("user.dir"));
 
     static {
         // S'assure que le dossier de données et le sous-dossier "Saves"
@@ -128,18 +122,12 @@ public class FileManager {
         /* Cette méthode renvoie l'extension d'un fichier. */
 
         if (f.exists()){
-            String p = pathToString(f.toPath());
-            String[] arr = p.split("/");
-            p = arr[arr.length-1];
-            arr = p.split("\\.");
-            if (arr.length > 1){
-                return arr[1];
-            } else {
-                return null;
-            }
-        } else {
+            String name = f.getName(); // ← getName() au lieu de parser le path manuellement
+            int dot = name.lastIndexOf('.');
+            if (dot > 0) return name.substring(dot); // retourne ".txt" avec le point
             return null;
         }
+        return null;
     }
 
     public static boolean isGameFile(File f){
@@ -227,25 +215,27 @@ public class FileManager {
         }
     }
 
-    public static boolean createFolder(File f){
+    public static boolean createFile(File f){
         
-        /* Cette méthode crée un dossier si celui-ci n'existe pas. */
-        
-        if (isFolder(f) && !exists(f)){
-            return f.mkdir();
+        /* Cette méthode crée un fichier si celui-ci n'existe pas. */
+
+        if (!f.exists()){
+            try {
+                if (f.getParentFile() != null) f.getParentFile().mkdirs();
+                return f.createNewFile();
+            } catch (IOException e){
+                System.out.println("EXCEPTION createFile : " + e.getMessage());
+            }
         }
         return false;
     }
 
-    public static boolean createFile(File f){
+    public static boolean createFolder(File f){
+        
+        /* Cette méthode crée un dossier si celui-ci n'existe pas. */
 
-        /* Cette méthode crée un fichier si celui-ci n'existe pas. */
-
-        if (isFile(f) && !exists(f)){
-            try {
-                return f.createNewFile();
-            } catch (IOException e){
-            }
+        if (!f.exists()){
+            return f.mkdirs();
         }
         return false;
     }

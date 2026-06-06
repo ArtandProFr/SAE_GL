@@ -2,42 +2,163 @@ package com.sae.core;
 
 public class Phase {
 
-    private String numero;       
+    private static Phase[] TOUTES_LES_PHASES = new Phase[0];
+    private static int POIDS_TOTAL = 0;
+    private double numero;       
     private String description;  
-    private int pourcentage;     
+    private int avancee;
+    private int poids;
+    private boolean isLastStep;
 
-    public Phase(String numero, String description, int pourcentage) {
+    static {
+        // Phase 0
+        addPhase("Réveil sans Louis.", 0, true);
+
+        // Phase 1
+        addPhase("Un empoisonnement ?", 4, true);
+
+        // Phase 2
+        addPhase("Pierre, que peut-il bien cacher ?", 3, true);
+
+        // Phase 3
+        addPhase("Trouver comment entrer dans la chambre de Louis.", 5);
+        addPhase("Ordinateur de Louis.", 3);
+        addPhase("Coupure de courant.", 2);
+        addPhase("1/2 Remettre le courant.", 5);
+        addPhase("2/2 Remettre le courant.", 6);
+        addPhase("Discussion.", 1);
+        addPhase("Un peu de chimie.", 3, true);
+
+        // Phase 4
+        addPhase("Téléphone.", 6);
+        addPhase("Répondeur.", 0);
+        addPhase("Enquête dans la salle de bain.", 4, true);
+
+        // Phase 5
+        addPhase("Paul rentre à l'appartement.", 0);
+        addPhase("Chambre de Jacques.", 8, true);
+
+        // Phase 6
+        addPhase("Révélations.", 0, true);
+
+        // Phase 7
+        addPhase("Crédits", 0, true);
+
+        // Phase 8
+        addPhase("Fin", 0, true);
+
+        System.out.println(POIDS_TOTAL);
+        for (Phase p : TOUTES_LES_PHASES){
+            p.showPhase();
+        }
+    }
+
+    public Phase(double numero){
+        Phase p = searchPhase(numero);
+        if (p != null) change(p);
+    }
+    public Phase(double numero, String description, int avancee, int poids) {
         this.numero = numero;
         this.description = description;
-        this.pourcentage = pourcentage;
+        this.avancee = avancee;
+        this.poids = poids;
+        this.isLastStep = false;
+    }
+    public Phase(double numero, String description, int avancee, int poids, boolean isLastStep) {
+        this.numero = numero;
+        this.description = description;
+        this.avancee = avancee;
+        this.poids = poids;
+        this.isLastStep = isLastStep;
+    }
+    public Phase(Phase p){
+        this.numero = p.numero;
+        this.description = p.description;
+        this.avancee = p.avancee;
+        this.poids = p.poids;
+        this.isLastStep = p.isLastStep;
+    }
+    public void change(Phase p){
+        this.numero = p.numero;
+        this.description = p.description;
+        this.avancee = p.avancee;
+        this.poids = p.poids;
+        this.isLastStep = p.isLastStep;
+    }
+
+    public void showPhase(){
+        System.out.println("-----------------------------------");
+        System.out.println("Phase " + numero + " :");
+        System.out.println("Description : " + description);
+        System.out.println("Avancée : " + avancee);
+        System.out.println("Pourcentage : " + getPourcentage() + "%");
+        System.out.println("Poids : " + poids);
+        System.out.println("Dernière étape : " + isLastStep);
+    }
+
+    private Phase searchPhase(double num){
+        int i = 0;
+        for (Phase p : TOUTES_LES_PHASES){
+            if (p.numero == num) return TOUTES_LES_PHASES[i];
+        }
+        return null;
+    }
+
+    private static boolean alreadyExists(String description){
+        for (Phase p : TOUTES_LES_PHASES){
+            if (p.description.equals(description)){
+                return true;
+            }
+        }
+        return false;
     }
 
     public boolean estJeuFini() {
-        return this.numero.equals("8.1");
+        return this.numero >= TOUTES_LES_PHASES[TOUTES_LES_PHASES.length-1].numero;
     }
 
-    public String getNumero() { return numero; }
+    public double getNumero() { return numero; }
     public String getDescription() { return description; }
-    public int getPourcentage() { return pourcentage; }
+    public int getAvancee() { return avancee; }
+    public int getPoids() { return poids; }
+    public boolean isLastStep() { return isLastStep; }
+    public double getPourcentage() { return (double) getAvancee()/POIDS_TOTAL; }
+    public int getIndex() { int i = 0; for (Phase p : TOUTES_LES_PHASES) { if (this.isEqualTo(p)) { return i; } i++;} return -1; }
 
-    public static final Phase[] TOUTES_LES_PHASES = {
-        new Phase("0.1", "Réveil sans Louis.", 0),
-        new Phase("1.1", "Un empoisonnement ?", 8),
-        new Phase("2.1", "Pierre, que peut-il bien cacher ?", 14),
-        new Phase("3.1", "Trouver comment entrer dans la chambre de Louis.", 24),
-        new Phase("3.2", "Ordinateur de Louis.", 30),
-        new Phase("3.2.bis", "Coupure de courant.", 34), 
-        new Phase("3.3", "1/2 : Remettre le courant.", 44),
-        new Phase("3.4", "2/2 : Remettre le courant.", 56),
-        new Phase("3.5", "Discussion.", 58),
-        new Phase("3.6", "Un peu de chimie.", 64),
-        new Phase("4.1", "Téléphone.", 76),
-        new Phase("4.2", "Répondeur.", 76), 
-        new Phase("4.3", "Enquête dans la salle de bain.", 84),
-        new Phase("5.1", "Paul rentre à l’appartement.", 84),
-        new Phase("5.2", "Chambre de Jacques.", 100),
-        new Phase("6.1", "Révélations.", 100),
-        new Phase("7.1", "Crédits.", 100),
-        new Phase("8.1", "Fin (Stockage best score)", 100)
-    };
+    public void nextPhase(){
+        int i = getIndex();
+        if (i >= 0 && i < TOUTES_LES_PHASES.length - 1) {change(TOUTES_LES_PHASES[i+1]);}
+    }
+
+    private static void addPhase(String description, int poids){
+        addPhase(description, poids, false);
+    }
+
+    private boolean isEqualTo(Phase p){ return this.numero == numero;}
+
+    private static void addPhase(String description, int poids, boolean isLastStep){
+        if (!alreadyExists(description)){
+            Phase[] copie = new Phase[TOUTES_LES_PHASES.length+1];
+            int i = 0;
+            for (Phase p : TOUTES_LES_PHASES){
+                copie[i] = p;
+                i++;
+            }
+            int av = 0;
+            double num = 0.1;
+            if (TOUTES_LES_PHASES.length != 0){
+                av = copie[i-1].avancee + copie[i-1].poids;
+                num = copie[i-1].numero;
+                if (copie[i-1].isLastStep){
+                    num += 1;
+                    num = (int) num + 0.1;
+                } else {
+                    num += 0.1; // Attention à ne pas avoir plus de 9 étapes par phases.
+                }
+            }
+            POIDS_TOTAL += poids;
+            copie[i] = new Phase(num, description, av, poids, isLastStep);
+            TOUTES_LES_PHASES = copie;
+        }
+    }
 }

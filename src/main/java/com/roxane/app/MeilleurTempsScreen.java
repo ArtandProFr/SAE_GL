@@ -1,8 +1,12 @@
 package com.roxane.app;
 
+import com.sae.core.Save;
+import com.sae.core.Time;
+
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
@@ -20,6 +24,8 @@ public class MeilleurTempsScreen {
     private final Stage stage;
     private final Font minecraftFont;
     private final Runnable onBack;
+    private String[][] scores;
+    double ratio = 1.0;
 
     public MeilleurTempsScreen(Stage stage, Font minecraftFont, Runnable onBack) {
         this.stage = stage;
@@ -47,10 +53,37 @@ public class MeilleurTempsScreen {
         }
         backButton.setOnAction(e -> onBack.run());
 
-        VBox right = new VBox(backButton);
+        Settings s = Settings.getInstance();
+        ComboBox<String> langCombo = new ComboBox<>();
+        langCombo.getItems().addAll(Translations.t("Easy"), Translations.t("Normal"), Translations.t("Hard"));
+        langCombo.setValue(Translations.t(s.getDifficulty()));
+        langCombo.getStyleClass().add("param-combo");
+        langCombo.setPrefWidth(200);
+
+        langCombo.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                s.setDifficulty(Translations.toEN(newVal));
+                show();
+            }
+        });
+
+        javafx.scene.layout.Region spacer = new javafx.scene.layout.Region();
+        spacer.setPrefHeight(100);
+
+        VBox right = new VBox(spacer, backButton);
         right.setAlignment(Pos.BOTTOM_CENTER);
         right.setPadding(new Insets(0, 0, 0, 20));
-        content.setRight(right);
+
+        VBox difficultyPanel = new VBox(28);
+        difficultyPanel.getStyleClass().add("gold-frame");
+        difficultyPanel.setPadding(new Insets(36, 48, 36, 48));
+        difficultyPanel.setMaxWidth(700);
+        difficultyPanel.setAlignment(Pos.CENTER_LEFT);
+        difficultyPanel.getChildren().addAll(
+            makeDifficultyRow(langCombo),
+            right
+        );
+        content.setRight(difficultyPanel);
 
         StackPane root = new StackPane(backgroundImageView, content);
         Settings.getInstance().applyBrightness(root);
@@ -58,11 +91,29 @@ public class MeilleurTempsScreen {
         Scene scene = new Scene(root, 1280, 720);
         scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
         stage.setScene(scene);
+        ratio = stage.getWidth() / 1280;
+    }
+
+    private HBox makeDifficultyRow(ComboBox<String> combo) {
+        HBox row = new HBox(24);
+        row.setAlignment(Pos.CENTER_LEFT);
+
+        Label label = new Label(Translations.t("DIFFICULTE"));
+        label.setTextFill(Color.web("#ffde64"));
+        label.setPrefWidth(160);
+        if (minecraftFont != null) {
+            label.setFont(Font.font(minecraftFont.getFamily(), 18));
+        }
+
+        row.getChildren().addAll(label, combo);
+        return row;
     }
 
     private VBox createMainContent() {
+        Settings s = Settings.getInstance();
         VBox main = new VBox(12);
 
+        // ── En-tête titre
         HBox header = new HBox(16);
         header.setAlignment(Pos.CENTER_LEFT);
 
@@ -70,41 +121,48 @@ public class MeilleurTempsScreen {
         clock.setFont(Font.font(56));
         clock.setTextFill(Color.web("#ffde64"));
 
-        Label title = new Label(Translations.t("MEILLEUR TEMPS"));
+        Label title = new Label(Translations.t("MEILLEURS TEMPS"));
         title.getStyleClass().add("panel-title");
         if (minecraftFont != null) {
             title.setFont(Font.font(minecraftFont.getFamily(), 36));
         }
-
         header.getChildren().addAll(clock, title);
 
+        // ── En-tête colonnes
         HBox colHeader = new HBox();
         colHeader.getStyleClass().add("gold-panel");
         colHeader.setPadding(new Insets(10, 16, 10, 16));
         colHeader.setAlignment(Pos.CENTER_LEFT);
+        double globalTitleRatio = 1.3;
         colHeader.getChildren().addAll(
-            makeColLabel("#", 60, "#101010"),
-            makeColLabel(Translations.t("TEMPS"), 200, "#101010"),
-            makeColLabel(Translations.t("NOM"), -1, "#101010")
+            makeColLabel("#",                          32  * ratio * globalTitleRatio, "#101010"),
+            makeColLabel(Translations.t("TEMPS"),      75  * ratio * globalTitleRatio, "#101010"),
+            makeColLabel(Translations.t("NOM"),        75  * ratio * globalTitleRatio, "#101010"),
+            makeColLabel(Translations.t("DIFFICULTE"), 128 * ratio * globalTitleRatio, "#101010"),
+            makeColLabel(Translations.t("DATE"),       -1,                             "#101010")
         );
 
+        // ── Chargement et filtrage des données depuis le scoreboard
         VBox scoreList = new VBox(8);
         scoreList.setPadding(new Insets(10));
 
-        String[][] data = {
-            {"1", "1m 23s", "JOUEUR_1"},
-            {"2", "1m 45s", "JOUEUR_2"},
-            {"3", "2m 01s", "JOUEUR_3"},
-            {"4", "2m 18s", "JOUEUR_4"},
-            {"5", "2m 35s", "JOUEUR_5"},
-            {"6", "3m 02s", "JOUEUR_6"},
-            {"7", "3m 40s", "JOUEUR_7"},
-            {"8", "4m 11s", "JOUEUR_8"},
-            {"9", "4m 55s", "JOUEUR_9"},
-            {"10", "5m 30s", "JOUEUR_10"}
-        };
-        for (String[] row : data) {
-            scoreList.getChildren().add(createScoreItem(row[0], row[1], row[2]));
+        Save[] preDataSave = Save.scoreboardToSaves();
+        preDataSave = Save.difficultyFilter(preDataSave, s.getDifficulty());
+        Save.lessTimeOrder(preDataSave, 1);
+
+        // Construction du tableau d'affichage
+        scores = new String[preDataSave.length][5];
+        for (int i = 0; i < preDataSave.length; i++) {
+            Save sv = preDataSave[i];
+            scores[i][0] = String.valueOf(i + 1);                        // Numéro (classement)
+            scores[i][1] = Time.chronoToString(sv.getTime());            // Temps hh:mm:ss
+            scores[i][2] = sv.getUsername();                             // Pseudo
+            scores[i][3] = Translations.t(sv.getDifficulty());          // Difficulté
+            scores[i][4] = Time.stringFromInstant(sv.getLastSave());     // Date jj/MM/aaaa - hh:mm:ss
+        }
+
+        for (String[] row : scores) {
+            scoreList.getChildren().add(createScoreItem(row[0], row[1], row[2], row[3], row[4]));
         }
 
         ScrollPane scroll = new ScrollPane(scoreList);
@@ -115,15 +173,17 @@ public class MeilleurTempsScreen {
         return main;
     }
 
-    private HBox createScoreItem(String rank, String time, String name) {
+    private HBox createScoreItem(String rank, String time, String name, String difficulty, String date) {
         HBox item = new HBox();
         item.getStyleClass().add("save-item");
         item.setPadding(new Insets(8, 16, 8, 16));
         item.setAlignment(Pos.CENTER_LEFT);
         item.getChildren().addAll(
-            makeColLabel(rank, 60, "#ffde64"),
-            makeColLabel(time, 200, "#ffde64"),
-            makeColLabel(name, -1, "#ffde64")
+            makeColLabel(rank,       50  * ratio, "#ffde64"),
+            makeColLabel(time,       100 * ratio, "#ffde64"),
+            makeColLabel(name,       160 * ratio, "#ffde64"),
+            makeColLabel(difficulty, 110 * ratio, "#ffde64"),
+            makeColLabel(date,       200 * ratio, "#ffde64")
         );
         return item;
     }

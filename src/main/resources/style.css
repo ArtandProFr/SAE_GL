@@ -1,7 +1,5 @@
 .root {
-
 	-fx-background-image: url("assets/background.png");
-
 	-fx-background-size: cover;
 	-fx-background-position: center center;
 }
@@ -15,13 +13,9 @@
 /* ===== TITRE ===== */
 
 .title {
-
 	-fx-font-size: 140px;
-
 	-fx-fill: #ffde64;
-
 	-fx-font-family: "Minecraft";
-
 	-fx-font-weight: bold;
 }
 
@@ -29,52 +23,31 @@
 /* ===== BOUTONS ===== */
 
 .menu-button {
-
 	-fx-background-color: linear-gradient(to bottom, #f6c045 0%, #efb22d 100%);
-
 	-fx-text-fill: #101010;
-
 	-fx-font-size: 32px;
-
 	-fx-font-family: "Minecraft";
-
 	-fx-font-weight: bold;
-
 	-fx-padding: 15 40 15 40;
 	-fx-pref-width: 520px;
 	-fx-pref-height: 120px;
-
 	-fx-border-color: #1c130e;
-
 	-fx-border-width: 12px;
-
 	-fx-background-radius: 0;
-
 	-fx-border-radius: 0;
-
 	-fx-cursor: hand;
 }
 
-
-/* ===== SURVOL ===== */
-
 .menu-button:hover {
-
 	-fx-background-color: linear-gradient(to bottom, #ffd85e 0%, #f2be40 100%);
-
 	-fx-translate-y: -1;
-
 }
-
-
-/* ===== CLIC ===== */
 
 .menu-button:pressed {
-
 	-fx-background-color: linear-gradient(to bottom, #e0a827 0%, #c99110 100%);
-
 	-fx-translate-y: 2;
 }
+
 
 /* ===== OVERLAY GAME SCREENS ===== */
 
@@ -112,15 +85,67 @@
 	-fx-background-color: rgba(15, 11, 9, 0.72);
 	-fx-border-color: #1c130e;
 	-fx-border-width: 6px;
+	/* Padding droit pour que la scrollbar ne soit pas par-dessus le contenu */
+	-fx-padding: 0 0 0 0;
 }
 
 .save-scroll > .viewport {
 	-fx-background-color: transparent;
 }
 
+/* Scrollbar verticale : style doré, positionnée à l'extérieur visuellement */
+.save-scroll > .scroll-bar:vertical {
+	-fx-background-color: rgba(15, 11, 9, 0.72);
+	-fx-pref-width: 12px;
+	-fx-border-color: #1c130e;
+	-fx-border-width: 0 0 0 3px;
+}
+
+.save-scroll > .scroll-bar:vertical .thumb {
+	-fx-background-color: #f6c045;
+	-fx-background-radius: 0;
+	-fx-border-color: #1c130e;
+	-fx-border-width: 2px;
+}
+
+.save-scroll > .scroll-bar:vertical .track {
+	-fx-background-color: rgba(28, 19, 14, 0.6);
+	-fx-background-radius: 0;
+}
+
+.save-scroll > .scroll-bar:vertical .increment-button,
+.save-scroll > .scroll-bar:vertical .decrement-button {
+	-fx-background-color: #1c130e;
+	-fx-pref-height: 14px;
+}
+
+.save-scroll > .scroll-bar:vertical .increment-arrow,
+.save-scroll > .scroll-bar:vertical .decrement-arrow {
+	-fx-background-color: #ffde64;
+	-fx-shape: " ";
+	-fx-pref-height: 0;
+}
+
+/* Scrollbar horizontale : masquée via NEVER dans le code Java */
+.save-scroll > .scroll-bar:horizontal {
+	-fx-pref-height: 0;
+	-fx-opacity: 0;
+}
+
+/* Corner (coin entre les deux barres) : transparent */
+.save-scroll > .corner {
+	-fx-background-color: transparent;
+}
+
 .save-item {
 	-fx-background-color: linear-gradient(to bottom, #f6c045 0%, #efb22d 100%);
 	-fx-border-color: #1c130e;
+	-fx-border-width: 4px;
+}
+
+.save-item-selected {
+	-fx-background-color: #5A3A0A;
+	-fx-border-color: #ffde64;
 	-fx-border-width: 4px;
 }
 
@@ -148,6 +173,67 @@
 	-fx-border-radius: 0;
 }
 
+.small-action-button:hover {
+	-fx-background-color: linear-gradient(to bottom, #ffd85e 0%, #f2be40 100%);
+}
+
+.small-action-button:pressed {
+	-fx-background-color: linear-gradient(to bottom, #e0a827 0%, #c99110 100%);
+	-fx-translate-y: 1;
+}
+
+/* ToggleButton sélectionné (tri actif) */
+.small-action-button:selected {
+	-fx-background-color: #1c130e;
+	-fx-text-fill: #ffde64;
+}
+
+
+/* ===== BARRE DE RECHERCHE ===== */
+
+/* Conteneur de la barre de recherche */
+.search-bar {
+	-fx-background-color: rgba(15, 11, 9, 0.72);
+	-fx-border-color: #1c130e;
+	-fx-border-width: 5px;
+	-fx-padding: 6 10 6 10;
+}
+
+/* Champ texte dans la barre de recherche */
+.search-field {
+	-fx-background-color: rgba(246, 192, 69, 0.15);
+	-fx-text-fill: #ffde64;
+	-fx-prompt-text-fill: rgba(255, 222, 100, 0.45);
+	-fx-font-family: "Minecraft";
+	-fx-font-size: 15px;
+	-fx-border-color: transparent transparent #ffde64 transparent;
+	-fx-border-width: 0 0 3px 0;
+	-fx-background-radius: 0;
+	-fx-padding: 4 8 4 8;
+}
+
+.search-field:focused {
+	-fx-border-color: transparent transparent #f6c045 transparent;
+	-fx-background-color: rgba(246, 192, 69, 0.22);
+}
+
+/* Bouton reset (croix) dans la barre de recherche */
+.search-clear-button {
+	-fx-background-color: transparent;
+	-fx-text-fill: rgba(255, 222, 100, 0.6);
+	-fx-font-size: 16px;
+	-fx-border-width: 0;
+	-fx-cursor: hand;
+	-fx-padding: 2 6 2 6;
+}
+
+.search-clear-button:hover {
+	-fx-text-fill: #ffde64;
+}
+
+
+/* ===== CHAMP TEXTE (formulaires) ===== */
+
 .line-input {
 	-fx-background-color: transparent;
 	-fx-text-fill: #101010;
@@ -164,7 +250,8 @@
 	-fx-border-width: 6px;
 }
 
-/* ===== PARAMETRES ===== */
+
+/* ===== PARAMÈTRES ===== */
 
 .param-slider .track {
 	-fx-background-color: #1c130e;

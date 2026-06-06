@@ -1,5 +1,7 @@
 package com.roxane.app;
 
+import com.sae.core.GameInfos;
+
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -108,7 +110,11 @@ public class ParametresScreen {
         });
 
         langCombo.valueProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal != null) s.setLanguage(newVal);
+            if (newVal != null){
+                s.setLanguage(newVal);
+                this.stage.setTitle(Translations.t(GameInfos.GAMENAME_TYPE_2));
+                show();
+            }
         });
 
         Scene scene = new Scene(root, 1280, 720);

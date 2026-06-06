@@ -22,7 +22,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 public class GameInfos{
-    public static String GAMENAME = "GAME_NAME";
+    public static String GAMENAME = "MY OWN ENEMY";
+    public static String GAMENAME_TYPE_2 = "My Own Enemy";
     public static HashMap CREDITS = new HashMap<>();
     private final HashSet<String> conception = new HashSet<>();
     {
