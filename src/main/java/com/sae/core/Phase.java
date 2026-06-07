@@ -47,10 +47,12 @@ public class Phase {
         // Phase 8
         addPhase("Fin", 0, true);
 
+        /*
         System.out.println(POIDS_TOTAL);
         for (Phase p : TOUTES_LES_PHASES){
             p.showPhase();
         }
+        */
     }
 
     public Phase(double numero){
@@ -94,6 +96,7 @@ public class Phase {
         System.out.println("Pourcentage : " + getPourcentage() + "%");
         System.out.println("Poids : " + poids);
         System.out.println("Dernière étape : " + isLastStep);
+        System.out.println("Fin du jeu : " + estJeuFini());
     }
 
     private Phase searchPhase(double num){
@@ -122,7 +125,7 @@ public class Phase {
     public int getAvancee() { return avancee; }
     public int getPoids() { return poids; }
     public boolean isLastStep() { return isLastStep; }
-    public double getPourcentage() { return (double) getAvancee()/POIDS_TOTAL; }
+    public double getPourcentage() { return 100 * (double) getAvancee()/POIDS_TOTAL; }
     public int getIndex() { int i = 0; for (Phase p : TOUTES_LES_PHASES) { if (this.isEqualTo(p)) { return i; } i++;} return -1; }
 
     public void nextPhase(){
@@ -135,6 +138,10 @@ public class Phase {
     }
 
     private boolean isEqualTo(Phase p){ return this.numero == numero;}
+
+    private static double arrondirNum(double num){
+        return (int) Math.round(num*10)/10.0;
+    }
 
     private static void addPhase(String description, int poids, boolean isLastStep){
         if (!alreadyExists(description)){
@@ -155,6 +162,7 @@ public class Phase {
                 } else {
                     num += 0.1; // Attention à ne pas avoir plus de 9 étapes par phases.
                 }
+                num = arrondirNum(num);
             }
             POIDS_TOTAL += poids;
             copie[i] = new Phase(num, description, av, poids, isLastStep);

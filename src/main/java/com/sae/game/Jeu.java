@@ -29,6 +29,7 @@ import com.roxane.app.Translations;
 import com.sae.core.GameInfos;
 import com.sae.core.Phase;
 import com.sae.core.Save;
+import com.sae.core.Time;
 import com.sae.enigmas.ChambrePierreManager;
 import com.sae.enigmas.EnigmeEmpreinteUI;
 import com.sae.enigmas.EnigmeVerre;
@@ -302,6 +303,8 @@ public class Jeu extends JFrame {
     private void avancerPhaseTest() {
         phase.nextPhase();
         save.setPhase(phase.getNumero());
+        //System.out.println(Time.now() - save.getLastSave());
+        save.addTime(((int) (Time.now() - save.getLastSave()))/1000);
         save.save();
     }
 
