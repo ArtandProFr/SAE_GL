@@ -62,7 +62,8 @@ public class Bouton extends Button {
             // Jouer le son au relâchement du clic
             if (clickSound != null) {
                 double volumeGlobal = Settings.getInstance().getVolume();
-                // Si ton système utilise 0-100 : volumeGlobal = volumeGlobal / 100.0;
+                // Si ton système utilise 0-100 : 
+                volumeGlobal = volumeGlobal / 100.0;
                 clickSound.setVolume(volumeGlobal);
                 clickSound.play();
             }
