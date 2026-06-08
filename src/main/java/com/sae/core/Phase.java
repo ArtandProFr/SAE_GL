@@ -46,13 +46,6 @@ public class Phase {
 
         // Phase 8
         addPhase("Fin", 0, true);
-
-        /*
-        System.out.println(POIDS_TOTAL);
-        for (Phase p : TOUTES_LES_PHASES){
-            p.showPhase();
-        }
-        */
     }
 
     public Phase(double numero){
@@ -126,7 +119,15 @@ public class Phase {
     public int getPoids() { return poids; }
     public boolean isLastStep() { return isLastStep; }
     public double getPourcentage() { return 100 * (double) getAvancee()/POIDS_TOTAL; }
-    public int getIndex() { int i = 0; for (Phase p : TOUTES_LES_PHASES) { if (this.isEqualTo(p)) { return i; } i++;} return -1; }
+    public int getIndex(){ 
+        for (int i = 0; i < TOUTES_LES_PHASES.length; i++){
+            if (this.isEqualTo(TOUTES_LES_PHASES[i])){
+                System.out.println(i);
+                return i;
+            }
+        }
+        return -1;
+    }
 
     public String getStrPourcentage(){
         double prc = getPourcentage();
@@ -147,7 +148,7 @@ public class Phase {
         addPhase(description, poids, false);
     }
 
-    private boolean isEqualTo(Phase p){ return this.numero == numero;}
+    private boolean isEqualTo(Phase p){ return this.numero == p.numero;}
 
     private static double arrondirNum(double num){
         return (int) Math.round(num*10)/10.0;

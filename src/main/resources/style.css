@@ -23,29 +23,33 @@
 /* ===== BOUTONS ===== */
 
 .menu-button {
-	-fx-background-color: linear-gradient(to bottom, #f6c045 0%, #efb22d 100%);
-	-fx-text-fill: #101010;
-	-fx-font-size: 32px;
-	-fx-font-family: "Minecraft";
-	-fx-font-weight: bold;
-	-fx-padding: 15 40 15 40;
-	-fx-pref-width: 520px;
-	-fx-pref-height: 120px;
-	-fx-border-color: #1c130e;
-	-fx-border-width: 12px;
-	-fx-background-radius: 0;
-	-fx-border-radius: 0;
-	-fx-cursor: hand;
+    -fx-background-color: linear-gradient(to bottom, #f6c045 0%, #efb22d 100%);
+    -fx-text-fill: #101010;
+    -fx-font-family: "Minecraft";
+    -fx-font-weight: bold;
+    -fx-padding: 15 20 15 20; /* Moins de padding sur les côtés pour laisser de la place au texte */
+    -fx-border-color: #1c130e;
+    -fx-border-width: 6px;
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
+    -fx-cursor: hand;
 }
 
+/* Style exclusif pour les gros boutons du menu principal */
+.root .menu-button {
+    -fx-pref-width: 600px;  /* Augmenté de 520px à 600px pour éviter les "..." */
+    -fx-pref-height: 120px;
+    -fx-border-width: 12px;
+    -fx-font-size: 32px;    /* On force la taille ici aussi pour la stabiliser */
+}
+
+/* NETTOYAGE : On enlève les -fx-translate-y qui cassent la taille de la police */
 .menu-button:hover {
-	-fx-background-color: linear-gradient(to bottom, #ffd85e 0%, #f2be40 100%);
-	-fx-translate-y: -1;
+    -fx-background-color: linear-gradient(to bottom, #ffd85e 0%, #f2be40 100%);
 }
 
 .menu-button:pressed {
-	-fx-background-color: linear-gradient(to bottom, #e0a827 0%, #c99110 100%);
-	-fx-translate-y: 2;
+    -fx-background-color: linear-gradient(to bottom, #e0a827 0%, #c99110 100%);
 }
 
 

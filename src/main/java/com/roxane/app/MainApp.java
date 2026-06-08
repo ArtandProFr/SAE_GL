@@ -5,7 +5,6 @@ import com.sae.core.GameInfos;
 import javafx.application.Application;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -26,39 +25,23 @@ public class MainApp extends Application {
     public void start(Stage stage) {
         this.primaryStage = stage;
 
-
         // Charger la police Minecraft
         minecraftFont = null;
         minecraftFontTitle = null;
         
         try {
-            // Essayer de charger via InputStream
             var fontStream = getClass().getResourceAsStream("/fonts/Minecraft.ttf");
             if (fontStream != null) {
-                //System.out.println("Font stream found, attempting to load");
                 minecraftFont = Font.loadFont(fontStream, 16);
                 
                 fontStream = getClass().getResourceAsStream("/fonts/Minecraft.ttf");
                 minecraftFontTitle = Font.loadFont(fontStream, 84);
-                /*
-                System.out.println("Font loaded from stream: " + minecraftFont);
-                if (minecraftFont == null) {
-                    System.out.println("Font stream returned null");
-                }
-                */
-            } else {
-                //System.out.println("Font stream not found");
             }
         } catch (Exception e) {
-            /*
-            System.out.println("Error loading font: " + e.getMessage());
-            e.printStackTrace();
-            */
+            System.err.println("Erreur chargement police : " + e.getMessage());
         }
         
-        // Fallback si la police Minecraft échoue
         if (minecraftFont == null) {
-            //System.out.println("Using fallback font");
             minecraftFont = Font.font("Arial", 16);
             minecraftFontTitle = Font.font("Arial", 84);
         }
@@ -91,26 +74,17 @@ public class MainApp extends Application {
 
         title.setEffect(goldHighlight);
 
-        Button playButton = new Button(Translations.t("LANCER UNE PARTIE"));
-        Button settingsButton = new Button(Translations.t("PARAMETRES"));
-        Button bestTimeButton = new Button(Translations.t("MEILLEURS TEMPS"));
+        // ─── UTILISATION DE TON BOUTON PERSONNALISÉ ─────────────────────
+        Bouton playButton = new Bouton(Translations.t("LANCER UNE PARTIE"));
+        Bouton settingsButton = new Bouton(Translations.t("PARAMETRES"));
+        Bouton bestTimeButton = new Bouton(Translations.t("MEILLEURS TEMPS"));
 
         if (minecraftFont != null) {
-            playButton.setFont(minecraftFont);
-            settingsButton.setFont(minecraftFont);
-            bestTimeButton.setFont(minecraftFont);
+            // On augmente la taille de la police pour le menu principal (32px au lieu de 16px)
+            playButton.setFont(Font.font(minecraftFont.getFamily(), 32));
+            settingsButton.setFont(Font.font(minecraftFont.getFamily(), 32));
+            bestTimeButton.setFont(Font.font(minecraftFont.getFamily(), 32));
         }
-
-        playButton.getStyleClass().add("menu-button");
-        settingsButton.getStyleClass().add("menu-button");
-        bestTimeButton.getStyleClass().add("menu-button");
-
-        playButton.setMinSize(520, 120);
-        playButton.setPrefSize(520, 120);
-        settingsButton.setMinSize(520, 120);
-        settingsButton.setPrefSize(520, 120);
-        bestTimeButton.setMinSize(520, 120);
-        bestTimeButton.setPrefSize(520, 120);
 
         // Ajouter l'effet drop shadow aux boutons
         DropShadow buttonShadow = new DropShadow();
@@ -129,7 +103,7 @@ public class MainApp extends Application {
         VBox menuBox = new VBox(20);
         menuBox.getChildren().addAll(title, playButton, settingsButton, bestTimeButton);
         menuBox.setAlignment(Pos.CENTER);
-        menuBox.setMaxWidth(440);
+        menuBox.setMaxWidth(620); // Changé de 440 à 620 pour accueillir la nouvelle largeur de 600px
 
         // Charger et afficher l'image de fond
         Image backgroundImage = new Image(getClass().getResourceAsStream("/assets/background.png"));
@@ -147,15 +121,12 @@ public class MainApp extends Application {
 
         primaryStage.setTitle(Translations.t(GameInfos.GAMENAME_TYPE_2));
         primaryStage.setScene(scene);
-        try{
-            // 1. Charger l'image depuis les ressources de ton projet
+        try {
             String iconPath = "/icons/icon3.png";
             Image icone = new Image(getClass().getResourceAsStream(iconPath));
-            
-            // 2. Ajouter l'image aux icônes du Stage
             this.primaryStage.getIcons().add(icone);
         } catch(Exception e){
-
+            // Ignore
         }
         primaryStage.show();
     }
