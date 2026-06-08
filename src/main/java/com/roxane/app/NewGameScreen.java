@@ -201,6 +201,7 @@ public class NewGameScreen {
     /**
      * Affiche le jeu Swing ({@link com.sae.game.Jeu}) à l'intérieur de la
      * fenêtre JavaFX courante, sans ouvrir de seconde fenêtre.
+     * Un appui sur ÉCHAP affiche/masque l'overlay de pause contenant le bouton RETOUR MENU.
      */
     void launchSwingGameInScene(Save save) {
         SwingNode swingNode = new SwingNode();
@@ -208,25 +209,42 @@ public class NewGameScreen {
         StackPane gameRoot = new StackPane(swingNode);
         gameRoot.setStyle("-fx-background-color: black;");
 
-        // Bouton "RETOUR MENU" overlay JavaFX (en haut à droite)
+        // ─── CRÉATION DE L'OVERLAY DE PAUSE ──────────────────────────────────
+        // Un StackPane semi-transparent qui couvrira tout l'écran
+        StackPane pauseMenu = new StackPane();
+        pauseMenu.setStyle("-fx-background-color: rgba(0, 0, 0, 0.7);"); // Fond sombre transparent
+        pauseMenu.setVisible(false); // Caché par défaut au lancement
+
+        // Bouton "RETOUR MENU" au centre de l'écran de pause
         Bouton backButton = new Bouton(Translations.t("RETOUR MENU"));
         backButton.getStyleClass().add("small-action-button");
-        backButton.setPrefWidth(180);
-        if (minecraftFont != null) backButton.setFont(Font.font(minecraftFont.getFamily(), 14));
+        backButton.setPrefWidth(200);
+        backButton.setPrefHeight(50);
+        if (minecraftFont != null) backButton.setFont(Font.font(minecraftFont.getFamily(), 16));
         backButton.setOnAction(ev -> onBackToMenu.run());
 
-        HBox topBar = new HBox(backButton);
-        topBar.setAlignment(Pos.TOP_RIGHT);
-        topBar.setPadding(new Insets(12));
-        topBar.setMouseTransparent(false);
-        topBar.setPickOnBounds(false);
+        pauseMenu.getChildren().add(backButton);
+        StackPane.setAlignment(backButton, Pos.CENTER);
 
-        StackPane.setAlignment(topBar, Pos.TOP_RIGHT);
-        gameRoot.getChildren().add(topBar);
+        // Ajout de l'overlay de pause dans le conteneur principal (au-dessus du jeu)
+        gameRoot.getChildren().add(pauseMenu);
 
         Settings.getInstance().applyBrightness(gameRoot);
         Scene gameScene = new Scene(gameRoot, 1280, 720);
         gameScene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
+
+        // ─── GESTION DE LA TOUCHE ÉCHAP (ESCAPE) ─────────────────────────────
+        gameScene.setOnKeyPressed(event -> {
+            if (event.getCode() == javafx.scene.input.KeyCode.ESCAPE) {
+                // On inverse la visibilité du menu de pause
+                boolean isPaused = !pauseMenu.isVisible();
+                pauseMenu.setVisible(isPaused);
+
+                // Si le menu est affiché, le jeu Swing devient transparent aux clics (bloqué)
+                // Si le menu est masqué, le jeu Swing récupère les clics normalement
+                swingNode.setMouseTransparent(isPaused);
+            }
+        });
 
         // Lancement sur l'Event Dispatch Thread (EDT)
         javax.swing.SwingUtilities.invokeLater(() -> {
@@ -235,7 +253,8 @@ public class NewGameScreen {
             // Branchement du curseur JavaFX
             jeu.setCursorChangeListener(surElementInteractif -> {
                 javafx.application.Platform.runLater(() -> {
-                    if (surElementInteractif) {
+                    // On ne change le curseur en MAIN que si le jeu n'est pas en pause
+                    if (surElementInteractif && !pauseMenu.isVisible()) {
                         gameScene.setCursor(javafx.scene.Cursor.HAND);
                     } else {
                         gameScene.setCursor(javafx.scene.Cursor.DEFAULT);
