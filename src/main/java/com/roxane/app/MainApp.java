@@ -123,7 +123,7 @@ public class MainApp extends Application {
         bestTimeButton.setEffect(buttonShadow);
 
         playButton.setOnAction(e -> new GameScreen(primaryStage, minecraftFont, this::showMenu).show());
-        settingsButton.setOnAction(e -> new ParametresScreen(primaryStage, minecraftFont, this::showMenu).show());
+        settingsButton.setOnAction(e -> new ParametresScreen(primaryStage, minecraftFont, this::showMenu, "RETOUR MENU").show());
         bestTimeButton.setOnAction(e -> new MeilleurTempsScreen(primaryStage, minecraftFont, this::showMenu).show());
 
         VBox menuBox = new VBox(20);

@@ -21,11 +21,13 @@ public class ParametresScreen {
     private final Stage stage;
     private final Font minecraftFont;
     private final Runnable onBack;
+    private final String backbuttonText;
 
-    public ParametresScreen(Stage stage, Font minecraftFont, Runnable onBack) {
+    public ParametresScreen(Stage stage, Font minecraftFont, Runnable onBack, String backbuttonText) {
         this.stage = stage;
         this.minecraftFont = minecraftFont;
         this.onBack = onBack;
+        this.backbuttonText = backbuttonText;
     }
 
     public void show() {
@@ -78,7 +80,7 @@ public class ParametresScreen {
             title.setFont(Font.font(minecraftFont.getFamily(), 40));
         }
 
-        Bouton backButton = new Bouton(Translations.t("RETOUR MENU"));
+        Bouton backButton = new Bouton(Translations.t(this.backbuttonText));
         backButton.getStyleClass().add("small-action-button");
         backButton.setPrefWidth(260);
         if (minecraftFont != null) {

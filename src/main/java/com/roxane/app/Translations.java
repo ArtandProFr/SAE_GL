@@ -10,6 +10,7 @@ public class Translations {
         Map.entry("LISTE DES SCORES", "SCOREBOARD"),
         Map.entry("MEILLEURS TEMPS", "BEST TIMES"),
         Map.entry("RETOUR MENU", "BACK TO MENU"),
+        Map.entry("RETOUR AU JEU", "BACK TO GAME"),
         Map.entry("SAUVEGARDES", "SAVES"),
         Map.entry("LANCER UNE NOUVELLE PARTIE", "NEW GAME"),
         Map.entry("NOUVELLE PARTIE", "NEW GAME"),
