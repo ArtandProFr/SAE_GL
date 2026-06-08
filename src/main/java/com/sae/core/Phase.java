@@ -128,6 +128,16 @@ public class Phase {
     public double getPourcentage() { return 100 * (double) getAvancee()/POIDS_TOTAL; }
     public int getIndex() { int i = 0; for (Phase p : TOUTES_LES_PHASES) { if (this.isEqualTo(p)) { return i; } i++;} return -1; }
 
+    public String getStrPourcentage(){
+        double prc = getPourcentage();
+        String str = String.valueOf(prc);
+        if (prc%1 == 0){
+            str = str.substring(0, str.length()-2);
+        }
+        str += "%";
+        return str;
+    }
+
     public void nextPhase(){
         int i = getIndex();
         if (i >= 0 && i < TOUTES_LES_PHASES.length - 1) {change(TOUTES_LES_PHASES[i+1]);}
