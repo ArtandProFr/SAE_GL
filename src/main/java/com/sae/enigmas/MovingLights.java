@@ -1,5 +1,7 @@
 package com.sae.enigmas;
 
+import java.awt.Graphics2D;
+
 public class MovingLights {
     public static final double LIGHT_RADIUS = 1.0/3.0;
     public int taille;
@@ -243,5 +245,21 @@ public class MovingLights {
             }
         }
         return nv;
+    }
+
+    /* ====== AFFICHAGE ====== */
+
+    public void draw(Graphics2D g){
+        Draw.setupQuality(g);
+        for (Slide[] line : slides){
+            for (Slide s : line){
+                if (s != null) s.draw(g);
+            }
+        }
+        for (Slider[] line : sliders){
+            for (Slider sl : line){
+                if (sl != null) sl.drawLight(g);
+            }
+        }
     }
 }

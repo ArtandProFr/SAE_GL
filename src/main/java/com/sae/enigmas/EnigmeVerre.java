@@ -8,26 +8,26 @@ public class EnigmeVerre {
     private boolean corpsExamine = false;
     private boolean[] verresTrouves = new boolean[5];
     
-    // Dialogues initiaux d'Arthur
-    private final String[] textesArthur = {
-        "Arthur... ? Oh non, il ne respire plus. Son corps est déjà froid...",
+    // Dialogues initiaux de Louis
+    private final String[] textesLouis = {
+        "Louis... ? Oh non, il ne respire plus. Son corps est déjà froid...",
         "Regarde ses lèvres... elles ont une étrange teinte bleutée. Un empoisonnement ? C'est impensable...",
         "Je n'ai pas le choix. Je dois fouiller l'appartement et trouver les indices qui mèneront au coupable."
     };
 
     // Indices textuels associés à chaque verre rouge
     private final String[] indicesVerres = {
-        "Une trace de rouge à lèvres grasse... Ce verre appartient à Jacques.", // Verre 0 (Plante Salon 1)
-        "Ce verre sent fortement le soda tiède. C'est celui de Louis.",        // Verre 1 (Table basse Salon 1)
+        "Une trace de lèvres grasse... Ce verre appartient à Jacques.", // Verre 0 (Plante Salon 1)
+        "Ce verre sent fortement le soda tiède. C'est le mien.",        // Verre 1 (Table basse Salon 1)
         "Ce verre de jus est intact et propre. Paul n'y a pas touché.",         // Verre 2 (Cuisine Salon 1)
-        "De la poudre blanche s'est déposée au fond... C'est le verre empoisonné d'Arthur !", // Verre 3 (Table Salon 2)
+        "De la poudre blanche s'est déposée au fond... C'est le verre empoisonné de Louis !", // Verre 3 (Table Salon 2)
         "Des empreintes digitales très nettes entourent ce verre... Ce sont celles de Pierre."  // Verre 4 (Table Salon 2)
     };
 
     public boolean isCorpsExamine() { return corpsExamine; }
     public void setCorpsExamine(boolean examine) { this.corpsExamine = examine; }
 
-    public String[] getTextesArthur() { return textesArthur; }
+    public String[] getTextesLouis() { return textesLouis; }
 
     /** Vérifie si un clic touche un verre non trouvé selon l'univers et le décor actuel */
     public int obtenirIdVerreClique(String univers, int indexDecor, Point clic, int iw, int ih) {

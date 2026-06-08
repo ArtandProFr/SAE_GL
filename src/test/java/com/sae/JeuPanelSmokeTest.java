@@ -24,7 +24,7 @@ public class JeuPanelSmokeTest {
 
         SwingUtilities.invokeLater(() -> {
             try {
-                Jeu jeu = new Jeu();
+                Jeu jeu = new Jeu(null);
                 panelRef.set(jeu.getGamePanel());
             } catch (Throwable t) {
                 errorRef.set(t);

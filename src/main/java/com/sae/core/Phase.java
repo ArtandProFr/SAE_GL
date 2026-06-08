@@ -122,7 +122,6 @@ public class Phase {
     public int getIndex(){ 
         for (int i = 0; i < TOUTES_LES_PHASES.length; i++){
             if (this.isEqualTo(TOUTES_LES_PHASES[i])){
-                System.out.println(i);
                 return i;
             }
         }

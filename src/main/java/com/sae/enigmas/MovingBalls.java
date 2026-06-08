@@ -1,5 +1,7 @@
 package com.sae.enigmas;
 
+import java.awt.Graphics2D;
+
 
 public class MovingBalls{
     public static final double BALL_RADIUS = 1.0/3.0;
@@ -255,5 +257,29 @@ public class MovingBalls{
             }
         }
         return nv;
+    }
+
+    /* ====== AFFICHAGE ====== */
+
+    public void draw(Graphics2D g){
+        Draw.setupQuality(g);
+        // Grille
+        for (Slide[] line : slides){
+            for (Slide s : line){
+                if (s != null) s.draw(g);
+            }
+        }
+        // Boules
+        for (Slider[] line : balls){
+            for (Slider b : line){
+                if (b != null) b.drawBall(g);
+            }
+        }
+        // Boutons
+        for (MovingBallsButton[] line : buttons){
+            for (MovingBallsButton btn : line){
+                if (btn != null) btn.draw(g);
+            }
+        }
     }
 }

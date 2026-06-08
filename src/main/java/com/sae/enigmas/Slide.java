@@ -1,5 +1,9 @@
 package com.sae.enigmas;
 
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Graphics2D;
+
 import java.util.HashSet;
 
 public class Slide{
@@ -31,129 +35,87 @@ public class Slide{
     public HashSet<String> provenances;
 
     private static HashSet<String> getHashSet(String s){
-
-        /* Cette méthode renvoie un hashset composé d'une chaine de caractère. */
-
         HashSet<String> hs = new HashSet<>();
         hs.add(s);
         return hs;
     }
     private static HashSet<String> combineHashSet(HashSet<String> h1, HashSet<String> h2){
-
-        /* Cette méthode renvoie la combinaison de 2 hashsets sans modifier ceux de départ. */
-
         HashSet<String> nv = new HashSet<>(h1);
         nv.addAll(h2);
         return nv;
     }
 
     public Slide(Slide s){
-
-        /* Constructeur par recopie. */
-
         this.coord = s.coord;
         this.taille = s.taille;
         this.isGoal = s.isGoal;
-        this.directions = s.directions;
-        this.provenances = s.provenances;
+        this.directions = new HashSet<>(s.directions);
+        this.provenances = new HashSet<>(s.provenances);
     }
 
     public Slide(String type){
-
-        /* Constructeur par type. */
-
         initWithType(type);
     }
 
     public Slide(HashSet<String> directions){
-
-        /* Constructeur par directions. */
-
         initWithDirections(directions);
     }
 
     public Slide(String type, boolean isGoal){
-
-        /* Constructeur par type, connaissant isGoal */
-
         initIsGoal(isGoal);
         initWithType(type);
     }
 
     public Slide(HashSet<String> directions, boolean isGoal){
-
-        /* Constructeur par directions, connaisant isGoal */
-
         initIsGoal(isGoal);
         initWithDirections(directions);
     }
 
     private void initWithDirections(HashSet<String> directions){
-
-        /* Initialisation des directions. (puis des provenances associées) */
-
-        this.directions = directions;
+        this.directions = new HashSet<>(directions);
         initProvenances();
     }
 
     private void initWithType(String type){
-
-        /* Initialisation des directions en fonction du type. */
-
         this.directions = switch(type){
-            case UP -> HUP;
-            case DOWN -> HDOWN;
-            case LEFT -> HLEFT;
-            case RIGHT -> HRIGHT;
-            case UP+"_"+LEFT -> HUPLEFT;
-            case UP+"_"+RIGHT -> HUPRIGHT;
-            case DOWN+"_"+LEFT -> HDOWNLEFT;
-            case DOWN+"_"+RIGHT -> HDOWNRIGHT;
-            case "T_"+RIGHT -> HTRIGHT;
-            case "T_"+LEFT -> HTLEFT;
-            case "T_"+DOWN -> HTDOWN;
-            case "T_"+UP -> HTUP;
-            case "CROSS" -> HCROSS;
-            case "VERT" -> HVERT;
-            case "HORI" -> HHORI;
+            case UP -> new HashSet<>(HUP);
+            case DOWN -> new HashSet<>(HDOWN);
+            case LEFT -> new HashSet<>(HLEFT);
+            case RIGHT -> new HashSet<>(HRIGHT);
+            case UP+"_"+LEFT -> new HashSet<>(HUPLEFT);
+            case UP+"_"+RIGHT -> new HashSet<>(HUPRIGHT);
+            case DOWN+"_"+LEFT -> new HashSet<>(HDOWNLEFT);
+            case DOWN+"_"+RIGHT -> new HashSet<>(HDOWNRIGHT);
+            case "T_"+RIGHT -> new HashSet<>(HTRIGHT);
+            case "T_"+LEFT -> new HashSet<>(HTLEFT);
+            case "T_"+DOWN -> new HashSet<>(HTDOWN);
+            case "T_"+UP -> new HashSet<>(HTUP);
+            case "CROSS" -> new HashSet<>(HCROSS);
+            case "VERT" -> new HashSet<>(HVERT);
+            case "HORI" -> new HashSet<>(HHORI);
             default -> new HashSet<>();
         };
         initWithDirections(directions);
     }
 
     private void initIsGoal(boolean isGoal){
-
-        /* Initialisation de isGoal. */
-
         this.isGoal = isGoal;
     }
 
     public void setDrawingInfo(Vec2 coord, double taille){
-
-        /* Initialisation des variables nécessaire à l'affichage. */
-
         this.coord = coord;
         this.taille = taille;
     }
 
     public boolean canGoTo(String dir){
-
-        /* Cette méthode renvoie si la direction est non-bloquante. */
-
         return directions.contains(dir);
     }
 
     public boolean canComeFrom(String dir){
-
-        /* Cette méthode renvoie si la provenance est non-bloquante. */
-
         return provenances.contains(dir);
     }
 
     private void initProvenances(){
-
-        /* Cette méthode initialise les provenances. */
-
         this.provenances = new HashSet<>();
         if (canGoTo(UP)){
             this.provenances.add(DOWN);
@@ -166,6 +128,30 @@ public class Slide{
         }
         if (canGoTo(RIGHT)){
             this.provenances.add(LEFT);
+        }
+    }
+
+    /* ====== AFFICHAGE ====== */
+
+    public void draw(Graphics2D g){
+        if (coord == null) return;
+        // Fond de case
+        Color bgCase = isGoal ? new Color(46, 100, 60) : new Color(30, 32, 38);
+        Draw.rect(g, coord.x - taille/2, coord.y - taille/2, taille, taille, bgCase);
+        Draw.rectOutline(g, coord.x - taille/2, coord.y - taille/2, taille, taille,
+                new Color(60, 65, 75), 1);
+
+        // Rails (épaisseur ~ taille/6, couleur claire)
+        double w = Math.max(4, taille / 6.0);
+        g.setStroke(new BasicStroke((float) w, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g.setColor(new Color(160, 170, 185));
+        if (canGoTo(UP))    g.drawLine((int) coord.x, (int) coord.y, (int) coord.x, (int) (coord.y - taille/2));
+        if (canGoTo(DOWN))  g.drawLine((int) coord.x, (int) coord.y, (int) coord.x, (int) (coord.y + taille/2));
+        if (canGoTo(LEFT))  g.drawLine((int) coord.x, (int) coord.y, (int) (coord.x - taille/2), (int) coord.y);
+        if (canGoTo(RIGHT)) g.drawLine((int) coord.x, (int) coord.y, (int) (coord.x + taille/2), (int) coord.y);
+
+        if (isGoal){
+            Draw.circle(g, coord.x, coord.y, taille * 0.15, new Color(46, 204, 113, 180));
         }
     }
 }
