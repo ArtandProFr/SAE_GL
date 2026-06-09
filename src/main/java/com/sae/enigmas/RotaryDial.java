@@ -9,7 +9,7 @@ public class RotaryDial {
     public static final int[] EMPTY_LIST = new int[] {};
     public static final int[] EASY_LIST = new int[] {1, 2, 3, 1, 2, 1};
     public static final int[] NORMAL_LIST = new int[] {1, 3, 2, 1, 1, 2, 1, 3};
-    public static final int[] HARD_LIST = new int[] {2, 4, 1, 3, 2, 1, 3, 2}; // Liste Hard personnalisée
+    public static final int[] HARD_LIST = new int[] {2, 4, 1, 3, 2, 1, 3, 2};
 
     public Vec2 coord;
     public int taille;
@@ -24,6 +24,9 @@ public class RotaryDial {
     public double taille_bouton;
     public int rayon_ext;
     public int rayon_int;
+    
+    // Angles absolus fixes du cadran
+    private double[] angle_cadran;
 
     public final boolean isValid(){
         return (liste != EMPTY_LIST && (1 < taille_possib && taille_possib < taille));
@@ -38,6 +41,16 @@ public class RotaryDial {
         win = false;
     }
 
+    /**
+     * Permet de valider instantanément l'énigme (Bouton de triche/validation)
+     */
+    public void forceWin() {
+        for (int i = 0; i < taille; i++) {
+            pushed[i] = true;
+        }
+        win = true;
+    }
+
     public boolean isFinished(){
         if (pushed.length == 0) return false;
         for (boolean b : pushed){
@@ -47,8 +60,9 @@ public class RotaryDial {
     }
 
     public boolean canPlay(){
-        for (int i = 0; i < taille_possib; i++){
-            if (!pushed[(position + i) % taille]) return true;
+        for (int j = 0; j < taille_possib; j++){
+            int idxJouable = (position + j) % taille;
+            if (!pushed[idxJouable]) return true;
         }
         return false;
     }
@@ -57,25 +71,15 @@ public class RotaryDial {
         return !canPlay();
     }
 
-    // Renvoie les angles absolus mis à jour selon la rotation (position globale)
-    public double[] getAngleCadran() {
-        double[] angles = new double[taille];
-        for (int i = 0; i < taille; i++) {
-            angles[i] = ((position + i) * angle_unite) % 360;
-        }
-        return angles;
-    }
-
     public int getSelectedPos(double angle) {
-        double[] angleCadranActuel = getAngleCadran();
         for (int i = 0; i < taille; i++) {
-            double a1 = angleCadranActuel[i];
-            double a2 = angleCadranActuel[(i + 1) % taille];
+            double a1 = angle_cadran[i];
+            double a2 = angle_cadran[(i + 1) % taille];
             
-            if (a2 < a1) { // Gestion du passage par 0° / 360°
-                if (angle > a1 || angle < a2) return i;
+            if (a2 < a1) { // Passage du cap 360° -> 0°
+                if (angle >= a1 || angle < a2) return i;
             } else {
-                if (a1 < angle && angle < a2) return i;
+                if (angle >= a1 && angle < a2) return i;
             }
         }
         return -1;
@@ -105,7 +109,7 @@ public class RotaryDial {
                 liste = NORMAL_LIST;
                 break;
             case "Hard":
-                taille_possib = 2; // Tu peux passer à 3 si tu veux corser le jeu
+                taille_possib = 2;
                 liste = HARD_LIST;
                 break;
             default:
@@ -117,7 +121,13 @@ public class RotaryDial {
         if (isValid()){
             this.angle_unite = 360.0 / taille;
             this.angle_jouable = taille_possib * angle_unite;
-            this.pushed = new boolean[taille];
+            
+            // Initialisation des angles fixes (0° à 360° en sens horaire)
+            this.angle_cadran = new double[taille];
+            for (int i = 0; i < taille; i++) {
+                this.angle_cadran[i] = (i * angle_unite) % 360;
+            }
+            
             reset();
         } else {
             throw new Exception("Initialization error : length must be strictly positive.");
@@ -131,39 +141,26 @@ public class RotaryDial {
                 double dx = mouseCoord.x - coord.x;
                 double dy = mouseCoord.y - coord.y;
                 
-                // Formule mathématique calquée sur Python : 0° en haut, sens horaire
+                // Calcul de l'angle de la souris : 0° en haut, tourne dans le sens des aiguilles d'une montre
                 double angle = Math.toDegrees(Math.atan2(dx, -dy)) % 360;
                 if (angle < 0) angle += 360;
 
-                double[] angleCadranActuel = getAngleCadran();
-                double a1 = angleCadranActuel[0]; // Début de la zone jouable (index 0 de la rotation)
-                double a2 = (a1 + angle_jouable) % 360;
-
-                boolean angleDansZoneJouable = false;
-                if (a1 < a2) {
-                    angleDansZoneJouable = (angle > a1 && angle < a2);
-                } else { // Passage par le point zéro
-                    angleDansZoneJouable = (angle > a1 || angle < a2);
-                }
-
-                if (angleDansZoneJouable){
-                    int pos = getSelectedPos(angle);
-                    if (pos >= 0 && !pushed[pos]){
-                        pushed[pos] = true;
-                        position += liste[pos];
-                        position %= taille;
-                        
-                        if (isFinished()){
-                            win = true;
-                        } else if (isStuck()) {
-                            // Si le joueur est bloqué (plus de cases libres dans la zone active), reset
-                            reset();
+                int pos = getSelectedPos(angle);
+                if (pos >= 0) {
+                    if (isCaseJouable(pos)) {
+                        if (!pushed[pos]) {
+                            pushed[pos] = true;
+                            position += liste[pos];
+                            position %= taille;
+                            
+                            if (isFinished()) {
+                                win = true;
+                            } else if (isStuck()) {
+                                reset(); 
+                            }
                         }
-                    }
-                } else {
-                    // Clic en dehors de la zone active -> Reset de la progression
-                    if (getSelectedPos(angle) != -1) {
-                        reset();
+                    } else {
+                        reset(); // Clic sur une case sombre -> Reset
                     }
                 }
             }
@@ -175,48 +172,52 @@ public class RotaryDial {
     public void draw(Graphics2D g){
         Draw.setupQuality(g);
 
-        // Fond de la couronne
+        // Fond du cadran
         Draw.circle(g, coord.x, coord.y, rayon_ext, new Color(38, 42, 50));
         Draw.circle(g, coord.x, coord.y, rayon_int, new Color(18, 20, 24));
 
-        double[] angleCadranActuel = getAngleCadran();
-
-        // Secteurs : chaque case affiche son nombre et son état
+        // Dessin des secteurs
         for (int i = 0; i < taille; i++){
-            double a1 = angleCadranActuel[i];
-            double a2 = angleCadranActuel[(i + 1) % taille];
+            double a1 = angle_cadran[i];
+            double a2 = angle_cadran[(i + 1) % taille];
             if (a2 < a1) a2 += 360;
             
             boolean estJouable = isCaseJouable(i);
             Color base;
             
-            if (pushed[i]) base = new Color(46, 204, 113);          // vert : validé
-            else if (estJouable) base = new Color(241, 196, 15);    // jaune : actif
-            else base = new Color(52, 58, 68);                      // sombre : non jouable
+            if (pushed[i]) base = new Color(46, 204, 113);          // Vert
+            else if (estJouable) base = new Color(241, 196, 15);    // Jaune actif
+            else base = new Color(52, 58, 68);                      // Sombre
 
-            // Ajustement graphique Swing : On retire 90° pour aligner le haut (0°) avec le repère Java (gauche/haut)
-            Draw.portionCouronne(g, coord.x, coord.y, rayon_int + 4, rayon_ext - 4, a1 - 90, a2 - 90, base);
+            // TRÈS IMPORTANT : Java dessine en trigo (0° à droite). 
+            // Pour afficher notre repère horaire (0° en haut), on doit faire : 90 - angle.
+            // Comme portionCouronne prend un start et une ouverture (ou a1 et a2), on applique la conversion :
+            double drawA1 = 90 - a2;
+            double drawA2 = 90 - a1;
 
-            // Séparateurs
-            double aRad = Math.toRadians(a1 - 90);
+            Draw.portionCouronne(g, coord.x, coord.y, rayon_int + 4, rayon_ext - 4, drawA1, drawA2, base);
+
+            // Séparateurs de cases (alignés sur l'affichage)
+            double aRad = Math.toRadians(90 - a1);
             double xs1 = coord.x + Math.cos(aRad) * rayon_int;
             double ys1 = coord.y + Math.sin(aRad) * rayon_int;
             double xs2 = coord.x + Math.cos(aRad) * rayon_ext;
             double ys2 = coord.y + Math.sin(aRad) * rayon_ext;
             Draw.line(g, xs1, ys1, xs2, ys2, new Color(20, 22, 28), 2);
 
-            // Texte du chiffre (valeur du saut)
-            double aMid = Math.toRadians(((a1 + a2) / 2.0) - 90);
+            // Texte des chiffres de saut (au milieu de la case)
+            double midAngle = a1 + (angle_unite / 2.0);
+            double aMidRad = Math.toRadians(90 - midAngle);
             double rTxt = (rayon_int + rayon_ext) / 2.0;
-            double tx = coord.x + Math.cos(aMid) * rTxt;
-            double ty = coord.y + Math.sin(aMid) * rTxt;
+            double tx = coord.x + Math.cos(aMidRad) * rTxt;
+            double ty = coord.y + Math.sin(aMidRad) * rTxt; // Swing possède un axe Y vers le bas donc + pour descendre, mais avec la conversion 90-angle le sinus gère l'inversion nativement
             
             g.setFont(new Font("SansSerif", Font.BOLD, Math.max(12, rayon_ext / 12)));
             Draw.textCentered(g, tx, ty, String.valueOf(liste[i]),
                     pushed[i] ? Color.WHITE : new Color(230, 230, 230), Math.max(12, rayon_ext / 12));
         }
 
-        // Centre + libellé
+        // Centre de l'interface
         Draw.circle(g, coord.x, coord.y, rayon_int * 0.55, new Color(28, 30, 36));
         Draw.circle(g, coord.x, coord.y, rayon_int * 0.55, new Color(120, 130, 145), 2);
         Draw.textCentered(g, coord.x, coord.y,
@@ -226,8 +227,12 @@ public class RotaryDial {
     }
 
     private boolean isCaseJouable(int i){
-        // Les cases jouables sont toujours les 'taille_possib' premières cases à partir de l'index 0 de la rotation
-        return i < taille_possib;
+        for (int j = 0; j < taille_possib; j++) {
+            if (((position + j) % taille) == i) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private int countPushed(){
