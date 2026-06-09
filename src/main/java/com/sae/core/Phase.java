@@ -127,6 +127,23 @@ public class Phase {
         }
         return -1;
     }
+    public static int getIndex(double num){
+        for (int i = 0; i < TOUTES_LES_PHASES.length; i++){
+            if (num == TOUTES_LES_PHASES[i].getNumero()){
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public static Phase[] getAllPhases(){
+        Phase[] ans = new Phase[TOUTES_LES_PHASES.length];
+        for (int i = 0; i < TOUTES_LES_PHASES.length; i++){
+            Phase p = new Phase(TOUTES_LES_PHASES[i]);
+            ans[i] = p;
+        }
+        return ans;
+    }
 
     public String getStrPourcentage(){
         double prc = getPourcentage();

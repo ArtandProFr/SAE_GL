@@ -18,12 +18,15 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URL;
 
+import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 
 import com.roxane.app.Translations;
@@ -76,8 +79,8 @@ public class Jeu extends JFrame {
     private CursorChangeListener cursorChangeListener;
 
     /* ─── Gestionnaires & énigmes ───────────────────────────────────────────── */
-    private final ChambrePierreManager pierreManager = new ChambrePierreManager();
-    private final EnigmeVerre enigmeVerre = new EnigmeVerre();
+    private ChambrePierreManager pierreManager = new ChambrePierreManager();
+    private EnigmeVerre enigmeVerre = new EnigmeVerre();
 
     private final String[] decorsLouis   = {"louis1.jpg", "louis2.jpg"};
     private final String[] decorsJacques = {"jacques1.jpg", "jacques2.jpg"};
@@ -181,12 +184,65 @@ public class Jeu extends JFrame {
             @Override public void mouseMoved(MouseEvent e) { gererMouvementSouris(e); }
         });
 
+        // ─── Intégration globale du raccourci Admin '²' via Key Bindings ───
+        setupAdminKeyBinding();
+
         setContentPane(backgroundPanel);
+    }
+
+    /**
+     * Configure le raccourci clavier global pour la touche '²' (indépendant du focus)
+     */
+    private void setupAdminKeyBinding() {
+        // WHEN_IN_FOCUSED_WINDOW permet de capturer la touche même si un sous-composant a le focus
+        backgroundPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
+            KeyStroke.getKeyStroke("typed !"), "ouvrirAdminPhase"
+        );
+        backgroundPanel.getActionMap().put("ouvrirAdminPhase", new AbstractAction() {
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                promptChangePhase();
+            }
+        });
     }
 
     /* ════════════════════════════════════════════════════════════════════════
      *                       RESTAURATION D'ÉTAT (switch)
      * ════════════════════════════════════════════════════════════════════════ */
+
+    private void resetPhase(){
+        if (this.phase.getNumero() <= 2.1){
+            pierreManager = new ChambrePierreManager();
+        }
+        enigmeVerre = new EnigmeVerre();
+        decorsActuels = decorsSalon;
+        indexDecor = 0;
+        universActuel = U_SALON;
+
+        /* ─── État de jeu ───────────────────────────────────────────────────────── */
+        dialogueActif = false;
+        indexDialogueLouis = 0;
+        texteDialogueCourant = "";
+        textesDialogueCustom = null;
+        modeEnigmeActive = false;
+
+        /** Avancée intra-phase non persistée (cf. javadoc de la classe). */
+        subStep = 0;
+
+        /** Flags d'objets ramassés / découverts par phase 3 / 4 / 5. */
+        codeLouisTrouve     = false;  // post-it lu
+        ordiLouisDeverr     = false;
+        tableauElectriqueOk = false;  // 3.4 résolue
+        lumieresOk          = false;  // 3.5 résolue
+        discussionLue       = false;  // 3.6
+        livreChimieOuvert   = false;  // 3.7
+        telephoneDecroche   = false;  // 4.1
+        repondeurEcoute     = false;  // 4.2
+        lampeUVRamassee     = false;  // 4.3
+        serviettesVues      = false;  // 4.3
+        uvSurPlafondJacques = false;  // 5.2 optionnel
+        tiroirJacquesOuvert = false;  // 5.2 énigme boules
+        fioleTrouvee        = false;  // 5.2
+    }
 
     /**
      * Place le joueur dans la bonne pièce/vue selon la phase chargée.
@@ -955,6 +1011,47 @@ public class Jeu extends JFrame {
 
     private int numPhase() {
         return (int) Math.round(this.phase.getNumero() * 10);
+    }
+
+    private void promptChangePhase() {
+        // 1. Vérification des conditions ADMIN et SAVE
+        if (this.save != null && 
+            "ADMIN".equals(this.save.getUsername()) && 
+            "TESTER_PHASES".equals(this.save.getSavename())) {
+
+            // 2. Création de l'interface de saisie
+            String input = JOptionPane.showInputDialog(
+                this, 
+                "Mode Admin - Entrez le numéro de phase (format X.X) :", 
+                "Changement de Phase", 
+                JOptionPane.QUESTION_MESSAGE
+            );
+
+            // 3. Traitement de la saisie
+            if (input != null && input.matches("\\d+\\.\\d+")) {
+                // Conversion en Double pour correspondre à la méthode de la classe Phase
+                int newIndex = Phase.getIndex(Double.parseDouble(input));
+                
+                if (newIndex != -1) {
+                    // Application réelle du changement de phase dans le jeu
+                    this.phase.change(Phase.getAllPhases()[newIndex]); 
+                    this.save.setPhase(this.phase.getNumero());
+                    this.save.save();
+                    resetPhase();
+                    System.out.println("Phase changée vers : " + input);
+                    
+                    JOptionPane.showMessageDialog(this, "Phase changée avec succès : " + input);
+                    restaurerEtatProgression();
+                    mettreAJourTexteChambre();
+                    rafraichirAffichage();
+                    this.repaint(); // Rafraîchir l'affichage du jeu
+                } else {
+                    JOptionPane.showMessageDialog(this, "Erreur : Phase '" + input + "' introuvable.", "Erreur", JOptionPane.ERROR_MESSAGE);
+                }
+            } else if (input != null) {
+                JOptionPane.showMessageDialog(this, "Format invalide. Utilisez X.X (ex: 1.2)", "Erreur", JOptionPane.WARNING_MESSAGE);
+            }
+        }
     }
 
     private void rafraichirAffichage() {
