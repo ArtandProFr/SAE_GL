@@ -25,11 +25,13 @@ public class UVLampUI extends EnigmaDialog {
 
     @Override
     protected void tick() {
+        /*
         // Autosolve après 2,5s ou clic sur le bouton.
         if (System.currentTimeMillis() - start > 2500 && !reussite) {
             setStatus("Marquage révélé : tiroir n°2.", new Color(46, 204, 113));
             markSolvedAndClose();
         }
+        */
     }
 
     @Override

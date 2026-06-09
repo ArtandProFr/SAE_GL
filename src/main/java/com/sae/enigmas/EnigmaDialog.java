@@ -133,7 +133,7 @@ public abstract class EnigmaDialog extends JDialog {
     protected void markSolvedAndClose() {
         reussite = true;
         // Petite tempo pour laisser apparaître l'état résolu
-        Timer t = new Timer(550, e -> dispose());
+        Timer t = new Timer(1000, e -> dispose());
         t.setRepeats(false);
         t.start();
     }

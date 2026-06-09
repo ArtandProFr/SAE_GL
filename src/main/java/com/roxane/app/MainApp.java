@@ -24,6 +24,13 @@ public class MainApp extends Application {
     @Override
     public void start(Stage stage) {
         this.primaryStage = stage;
+        primaryStage.setOnCloseRequest(event -> {
+            // 1. Arrête proprement la plateforme JavaFX
+            javafx.application.Platform.exit();
+            
+            // 2. Tue la JVM et tous les processus/threads liés (Swing, Timers, etc.)
+            System.exit(0);
+        });
 
         // Charger la police Minecraft
         minecraftFont = null;

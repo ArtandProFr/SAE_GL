@@ -105,8 +105,10 @@ public class Jeu extends JFrame {
     private int subStep = 0;
 
     /** Flags d'objets ramassés / découverts par phase 3 / 4 / 5. */
+    private boolean postItAffiche       = false;
     private boolean codeLouisTrouve     = false;  // post-it lu
     private boolean ordiLouisDeverr     = false;
+    private boolean foundTableauElectrique = false; // 3.3 résolue
     private boolean tableauElectriqueOk = false;  // 3.4 résolue
     private boolean lumieresOk          = false;  // 3.5 résolue
     private boolean discussionLue       = false;  // 3.6
@@ -115,7 +117,7 @@ public class Jeu extends JFrame {
     private boolean repondeurEcoute     = false;  // 4.2
     private boolean lampeUVRamassee     = false;  // 4.3
     private boolean serviettesVues      = false;  // 4.3
-    private boolean uvSurPlafondJacques = false;  // 5.2 optionnel
+    //private boolean uvSurPlafondJacques = false;  // 5.2 optionnel
     private boolean tiroirJacquesOuvert = false;  // 5.2 énigme boules
     private boolean fioleTrouvee        = false;  // 5.2
 
@@ -136,13 +138,11 @@ public class Jeu extends JFrame {
         double numPhaseSauvegardee = (this.save != null) ? this.save.getPhase() : 0.1;
         if (numPhaseSauvegardee <= 0) numPhaseSauvegardee = 0.1;
         numPhaseSauvegardee = Math.round(numPhaseSauvegardee * 10) / 10.0;
-
         this.phase = new Phase(numPhaseSauvegardee);
         if (this.save != null) this.save.save();
-
         setTitle(Translations.t(GameInfos.GAMENAME_TYPE_2));
         setSize(800, 600);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
         backgroundPanel = new BackgroundPanel(decorsActuels[indexDecor]);
@@ -176,6 +176,8 @@ public class Jeu extends JFrame {
         // ─── Restauration de l'état selon la phase ─────────────────────────
         restaurerEtatProgression();
         mettreAJourTexteChambre();
+        rafraichirAffichage();
+        this.repaint();
 
         backgroundPanel.addMouseListener(new MouseAdapter() {
             @Override public void mousePressed(MouseEvent e) { gererClicSouris(e); }
@@ -184,19 +186,19 @@ public class Jeu extends JFrame {
             @Override public void mouseMoved(MouseEvent e) { gererMouvementSouris(e); }
         });
 
-        // ─── Intégration globale du raccourci Admin '²' via Key Bindings ───
+        // ─── Intégration globale du raccourci Admin '!' via Key Bindings ───
         setupAdminKeyBinding();
 
         setContentPane(backgroundPanel);
     }
 
     /**
-     * Configure le raccourci clavier global pour la touche '²' (indépendant du focus)
+     * Configure le raccourci clavier global pour la touche '²' (indépendant du focus)[cite: 4]
      */
     private void setupAdminKeyBinding() {
-        // WHEN_IN_FOCUSED_WINDOW permet de capturer la touche même si un sous-composant a le focus
+        // Raccourci corrigé sur la touche '!' pour le mode admin
         backgroundPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
-            KeyStroke.getKeyStroke("typed !"), "ouvrirAdminPhase"
+            KeyStroke.getKeyStroke('!'), "ouvrirAdminPhase"
         );
         backgroundPanel.getActionMap().put("ouvrirAdminPhase", new AbstractAction() {
             public void actionPerformed(java.awt.event.ActionEvent e) {
@@ -231,6 +233,7 @@ public class Jeu extends JFrame {
         /** Flags d'objets ramassés / découverts par phase 3 / 4 / 5. */
         codeLouisTrouve     = false;  // post-it lu
         ordiLouisDeverr     = false;
+        foundTableauElectrique = false; // 3.3 résolue
         tableauElectriqueOk = false;  // 3.4 résolue
         lumieresOk          = false;  // 3.5 résolue
         discussionLue       = false;  // 3.6
@@ -239,7 +242,7 @@ public class Jeu extends JFrame {
         repondeurEcoute     = false;  // 4.2
         lampeUVRamassee     = false;  // 4.3
         serviettesVues      = false;  // 4.3
-        uvSurPlafondJacques = false;  // 5.2 optionnel
+        //uvSurPlafondJacques = false;  // 5.2 optionnel
         tiroirJacquesOuvert = false;  // 5.2 énigme boules
         fioleTrouvee        = false;  // 5.2
     }
@@ -251,11 +254,11 @@ public class Jeu extends JFrame {
      */
     private void restaurerEtatProgression() {
         if (this.save == null) return;
+        resetPhase();
         subStep = 0;
-        double n = Math.round(this.save.getPhase() * 10) / 10.0;
 
         // Tronque le double en clé d'entier (0.1→1, 1.1→11, 3.4→34…)
-        int key = (int) Math.round(n * 10);
+        int key = numPhase();
 
         switch (key) {
             case 1 -> { // 0.1
@@ -264,11 +267,11 @@ public class Jeu extends JFrame {
             }
             case 11 -> { // 1.1
                 enigmeVerre.setCorpsExamine(true);
-                placerDans(U_SALON, decorsSalon, 1);
+                placerDans(U_SALON, decorsSalon, 0);
             }
             case 21 -> { // 2.1
                 marquerEnqueteSalonComplete();
-                placerDans(U_SALON, decorsSalon, 1);
+                placerDans(U_SALON, decorsSalon, 0);
             }
             case 31 -> { // 3.1
                 marquerEnqueteSalonComplete();
@@ -277,38 +280,34 @@ public class Jeu extends JFrame {
             }
             case 32 -> { // 3.2 - Ordinateur
                 preparerJusqua32();
-                placerDans(U_LOUIS, decorsLouis, 1);
+                placerDans(U_LOUIS, decorsLouis, 0);
             }
             case 33 -> { // 3.3 - Coupure courant
-                preparerJusqua32();
-                ordiLouisDeverr = true;
+                preparerJusqua33();
                 placerDans(U_LOUIS, decorsLouis, 1);
             }
             case 34 -> { // 3.4 - Portes logiques
-                preparerJusqua33();
-                placerDans(U_SALON, decorsSalon, 1);
+                preparerJusqua34();
+                placerDans(U_SALON, decorsSalon, 0);
             }
             case 35 -> { // 3.5 - Lumières
-                preparerJusqua33();
-                tableauElectriqueOk = true;
-                placerDans(U_SALON, decorsSalon, 1);
+                preparerJusqua35();
+                placerDans(U_SALON, decorsSalon, 0);
             }
             case 36 -> { // 3.6 - Discussion
-                preparerJusqua35();
-                placerDans(U_LOUIS, decorsLouis, 1);
+                preparerJusqua36();
+                placerDans(U_LOUIS, decorsLouis, 0);
             }
             case 37 -> { // 3.7 - Chimie
-                preparerJusqua35();
-                discussionLue = true;
+                preparerJusqua37();
                 placerDans(U_LOUIS, decorsLouis, 1);
             }
             case 41 -> { // 4.1 - Téléphone
-                preparerJusqua37();
+                preparerJusqua41();
                 placerDans(U_SALON, decorsSalon, 1);
             }
             case 42 -> { // 4.2 - Répondeur (cinématique)
                 preparerJusqua37();
-                telephoneDecroche = true;
                 placerDans(U_SALON, decorsSalon, 1);
             }
             case 43 -> { // 4.3 - Enquête SDB
@@ -317,7 +316,7 @@ public class Jeu extends JFrame {
             }
             case 51 -> { // 5.1 - Paul rentre (cinématique)
                 preparerJusqua43();
-                placerDans(U_SALON, decorsSalon, 1);
+                placerDans(U_SALON, decorsSalon, 0);
             }
             case 52 -> { // 5.2 - Chambre Jacques
                 preparerJusqua43();
@@ -337,6 +336,7 @@ public class Jeu extends JFrame {
             }
         }
         backgroundPanel.setNewImage(decorsActuels[indexDecor]);
+        repaint();
     }
 
     private void placerDans(String u, String[] decors, int idx) {
@@ -363,18 +363,34 @@ public class Jeu extends JFrame {
         preparerJusqua32();
         ordiLouisDeverr = true;
     }
+
+    private void preparerJusqua34(){
+        preparerJusqua32();
+        foundTableauElectrique = true;
+    }
+
     private void preparerJusqua35() {
-        preparerJusqua33();
-        tableauElectriqueOk = true;
+        preparerJusqua34();
         lumieresOk = true;
     }
-    private void preparerJusqua37() {
+
+    private void preparerJusqua36(){
         preparerJusqua35();
+        tableauElectriqueOk = true;
+    }
+
+    private void preparerJusqua37() {
+        preparerJusqua36();
         discussionLue = true;
+    }
+
+    private void preparerJusqua41(){
+        preparerJusqua37();
         livreChimieOuvert = true;
     }
+
     private void preparerJusqua42() {
-        preparerJusqua37();
+        preparerJusqua41();
         telephoneDecroche = true;
         repondeurEcoute = true;
     }
@@ -504,10 +520,12 @@ public class Jeu extends JFrame {
                 && enigmeVerre.survolentUnVerre(universActuel, indexDecor, clic, iw, ih)) {
             inter = true;
         }
-        if (!inter && universActuel.equals(U_SALON) && indexDecor == 1) {
-            if (numPhase() >= 34 && !tableauElectriqueOk) {
+        if (!inter && universActuel.equals(U_SALON) && indexDecor == 0) {
+            if (numPhase() >= 33 && !tableauElectriqueOk) {
                 if (zoneTableauElec(iw, ih).contains(clic)) inter = true;
             }
+        }
+        if (!inter && universActuel.equals(U_SALON) && indexDecor == 1) {
             if (numPhase() == 41 && !telephoneDecroche) {
                 if (zoneTelephone(iw, ih).contains(clic)) inter = true;
             }
@@ -524,9 +542,7 @@ public class Jeu extends JFrame {
         backgroundPanel.setSetCursorDirect(inter);
     }
 
-    /* ════════════════════════════════════════════════════════════════════════
-     *                           DIALOGUES & TEXTES
-     * ════════════════════════════════════════════════════════════════════════ */
+    /* ─── DIALOGUES & TEXTES ────────────────────────────────────────────────── */
 
     private void ouvrirDialogueLouisInitial() {
         dialogueActif = true;
@@ -576,9 +592,7 @@ public class Jeu extends JFrame {
         recalculerCurseurImmediat();
     }
 
-    /* ════════════════════════════════════════════════════════════════════════
-     *                       CLICS PAR PIÈCE/VUE
-     * ════════════════════════════════════════════════════════════════════════ */
+    /* ─── CLICS PAR PIÈCE/VUE ───────────────────────────────────────────────── */
 
     private void gererClicSalon0(Point clic, int iw, int ih) {
         // Phase 0.1 : examiner le corps
@@ -595,6 +609,13 @@ public class Jeu extends JFrame {
         if (numPhase() == 11 && !enigmeVerre.tousVerresTrouves()) {
             int id = enigmeVerre.obtenirIdVerreClique(universActuel, indexDecor, clic, iw, ih);
             if (id != -1) ouvrirDialogueVerre(id);
+        }
+
+        // Tableau électrique (phase 3.3+ disponible quand l'ordi vient de provoquer la coupure)
+        if (numPhase() >= 33 && !tableauElectriqueOk && zoneTableauElec(iw, ih).contains(clic)) {
+            if (numPhase() == 33) {avancerPhase(); foundTableauElectrique = true;}
+            lancerTableauElectrique();
+            return;
         }
     }
 
@@ -622,12 +643,6 @@ public class Jeu extends JFrame {
             return;
         }
 
-        // Tableau électrique (phase 3.3+ disponible quand l'ordi vient de provoquer la coupure)
-        if (numPhase() >= 33 && !tableauElectriqueOk && zoneTableauElec(iw, ih).contains(clic)) {
-            lancerTableauElectrique();
-            return;
-        }
-
         // Téléphone (phase 4.1)
         if (numPhase() == 41 && !telephoneDecroche && zoneTelephone(iw, ih).contains(clic)) {
             lancerEnigmeOndes();
@@ -636,33 +651,31 @@ public class Jeu extends JFrame {
     }
 
     private void gererClicLouis(Point clic, int iw, int ih) {
-        // Phase 3.2 : trouver le code (post-it sur décor 1) puis cliquer l'ordi (décor 0)
+        // Phase 3.2 : trouver le code (post-it sur décor 1) puis cliquer l'ordi (décor 0)[cite: 4]
         if (numPhase() == 32) {
-            if (indexDecor == 1) {
-                Rectangle postIt = new Rectangle((int)(iw * 0.40), (int)(ih * 0.55), (int)(iw * 0.15), (int)(ih * 0.10));
-                if (postIt.contains(clic) && !codeLouisTrouve) {
+            if (indexDecor == 0) {
+                if (zonePostIt(iw, ih).contains(clic) && !postItAffiche) {
                     codeLouisTrouve = true;
                     subStep = 1;
-                    afficherIndice("Un post-it sous le clavier : \"Quatre colocs te cherchent depuis six heures, mais à neuf heures, il n’en restera qu’un.\".");
+                    // Appel de la méthode existante pour afficher l'image en plein écran
+                    activerModeZoom("louis_post-it.jpg");
+                    postItAffiche = true; 
                     return;
+                }
+                if (zonePostItZoom(iw, ih).contains(clic) && postItAffiche){
+                    afficherIndice("Un post-it sur le mur : \"Quatre colocs te cherchent depuis six heures, mais à neuf heures, il n’en restera qu’un.\".");
                 }
             }
             if (indexDecor == 0) {
-                Rectangle ordi = new Rectangle((int)(iw * 0.45), (int)(ih * 0.40), (int)(iw * 0.20), (int)(ih * 0.25));
-                if (ordi.contains(clic)) {
-                    if (!codeLouisTrouve) {
-                        afficherInfo("L'ordinateur est verrouillé. Je dois d'abord trouver son code.");
-                    } else {
-                        lancerOrdiLouis();
-                    }
+                if (zoneOrdi(iw, ih).contains(clic) && !postItAffiche) {
+                    lancerOrdiLouis();
                     return;
                 }
             }
         }
         // Phase 3.6 : lire les discussions
         if (numPhase() == 36) {
-            Rectangle ordi = new Rectangle((int)(iw * 0.45), (int)(ih * 0.40), (int)(iw * 0.20), (int)(ih * 0.25));
-            if (indexDecor == 0 && ordi.contains(clic)) {
+            if (indexDecor == 0 && zoneOrdi(iw, ih).contains(clic)) {
                 ouvrirDialogueCustom(
                         "Une conversation est ouverte entre Louis et Pierre.",
                         "Louis : \"Tu ne peux pas continuer comme ça, Pierre.\"",
@@ -676,8 +689,7 @@ public class Jeu extends JFrame {
         }
         // Phase 3.7 : trouver et ouvrir le livre de chimie
         if (numPhase() == 37) {
-            Rectangle livre = new Rectangle((int)(iw * 0.10), (int)(ih * 0.55), (int)(iw * 0.12), (int)(ih * 0.10));
-            if (livre.contains(clic) && !livreChimieOuvert) {
+            if (zoneLivre(iw, ih).contains(clic) && !livreChimieOuvert) {
                 livreChimieOuvert = true;
                 ouvrirDialogueCustom(
                         "Un livre de chimie est posé sur le bureau de Louis.",
@@ -693,15 +705,11 @@ public class Jeu extends JFrame {
 
     private void gererClicJacques(Point clic, int iw, int ih) {
         if (numPhase() != 52) return;
-        // Sous-étapes :
-        //   subStep = 0 : (optionnel) lampe UV au plafond → indique tiroir 2
-        //   subStep = 1 : énigme boules pour déverrouiller le tiroir
-        //   subStep = 2 : récupérer la fiole vide
         Rectangle plafond = new Rectangle((int)(iw * 0.15), (int)(ih * 0.05), (int)(iw * 0.70), (int)(ih * 0.18));
         Rectangle tiroir  = new Rectangle((int)(iw * 0.30), (int)(ih * 0.55), (int)(iw * 0.18), (int)(ih * 0.15));
         Rectangle fiole   = new Rectangle((int)(iw * 0.32), (int)(ih * 0.58), (int)(iw * 0.14), (int)(ih * 0.10));
 
-        if (!uvSurPlafondJacques && lampeUVRamassee && plafond.contains(clic) && subStep == 0) {
+        if (lampeUVRamassee && plafond.contains(clic) && subStep == 0) {
             lancerUVLamp();
             return;
         }
@@ -736,9 +744,7 @@ public class Jeu extends JFrame {
         }
     }
 
-    /* ════════════════════════════════════════════════════════════════════════
-     *                      ACCESSIBILITÉ DES PIÈCES
-     * ════════════════════════════════════════════════════════════════════════ */
+    /* ─── ACCESSIBILITÉ DES PIÈCES ──────────────────────────────────────────── */
 
     private void tenterAller(String u, String[] decors) {
         if (!peutAcceder(u)) {
@@ -749,14 +755,12 @@ public class Jeu extends JFrame {
     }
 
     private void tenterAllerLouis() {
-        // Avant 3.1 → message + autorisé si on a déjà résolu le cadran
         int n = numPhase();
         if (n < 31) {
             afficherInfo("La chambre de Louis doit contenir des indices...");
             return;
         }
         if (n == 31) {
-            // déclenche l'énigme cadran rotatif
             lancerCadranRotatif();
             return;
         }
@@ -772,13 +776,13 @@ public class Jeu extends JFrame {
             case U_PIERRE -> { return n >= 21; }
             case U_LOUIS  -> {
                 if (n < 31) return false;
-                if (n == 31) return false; // doit passer par cadran
+                if (n == 31) return false; 
                 return true;
             }
             case U_JACQUES -> { return n >= 51; }
             case U_BATH    -> {
                 if (n < 41) return false;
-                if (n == 41) return false; // téléphone sonne, plus tard
+                if (n == 41) return false; 
                 if (n == 42) return false;
                 return true;
             }
@@ -799,7 +803,7 @@ public class Jeu extends JFrame {
                 if (n == 31) return "Je dois d'abord déverrouiller la porte...";
             }
             case U_JACQUES -> {
-                if (n < 51) return "Voyons d'abord ce que cache Pierre..."; // texte générique
+                if (n < 51) return "Voyons d'abord ce que cache Pierre..."; 
             }
             case U_BATH -> {
                 if (n == 41) return "Le téléphone sonne, j'y enquêterai plus tard...";
@@ -810,9 +814,7 @@ public class Jeu extends JFrame {
         return "Pas maintenant.";
     }
 
-    /* ════════════════════════════════════════════════════════════════════════
-     *                  LANCEMENTS DES ÉNIGMES (par phase)
-     * ════════════════════════════════════════════════════════════════════════ */
+    /* ─── LANCEMENTS DES ÉNIGMES (par phase) ────────────────────────────────── */
 
     private Window dialogParent() {
         Window w = SwingUtilities.getWindowAncestor(backgroundPanel);
@@ -826,9 +828,6 @@ public class Jeu extends JFrame {
         btnGauche.setVisible(false);
         btnDroite.setVisible(false);
         backgroundPanel.repaint();
-
-        // Quand tous les verres sont trouvés ET on est en phase 1.1 → enigme empreintes (subStep 0→1)
-        // Le lancement effectif se fait à la sortie du dialogue (cf. avancerDialogue).
     }
 
     private void lancerEnigmeEmpreintes() {
@@ -839,6 +838,7 @@ public class Jeu extends JFrame {
         modeEnigmeActive = false;
         if (ui.isReussite()) {
             subStep = 0;
+            ui = null;
             afficherInfo("Empreinte de Pierre confirmée. Direction sa chambre !");
             avancerPhase(); // 1.1 → 2.1
         }
@@ -852,8 +852,9 @@ public class Jeu extends JFrame {
         modeEnigmeActive = false;
         if (ui.isReussite()) {
             avancerPhase(); // 3.1 → 3.2
+            ui = null;
             transitionner(U_LOUIS, decorsLouis);
-            indexDecor = 1; // regard opposé à la porte
+            indexDecor = 1; 
             backgroundPanel.setNewImage(decorsActuels[indexDecor]);
             mettreAJourTexteChambre();
         }
@@ -867,31 +868,30 @@ public class Jeu extends JFrame {
         modeEnigmeActive = false;
         if (ui.isReussite()) {
             ordiLouisDeverr = true;
-            afficherInfo("Vous êtes connecté à la session de Louis. Mais soudain... [COUPURE !]");
+            ui = null;
             avancerPhase(); // 3.2 → 3.3
-            // déclenche tableau électrique (cinématique : retour salon)
-            transitionner(U_SALON, decorsSalon);
-            indexDecor = 1;
-            backgroundPanel.setNewImage(decorsActuels[indexDecor]);
-            mettreAJourTexteChambre();
-            avancerPhase(); // 3.3 → 3.4 (le simple fait de trouver le tableau est cette étape)
+            afficherAvertissement("Vous êtes connecté à la session de Louis. Mais soudain... Le courant est coupé.", "Coupure de courant");
         }
         rafraichirAffichage();
     }
 
     private void lancerTableauElectrique() {
         modeEnigmeActive = true;
-        LogicGateUI ui = new LogicGateUI(dialogParent(), this.save);
-        ui.setVisible(true);
+        LogicGateUI ui = null;
+        if (numPhase() == 34){
+            ui = new LogicGateUI(dialogParent(), this.save);
+            ui.setVisible(true);
+        }
         modeEnigmeActive = false;
-        if (ui.isReussite()) {
-            // 3.4 → 3.5 : enchaîne directement sur lumières
-            avancerPhase();
+        if (numPhase() == 35 || (ui != null && ui.isReussite())) {
+            if (numPhase() == 34) avancerPhase(); // 3.4 → 3.5
+            ui = null;
             MovingLightsUI ui2 = new MovingLightsUI(dialogParent(), this.save);
             modeEnigmeActive = true;
             ui2.setVisible(true);
             modeEnigmeActive = false;
             if (ui2.isReussite()) {
+                ui2 = null;
                 tableauElectriqueOk = true;
                 lumieresOk = true;
                 afficherInfo("Le courant est rétabli !");
@@ -911,8 +911,9 @@ public class Jeu extends JFrame {
         ui.setVisible(true);
         modeEnigmeActive = false;
         if (ui.isReussite()) {
+            ui = null;
             telephoneDecroche = true;
-            avancerPhase(); // 4.1 → 4.2 (répondeur cinématique)
+            avancerPhase(); // 4.1 → 4.2 
             ouvrirDialogueCustom(
                     "Vous décrochez. C'est un message vocal en différé.",
                     "Jacques : \"Paul t'en veux, on en parle quand je serai rentré.\"",
@@ -920,7 +921,6 @@ public class Jeu extends JFrame {
                     "Direction la salle de bain."
             );
             avancerPhase(); // 4.2 → 4.3
-            // Téléportation salle de bain par sécurité après le dialogue (gérée par avancerDialogue)
         }
         rafraichirAffichage();
     }
@@ -930,7 +930,6 @@ public class Jeu extends JFrame {
         UVLampUI ui = new UVLampUI(dialogParent());
         ui.setVisible(true);
         modeEnigmeActive = false;
-        uvSurPlafondJacques = true;
         rafraichirAffichage();
     }
 
@@ -940,6 +939,7 @@ public class Jeu extends JFrame {
         ui.setVisible(true);
         modeEnigmeActive = false;
         if (ui.isReussite()) {
+            ui = null;
             tiroirJacquesOuvert = true;
             afficherInfo("Le tiroir s'ouvre. Une fiole vide est dissimulée à l'intérieur...");
         }
@@ -955,12 +955,10 @@ public class Jeu extends JFrame {
                 "Vous comprenez. C'est vous qui l'avez fait.",
                 "Le silence retombe."
         );
-        avancerPhase(); // 6.1 → 7.1 (crédits) — déclenchée à la fin du dialogue
+        avancerPhase(); // 6.1 → 7.1 (crédits)
     }
 
-    /* ════════════════════════════════════════════════════════════════════════
-     *                       OUTILLAGE / NAVIGATION
-     * ════════════════════════════════════════════════════════════════════════ */
+    /* ─── OUTILLAGE / NAVIGATION ────────────────────────────────────────────── */
 
     public void activerModeZoom(String imageZoom) {
         btnGauche.setVisible(false);
@@ -975,13 +973,15 @@ public class Jeu extends JFrame {
         btnQuitterZoom.setVisible(false);
         btnGauche.setVisible(true);
         btnDroite.setVisible(true);
-        decorsActuels = pierreManager.obtenirDecorsPierre();
+        //decorsActuels = pierreManager.obtenirDecorsPierre();
         backgroundPanel.setNewImage(decorsActuels[indexDecor]);
         recalculerCurseurImmediat();
+        if (postItAffiche){
+            postItAffiche = false; 
+        }
     }
 
     private void naviguerDecor(int dir) {
-        // Bloquer la navigation tant que le corps n'a pas été examiné
         if (!enigmeVerre.isCorpsExamine() && universActuel.equals(U_SALON) && indexDecor == 0) {
             if (dir > 0) txtExplicatif.setText("Je devrais d'abord aller voir ce qu'a Louis sur le canapé...");
             return;
@@ -1014,12 +1014,10 @@ public class Jeu extends JFrame {
     }
 
     private void promptChangePhase() {
-        // 1. Vérification des conditions ADMIN et SAVE
         if (this.save != null && 
             "ADMIN".equals(this.save.getUsername()) && 
             "TESTER_PHASES".equals(this.save.getSavename())) {
 
-            // 2. Création de l'interface de saisie
             String input = JOptionPane.showInputDialog(
                 this, 
                 "Mode Admin - Entrez le numéro de phase (format X.X) :", 
@@ -1027,13 +1025,10 @@ public class Jeu extends JFrame {
                 JOptionPane.QUESTION_MESSAGE
             );
 
-            // 3. Traitement de la saisie
             if (input != null && input.matches("\\d+\\.\\d+")) {
-                // Conversion en Double pour correspondre à la méthode de la classe Phase
                 int newIndex = Phase.getIndex(Double.parseDouble(input));
                 
                 if (newIndex != -1) {
-                    // Application réelle du changement de phase dans le jeu
                     this.phase.change(Phase.getAllPhases()[newIndex]); 
                     this.save.setPhase(this.phase.getNumero());
                     this.save.save();
@@ -1044,7 +1039,7 @@ public class Jeu extends JFrame {
                     restaurerEtatProgression();
                     mettreAJourTexteChambre();
                     rafraichirAffichage();
-                    this.repaint(); // Rafraîchir l'affichage du jeu
+                    this.repaint(); 
                 } else {
                     JOptionPane.showMessageDialog(this, "Erreur : Phase '" + input + "' introuvable.", "Erreur", JOptionPane.ERROR_MESSAGE);
                 }
@@ -1070,6 +1065,9 @@ public class Jeu extends JFrame {
     private void afficherInfo(String msg) {
         if (txtExplicatif != null) txtExplicatif.setText(msg);
         else JOptionPane.showMessageDialog(this, msg, "Info", JOptionPane.INFORMATION_MESSAGE);
+    }
+    private void afficherAvertissement(String msg, String title){
+        JOptionPane.showMessageDialog(this, msg, title, JOptionPane.WARNING_MESSAGE);
     }
 
     private void notifierChangementCurseur(boolean surElementInteractif) {
@@ -1108,23 +1106,39 @@ public class Jeu extends JFrame {
     /* ─── Zones d'interaction utilitaires ─────────────────────────────────── */
 
     private Rectangle zoneTableauElec(int iw, int ih) {
-        return new Rectangle((int)(iw * 0.78), (int)(ih * 0.30), (int)(iw * 0.10), (int)(ih * 0.18));
+        return new Rectangle((int)(iw * 0.79), (int)(ih * 0.155), (int)(iw * 0.083), (int)(ih * 0.116));
     }
 
     private Rectangle zoneTelephone(int iw, int ih) {
-        return new Rectangle((int)(iw * 0.66), (int)(ih * 0.55), (int)(iw * 0.07), (int)(ih * 0.10));
+        return new Rectangle((int)(iw * 0.595), (int)(ih * 0.418), (int)(iw * 0.02), (int)(ih * 0.023));
+    }
+
+    private Rectangle zoneOrdi(int iw, int ih) {
+        return new Rectangle((int)(iw * 0.576), (int)(ih * 0.32), (int)(iw * 0.152), (int)(ih * 0.189));
+    }
+
+    private Rectangle zonePostIt(int iw, int ih) {
+        return new Rectangle((int)(iw * 0.610), (int)(ih * 0.148), (int)(iw * 0.06), (int)(ih * 0.132));
+    }
+
+    private Rectangle zonePostItZoom(int iw, int ih){
+        return new Rectangle((int)(iw * 0.386), (int)(ih * 0.147), (int)(iw * 0.238), (int)(ih * 0.372));
+    }
+
+    private Rectangle zoneLivre(int iw, int ih){
+        return new Rectangle((int)(iw * 0.63), (int)(ih * 0.356), (int)(iw * 0.014), (int)(ih * 0.132));
     }
 
     private boolean zoneLouisInter(Point clic, int iw, int ih) {
         int n = numPhase();
-        if (n == 32 && indexDecor == 1) {
-            return new Rectangle((int)(iw * 0.40), (int)(ih * 0.55), (int)(iw * 0.15), (int)(ih * 0.10)).contains(clic);
+        if (n == 32 && indexDecor == 0) {
+            return (zonePostIt(iw, ih).contains(clic) && !postItAffiche) || (zonePostItZoom(iw, ih).contains(clic) && postItAffiche) || zoneOrdi(iw, ih).contains(clic); // Post-it et Post-it gros plan
         }
         if ((n == 32 || n == 36) && indexDecor == 0) {
-            return new Rectangle((int)(iw * 0.45), (int)(ih * 0.40), (int)(iw * 0.20), (int)(ih * 0.25)).contains(clic);
+            return zoneOrdi(iw, ih).contains(clic);
         }
-        if (n == 37 && indexDecor == 0) {
-            return new Rectangle((int)(iw * 0.10), (int)(ih * 0.55), (int)(iw * 0.12), (int)(ih * 0.10)).contains(clic);
+        if (n == 37 && indexDecor == 1) {
+            return zoneLivre(iw, ih).contains(clic);
         }
         return false;
     }
@@ -1143,11 +1157,8 @@ public class Jeu extends JFrame {
         return (lampe.contains(clic) && !lampeUVRamassee) || (serviettes.contains(clic) && !serviettesVues);
     }
 
-    /* ════════════════════════════════════════════════════════════════════════
-     *                            MINI-MAP & RENDU
-     * ════════════════════════════════════════════════════════════════════════ */
+    /* ─── MINI-MAP & RENDU ──────────────────────────────────────────────────── */
 
-    /** Rectangles de la mini-map en coords absolues du backgroundPanel. */
     private Rectangle[] miniMapRects = new Rectangle[7];
     private final String[] miniMapUnivers = { U_PIERRE, U_LOUIS, U_BATH, U_JACQUES, U_SALON, U_THOMAS, U_PAUL };
 
@@ -1161,7 +1172,7 @@ public class Jeu extends JFrame {
             Rectangle r = miniMapRects[i];
             if (r != null && r.contains(p)) {
                 String cible = miniMapUnivers[i];
-                if (cible.equals(universActuel)) return true; // déjà ici
+                if (cible.equals(universActuel)) return true; 
                 if (cible.equals(U_PIERRE))   tenterAller(U_PIERRE, pierreManager.obtenirDecorsPierre());
                 else if (cible.equals(U_LOUIS))   tenterAllerLouis();
                 else if (cible.equals(U_JACQUES)) tenterAller(U_JACQUES, decorsJacques);
@@ -1188,8 +1199,8 @@ public class Jeu extends JFrame {
             progr = "  |  Fouille l'appartement : Trouvez les 5 verres rouges (" + enigmeVerre.compterVerresTrouves() + "/5)";
         }
         switch (universActuel) {
-            case U_SALON   -> txtExplicatif.setText(indexDecor == 0 ? "Le Salon - Cuisine" + progr : "Le Salon - Les Portes" + progr);
-            case U_PIERRE  -> txtExplicatif.setText(pierreManager.getModeZoom().equals("AUCUN") ? "Chambre de Pierre" + progr : "Chambre de Pierre - [Zoom Actif]");
+            case U_SALON   -> txtExplicatif.setText("Salon" + progr);
+            case U_PIERRE  -> txtExplicatif.setText("Chambre de Pierre" + progr);
             case U_LOUIS   -> txtExplicatif.setText("Chambre de Louis" + progr);
             case U_JACQUES -> txtExplicatif.setText("Chambre de Jacques" + progr);
             case U_BATH    -> txtExplicatif.setText("Salle de bain" + progr);
@@ -1197,9 +1208,7 @@ public class Jeu extends JFrame {
         }
     }
 
-    /* ════════════════════════════════════════════════════════════════════════
-     *                      Panneau de fond (rendu général)
-     * ════════════════════════════════════════════════════════════════════════ */
+    /* ─── Panneau de fond (rendu général) ─────────────────────────────────── */
 
     class BackgroundPanel extends JPanel {
         private Image backgroundImage;
@@ -1218,6 +1227,11 @@ public class Jeu extends JFrame {
         public void setNewImage(String path) {
             placeholderMode = path != null && path.startsWith("__") && path.endsWith("__");
             placeholderTag = placeholderMode ? path : "";
+
+            if (backgroundImage != null) {
+                backgroundImage.flush(); // Force la libération des ressources mémoire de l'ancienne image
+            }
+
             if (placeholderMode) {
                 backgroundImage = null;
                 imgWidthOriginal  = 800;
@@ -1312,9 +1326,7 @@ public class Jeu extends JFrame {
             g.setColor(new Color(220, 220, 230));
             g.drawString(sousTitre, r.x + 40, r.y + 120);
 
-            // Petits éléments pour SDB
             if (tag.startsWith("__SDB")) {
-                // Lampe UV (cliquable)
                 int lx = r.x + (int)(r.width * 0.10);
                 int ly = r.y + (int)(r.height * 0.30);
                 int lw = (int)(r.width * 0.15);
@@ -1324,7 +1336,7 @@ public class Jeu extends JFrame {
                 g.setColor(Color.WHITE);
                 g.setFont(new Font("SansSerif", Font.BOLD, 14));
                 g.drawString(lampeUVRamassee ? "Lampe UV (prise)" : "Lampe UV", lx + 10, ly + lh / 2);
-                // Serviettes
+                
                 int sx = r.x + (int)(r.width * 0.55);
                 int sy = r.y + (int)(r.height * 0.40);
                 int sw = (int)(r.width * 0.25);

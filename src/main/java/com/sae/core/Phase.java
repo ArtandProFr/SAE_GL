@@ -96,6 +96,7 @@ public class Phase {
         int i = 0;
         for (Phase p : TOUTES_LES_PHASES){
             if (p.numero == num) return TOUTES_LES_PHASES[i];
+            i++;
         }
         return null;
     }

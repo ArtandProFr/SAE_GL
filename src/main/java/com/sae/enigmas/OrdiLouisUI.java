@@ -22,7 +22,8 @@ public class OrdiLouisUI extends EnigmaDialog {
 
     private static final int W = 540;
     private static final int H = 360;
-    public  static final String CODE_LOUIS = "4791";
+    public  static final String CODE_LOUIS = "4691";
+    private String difficulty;
 
     private final JTextField field;
     private final Rectangle btnValider = new Rectangle(W/2 - 90, 230, 180, 40);
@@ -30,6 +31,7 @@ public class OrdiLouisUI extends EnigmaDialog {
     public OrdiLouisUI(Window parent, Save save) {
         super(parent, "Ordinateur de Louis - Verrouillé", W, H);
 
+        this.difficulty = save.getDifficulty();
         field = new JTextField();
         field.setBounds(W/2 - 100, 170, 200, 38);
         field.setFont(new Font("Monospaced", Font.BOLD, 22));
@@ -84,7 +86,9 @@ public class OrdiLouisUI extends EnigmaDialog {
         g.setFont(new Font("Monospaced", Font.BOLD, 16));
         g.drawString("Louis@INSA:~$ login --code", 50, 70);
         g.drawString("> ENTRER LE CODE D'ACCÈS...", 50, 100);
-        g.drawString("> Indice : post-it sous le clavier", 50, 130);
+        if (this.difficulty.equals("Easy")){
+            g.drawString("> Indice : post-it", 50, 130);
+        }
 
         // Bouton valider
         g.setColor(new Color(41, 128, 185));
