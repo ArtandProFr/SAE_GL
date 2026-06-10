@@ -1,6 +1,7 @@
 package com.sae.enigmas;
 
-import java.awt.*;
+import java.awt.Point;
+import java.awt.Rectangle;
 
 public class ChambrePierreManager {
 
@@ -111,7 +112,10 @@ public class ChambrePierreManager {
         return false;
     }
 
-    public void quitterZoom() {
+    public void quitterZoom(com.sae.game.Jeu jeu) {
+        if (this.modeZoom.equals("ARMOIRE")){
+            jeu.debugVisuelArmoire();
+        }
         this.modeZoom = "AUCUN";
     }
 

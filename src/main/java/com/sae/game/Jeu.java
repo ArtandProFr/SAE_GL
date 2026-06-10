@@ -409,6 +409,10 @@ public class Jeu extends JFrame {
      *                          GESTION DE LA SOURIS
      * ════════════════════════════════════════════════════════════════════════ */
 
+    public void debugVisuelArmoire(){
+        transitionner(U_PIERRE, pierreManager.obtenirDecorsPierre(), 1);
+    }
+
     private void gererClicSouris(MouseEvent e) {
         Rectangle imgBounds = backgroundPanel.getImageBounds();
         int iw = imgBounds.width;
@@ -435,7 +439,7 @@ public class Jeu extends JFrame {
             if (numPhase() == 21 && pierreManager.getModeZoom().equals("ARMOIRE")) {
                 Rectangle zoneFiole = new Rectangle((int)(iw * 0.46), (int)(ih * 0.35),
                         (int)(iw * 0.08), (int)(ih * 0.22));
-                if (zoneFiole.contains(clic)) avancerPhase();
+                if (zoneFiole.contains(clic)) { avancerPhase(); }
             }
             return;
         }
@@ -854,7 +858,7 @@ public class Jeu extends JFrame {
             avancerPhase(); // 3.1 → 3.2
             ui = null;
             transitionner(U_LOUIS, decorsLouis);
-            indexDecor = 1; 
+            indexDecor = 0; 
             backgroundPanel.setNewImage(decorsActuels[indexDecor]);
             mettreAJourTexteChambre();
         }
@@ -976,7 +980,7 @@ public class Jeu extends JFrame {
     }
 
     private void desactiverModeZoom() {
-        pierreManager.quitterZoom();
+        pierreManager.quitterZoom(this);
         btnQuitterZoom.setVisible(false);
         btnGauche.setVisible(true);
         btnDroite.setVisible(true);
@@ -1101,13 +1105,17 @@ public class Jeu extends JFrame {
         return new Point(p.x - imgBounds.x, p.y - imgBounds.y);
     }
 
-    private void transitionner(String u, String[] decors) {
+    private void transitionner(String u, String[] decors, int indexDecor) {
         universActuel = u;
         decorsActuels = decors;
-        indexDecor = 0;
+        this.indexDecor = indexDecor;
         backgroundPanel.setNewImage(decorsActuels[indexDecor]);
         mettreAJourTexteChambre();
         recalculerCurseurImmediat();
+    }
+
+    private void transitionner(String u, String[] decors) {
+        transitionner(u, decors, 0);
     }
 
     /* ─── Zones d'interaction utilitaires ─────────────────────────────────── */
@@ -1198,12 +1206,12 @@ public class Jeu extends JFrame {
     private void mettreAJourTexteChambre() {
         if (txtExplicatif == null) return;
         if (!enigmeVerre.isCorpsExamine() && universActuel.equals(U_SALON) && indexDecor == 0) {
-            txtExplicatif.setText("Le Salon | Louis est allongé sur le canapé... Il ne bouge plus.");
+            txtExplicatif.setText("Salon | Louis est allongé sur le canapé... Il ne bouge plus.");
             return;
         }
         String progr = "  |  " + this.phase.getDescription();
         if (enigmeVerre.isCorpsExamine() && numPhase() == 11 && !enigmeVerre.tousVerresTrouves()) {
-            progr = "  |  Fouille l'appartement : Trouvez les 5 verres rouges (" + enigmeVerre.compterVerresTrouves() + "/5)";
+            progr = "  |  Fouille l'appartement : Trouve les 5 verres rouges (" + enigmeVerre.compterVerresTrouves() + "/5)";
         }
         switch (universActuel) {
             case U_SALON   -> txtExplicatif.setText("Salon" + progr);
