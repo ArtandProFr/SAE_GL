@@ -21,20 +21,21 @@ import com.sae.core.Save;
  * <p>
  * Difficultés :
  * <ul>
- *   <li><b>Easy</b>   : 1 onde sinusoïdale, 2 potards (amplitude + phase).</li>
- *   <li><b>Normal</b> : 3 ondes affichées séparément, chacune composée
- *       (sinus + dent-de-scie / triangle / carré). Pour chaque onde, 2-3
- *       potards (amplitude des sous-ondes, phase commune). Les fréquences des
- *       sous-ondes au sein d'une même onde sont identiques.</li>
- *   <li><b>Hard</b>   : 1 onde affichée, mais composée de plusieurs sous-ondes
- *       avec des fréquences/phases <i>indépendantes</i>. Tous les potards
- *       modifient cette unique onde résultante.</li>
+ * <li><b>Easy</b>   : 1 onde sinusoïdale, 2 potards (amplitude + phase).</li>
+ * <li><b>Normal</b> : 3 ondes affichées séparément, chacune composée
+ * (sinus + dent-de-scie / triangle / carré). Pour chaque onde, 2-3
+ * potards (amplitude des sous-ondes, phase commune). Les fréquences des
+ * sous-ondes au sein d'une même onde sont identiques.</li>
+ * <li><b>Hard</b>   : 1 onde affichée, mais composée de plusieurs sous-ondes
+ * avec des fréquences/phases <i>indépendantes</i>. Tous les potards
+ * modifient cette unique onde résultante.</li>
  * </ul>
  */
 public class OndesUI extends EnigmaDialog {
 
     private static final int W = 960;
-    private static final int H = 660;
+    private static final int H = 730;      // Dimension réelle de la fenêtre
+    private static final int H_JEU = 660;  // Hauteur virtuelle max pour remonter les composants
 
     /* ─── Modèle des sous-ondes ────────────────────────────────────────────── */
 
@@ -99,7 +100,8 @@ public class OndesUI extends EnigmaDialog {
     /** Pour chaque potard, la valeur cible que le joueur doit retrouver. */
     private final List<Double> knobsTarget = new ArrayList<>();
 
-    private final Rectangle btnTest = new Rectangle(W / 2 - 110, H - 60, 220, 38);
+    // Remonté à Y = 610 pour être pile au-dessus du bandeau noir d'EnigmaDialog
+    private final Rectangle btnTest = new Rectangle(W / 2 - 110, H_JEU - 82, 220, 38);
     private final String difficulte;
     private double timeAnim = 0; // pour effet visuel léger
 
@@ -123,7 +125,6 @@ public class OndesUI extends EnigmaDialog {
     }
 
     private void construireEasy() {
-        // 1 onde sinus. Cible : amp ∈ [1..4], phase ∈ [-π..π]
         Wave target = new Wave();
         double tAmp   = round1(1 + Math.random() * 3);
         double tPhase = round1((Math.random() * 2 - 1) * Math.PI);
@@ -141,18 +142,14 @@ public class OndesUI extends EnigmaDialog {
     }
 
     private void construireNormal() {
-        // 3 ondes composites séparées. Au sein d'une onde, la sous-onde 2 est
-        // une HARMONIQUE de la sous-onde 1 (fréquence multiple : 2f ou 3f).
-        // Visuellement, le motif est facile à reconnaître.
         Shape[] formes  = { Shape.SAW, Shape.TRI, Shape.SQUARE };
-        int[]   harmons = { 2,         3,         2           };
+        int[]   harmons = { 2,         3,         2            };
         for (int i = 0; i < 3; i++) {
             Shape sub2 = formes[i];
             int harm   = harmons[i];
-            double f1  = 1.0 + i * 0.5;       // 1.0, 1.5, 2.0 Hz
-            double f2  = f1 * harm;            // harmonique exacte
+            double f1  = 1.0 + i * 0.5;
+            double f2  = f1 * harm;
 
-            // Cible
             Wave tgt = new Wave();
             double tA1 = round1(0.5 + Math.random() * 2.5);
             double tA2 = round1(0.5 + Math.random() * 2.0);
@@ -161,7 +158,6 @@ public class OndesUI extends EnigmaDialog {
             tgt.subs.add(new Subwave(tA2, f2, tPh, sub2));
             cibleWaves.add(tgt);
 
-            // Joueur
             Wave pl = new Wave();
             pl.subs.add(new Subwave(1.0, f1, 0.0, Shape.SIN));
             pl.subs.add(new Subwave(1.0, f2, 0.0, sub2));
@@ -174,7 +170,6 @@ public class OndesUI extends EnigmaDialog {
             knobs.add(new Knob(pl, 0, "phase", "φ" + (i+1),            0.1, -Math.PI, Math.PI) {
                 @Override void set(double v) {
                     super.set(v);
-                    // Phase commune : également appliquée à la sous-onde 2
                     wave.subs.get(1).phase = v;
                 }
             });
@@ -187,7 +182,6 @@ public class OndesUI extends EnigmaDialog {
     }
 
     private void construireHard() {
-        // 1 seule onde rendue à l'écran ; composée de 3 sous-ondes indépendantes.
         Wave target = new Wave();
         double f1 = round1(0.7 + Math.random() * 0.6);
         double f2 = round1(1.5 + Math.random() * 0.6);
@@ -209,7 +203,6 @@ public class OndesUI extends EnigmaDialog {
         pl.subs.add(new Subwave(1.0, f3, 0.0, Shape.TRI));
         joueurWaves.add(pl);
 
-        // 6 potards : amp + phase pour chacune des 3 sous-ondes
         Object[][] cfg = {
                 {0, "amp",   "A sin",  tA1},
                 {0, "phase", "φ sin",  tP1},
@@ -234,11 +227,11 @@ public class OndesUI extends EnigmaDialog {
     /* ─── Mise en page des potards ─────────────────────────────────────────── */
 
     private void layoutKnobs() {
-        // Bandeau du bas : aligne les potards horizontalement
         int n = knobs.size();
         int totalW = W - 80;
         int slot = totalW / n;
-        int y = H - 170;
+        // Aligné par rapport à la hauteur virtuelle de 660 au lieu de 730
+        int y = H_JEU - 170; 
         for (int i = 0; i < n; i++) {
             Knob k = knobs.get(i);
             int cx = 40 + i * slot + slot / 2;
@@ -261,12 +254,11 @@ public class OndesUI extends EnigmaDialog {
     }
 
     private void tenter() {
-        // Comparaison par potard avec une tolérance proportionnelle à l'amplitude du pas
         boolean ok = true;
         for (int i = 0; i < knobs.size(); i++) {
             Knob k = knobs.get(i);
             double tgt = knobsTarget.get(i);
-            double tol = ("phase".equals(k.param)) ? 0.2 : 0.2;
+            double tol = 0.2;
             double err = (k.param.equals("phase"))
                     ? Math.abs(angleDelta(k.get(), tgt))
                     : Math.abs(k.get() - tgt);
@@ -305,15 +297,15 @@ public class OndesUI extends EnigmaDialog {
 
     @Override
     protected void paintEnigme(Graphics2D g, int w, int h) {
-        // 1) Oscilloscopes selon la difficulté
-        int scopeTop = 30, scopeBot = H - 200;
+        // 1) Oscilloscopes calés sur la hauteur virtuelle H_JEU (660)
+        int scopeTop = 30, scopeBot = H_JEU - 200;
         if (cibleWaves.size() == 1) {
             renderScope(g, 30, scopeTop, w - 60, scopeBot - scopeTop, cibleWaves.get(0), joueurWaves.get(0), "Signal");
         } else {
             int nW = cibleWaves.size();
             int slot = (w - 30 - 30 * (nW + 1)) / nW;
             for (int i = 0; i < nW; i++) {
-                int x = 30 + i * (slot + 30) + 30 * 0; // padding
+                int x = 30 + i * (slot + 30);
                 renderScope(g, x, scopeTop, slot, scopeBot - scopeTop,
                         cibleWaves.get(i), joueurWaves.get(i), "Onde " + (i + 1));
             }
@@ -322,7 +314,7 @@ public class OndesUI extends EnigmaDialog {
         // 2) Bandeau des potards
         for (Knob k : knobs) drawKnob(g, k);
 
-        // 3) Bouton tester
+        // 3) Bouton tester (Placé à Y = 610, juste au-dessus du bandeau noir)
         g.setColor(new Color(46, 204, 113));
         g.fillRoundRect(btnTest.x, btnTest.y, btnTest.width, btnTest.height, 14, 14);
         g.setStroke(new BasicStroke(2));
@@ -333,35 +325,31 @@ public class OndesUI extends EnigmaDialog {
         int tw = g.getFontMetrics().stringWidth(t);
         g.drawString(t, btnTest.x + (btnTest.width - tw) / 2, btnTest.y + 24);
 
-        // Légende
+        // Légende remontée légèrement pour laisser la place au bouton vert
         g.setFont(new Font("SansSerif", Font.PLAIN, 11));
         g.setColor(new Color(231, 76, 60));
-        g.drawString("● Cible", 40, H - 80);
+        g.drawString("● Cible", 40, H_JEU - 95);
         g.setColor(new Color(52, 152, 219));
-        g.drawString("● Vous", 110, H - 80);
+        g.drawString("● Vous", 110, H_JEU - 95);
         g.setColor(new Color(180, 185, 195));
-        g.drawString("Difficulté : " + difficulte + "  —  " + knobs.size() + " potard(s)", 200, H - 80);
+        g.drawString("Difficulté : " + difficulte + "  —  " + knobs.size() + " potard(s)", 200, H_JEU - 95);
     }
 
     private void renderScope(Graphics2D g, int x, int y, int wB, int hB, Wave tgt, Wave plr, String titre) {
-        // Cadre
         g.setColor(new Color(22, 24, 30));
         g.fillRoundRect(x, y, wB, hB, 12, 12);
         g.setColor(new Color(60, 70, 85));
         g.setStroke(new BasicStroke(2));
         g.drawRoundRect(x, y, wB, hB, 12, 12);
-        // Quadrillage
         g.setColor(new Color(50, 55, 65));
         g.setStroke(new BasicStroke(1));
         for (int i = 1; i < 8; i++) g.drawLine(x + i * wB / 8, y, x + i * wB / 8, y + hB);
         g.drawLine(x, y + hB / 2, x + wB, y + hB / 2);
 
-        // Ondes
         double tStart = 0, tEnd = 4 * Math.PI;
         drawWave(g, plr, x, y, wB, hB, tStart, tEnd, new Color(52, 152, 219));
         drawWave(g, tgt, x, y, wB, hB, tStart, tEnd, new Color(231, 76, 60, 220));
 
-        // Titre
         g.setColor(new Color(220, 220, 220));
         g.setFont(new Font("SansSerif", Font.BOLD, 12));
         g.drawString(titre, x + 8, y + 16);
@@ -371,11 +359,10 @@ public class OndesUI extends EnigmaDialog {
                            double tStart, double tEnd, Color col) {
         Path2D.Double path = new Path2D.Double();
         double maxAmp = (hB / 2.0) - 8;
-        // Normalisation : on borne max
         for (int i = 0; i <= wB; i++) {
             double t = tStart + (tEnd - tStart) * i / wB;
             double v = w.sample(t);
-            double norm = Math.max(-3.5, Math.min(3.5, v)) / 3.5; // normalisation douce
+            double norm = Math.max(-3.5, Math.min(3.5, v)) / 3.5;
             double yy = y + hB / 2.0 - norm * maxAmp;
             if (i == 0) path.moveTo(x + i, yy);
             else        path.lineTo(x + i, yy);
@@ -386,7 +373,6 @@ public class OndesUI extends EnigmaDialog {
     }
 
     private void drawKnob(Graphics2D g, Knob k) {
-        // ↓
         g.setColor(new Color(58, 65, 80));
         g.fillRoundRect(k.btnDown.x, k.btnDown.y, k.btnDown.width, k.btnDown.height, 10, 10);
         g.setColor(new Color(110, 120, 140));
@@ -395,19 +381,19 @@ public class OndesUI extends EnigmaDialog {
         g.setColor(Color.WHITE);
         g.setFont(new Font("SansSerif", Font.BOLD, 22));
         g.drawString("-", k.btnDown.x + 15, k.btnDown.y + 25);
-        // ↑
+
         g.setColor(new Color(58, 65, 80));
         g.fillRoundRect(k.btnUp.x, k.btnUp.y, k.btnUp.width, k.btnUp.height, 10, 10);
         g.setColor(new Color(110, 120, 140));
         g.drawRoundRect(k.btnUp.x, k.btnUp.y, k.btnUp.width, k.btnUp.height, 10, 10);
         g.setColor(Color.WHITE);
         g.drawString("+", k.btnUp.x + 13, k.btnUp.y + 25);
-        // Étiquette
+
         g.setFont(new Font("SansSerif", Font.PLAIN, 11));
         g.setColor(new Color(190, 195, 205));
         int tw = g.getFontMetrics().stringWidth(k.label);
         g.drawString(k.label, k.btnDown.x + (k.disp.width - tw) / 2, k.btnDown.y - 6);
-        // Valeur courante
+
         g.setFont(new Font("Monospaced", Font.BOLD, 13));
         g.setColor(new Color(52, 152, 219));
         String val = formatVal(k);

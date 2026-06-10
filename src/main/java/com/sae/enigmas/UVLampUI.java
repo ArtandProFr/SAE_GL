@@ -15,7 +15,7 @@ public class UVLampUI extends EnigmaDialog {
 
     private static final int W = 560;
     private static final int H = 360;
-    private final Rectangle btnAuto = new Rectangle(W/2 - 110, 240, 220, 42);
+    private final Rectangle btnAuto = new Rectangle(W/2 - 110, 220, 220, 32);
     private long start = System.currentTimeMillis();
 
     public UVLampUI(Window parent) {
@@ -65,7 +65,7 @@ public class UVLampUI extends EnigmaDialog {
         if (marquage.intersects(new Rectangle(mx - 90, my - 90, 180, 180))) {
             g.setColor(new Color(180, 150, 255));
             g.setFont(new Font("Monospaced", Font.BOLD, 22));
-            g.drawString("TIROIR 2", marquage.x - 12, marquage.y + 26);
+            g.drawString("TIROIR B4", marquage.x - 12, marquage.y + 26);
         }
 
         // Bouton autosolve (failback : utile si pas de visuel finalisé)
@@ -75,8 +75,8 @@ public class UVLampUI extends EnigmaDialog {
         g.setColor(Color.WHITE);
         g.drawRoundRect(btnAuto.x, btnAuto.y, btnAuto.width, btnAuto.height, 14, 14);
         g.setFont(new Font("SansSerif", Font.BOLD, 14));
-        String t = "Continuer (vous avez vu le marquage)";
+        String t = "Continuer";
         int tw = g.getFontMetrics().stringWidth(t);
-        g.drawString(t, btnAuto.x + (btnAuto.width - tw) / 2, btnAuto.y + 27);
+        g.drawString(t, btnAuto.x + (btnAuto.width - tw) / 2, btnAuto.y + 20);
     }
 }

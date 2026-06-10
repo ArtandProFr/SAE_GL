@@ -320,15 +320,15 @@ public class Jeu extends JFrame {
             }
             case 52 -> { // 5.2 - Chambre Jacques
                 preparerJusqua43();
-                placerDans(U_JACQUES, decorsJacques, 1);
+                placerDans(U_JACQUES, decorsJacques, 0);
             }
             case 61 -> { // 6.1 - Révélations
                 preparerJusqua52();
-                placerDans(U_SALON, decorsSalon, 1);
+                placerDans(U_SALON, decorsSalon, 0);
             }
             case 71 -> { // 7.1 - Crédits
                 preparerJusqua52();
-                placerDans(U_SALON, decorsSalon, 1);
+                placerDans(U_SALON, decorsSalon, 0);
             }
             default -> {
                 enigmeVerre.setCorpsExamine(false);
@@ -705,7 +705,7 @@ public class Jeu extends JFrame {
 
     private void gererClicJacques(Point clic, int iw, int ih) {
         if (numPhase() != 52) return;
-        Rectangle plafond = new Rectangle((int)(iw * 0.15), (int)(ih * 0.05), (int)(iw * 0.70), (int)(ih * 0.18));
+        Rectangle plafond = new Rectangle((int)(iw * 0), (int)(ih * 0), (int)(iw * 1), (int)(ih * 0.1));
         Rectangle tiroir  = new Rectangle((int)(iw * 0.30), (int)(ih * 0.55), (int)(iw * 0.18), (int)(ih * 0.15));
         Rectangle fiole   = new Rectangle((int)(iw * 0.32), (int)(ih * 0.58), (int)(iw * 0.14), (int)(ih * 0.10));
 
@@ -713,7 +713,7 @@ public class Jeu extends JFrame {
             lancerUVLamp();
             return;
         }
-        if (!tiroirJacquesOuvert && tiroir.contains(clic)) {
+        if (!tiroirJacquesOuvert && tiroir.contains(clic) && indexDecor == 0) {
             lancerEnigmeBoules();
             return;
         }
@@ -906,21 +906,28 @@ public class Jeu extends JFrame {
     }
 
     private void lancerEnigmeOndes() {
-        modeEnigmeActive = true;
-        OndesUI ui = new OndesUI(dialogParent(), this.save);
-        ui.setVisible(true);
+        OndesUI ui = null;
+        if (!telephoneDecroche){
+            modeEnigmeActive = true;
+            ui = new OndesUI(dialogParent(), this.save);
+            ui.setVisible(true);
+        }
         modeEnigmeActive = false;
-        if (ui.isReussite()) {
+        if (telephoneDecroche || (ui != null && ui.isReussite())) {
             ui = null;
             telephoneDecroche = true;
-            avancerPhase(); // 4.1 → 4.2 
+            if (numPhase() == 41){
+                avancerPhase(); // 4.1 → 4.2
+            }
             ouvrirDialogueCustom(
                     "Vous décrochez. C'est un message vocal en différé.",
                     "Jacques : \"Paul t'en veux, on en parle quand je serai rentré.\"",
                     "Une piste de plus...",
                     "Direction la salle de bain."
             );
-            avancerPhase(); // 4.2 → 4.3
+            if (numPhase() == 42){
+                avancerPhase(); // 4.2 → 4.3
+            }
         }
         rafraichirAffichage();
     }
@@ -1145,9 +1152,9 @@ public class Jeu extends JFrame {
 
     private boolean zoneJacquesInter(Point clic, int iw, int ih) {
         if (numPhase() != 52) return false;
-        Rectangle plafond = new Rectangle((int)(iw * 0.15), (int)(ih * 0.05), (int)(iw * 0.70), (int)(ih * 0.18));
+        Rectangle plafond = new Rectangle((int)(iw * 0), (int)(ih * 0), (int)(iw * 1), (int)(ih * 0.1));
         Rectangle tiroir  = new Rectangle((int)(iw * 0.30), (int)(ih * 0.55), (int)(iw * 0.18), (int)(ih * 0.15));
-        return plafond.contains(clic) || tiroir.contains(clic);
+        return plafond.contains(clic) || (indexDecor == 0 && tiroir.contains(clic));
     }
 
     private boolean zoneSdbInter(Point clic, int iw, int ih) {
