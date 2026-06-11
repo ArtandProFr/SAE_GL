@@ -16,20 +16,18 @@ import java.util.List;
 import com.sae.core.Save;
 
 /**
- * Phase 3.4 — "Portes Logiques" (1/2 Remettre le courant).
+ * Phase 3.4 — "Portes Logiques".
  * <p>
- * Port en Java de {@code SAE_Classe_Enigme_GATE_Remake.py}. La grille n°1 est
- * une reproduction fidèle du prototype (positions, branchements, lights
- * sondes). Les grilles suivantes dépendent de la difficulté.
+ * Port en Java de {@code SAE_Classe_Enigme_GATE_Remake.py} pour GR1/GR2/GR3,
+ * étendu avec deux niveaux de difficulté supplémentaires :
  *
- * <h2>Difficultés</h2>
  * <ul>
- *   <li><b>Easy</b>   : GR1 + 1 grille presque à l'aveugle.
- *       Animations + couleurs d'état + noms des portes visibles.</li>
- *   <li><b>Normal</b> : GR1 + GR2 + GR3 (exact prototype Python).
- *       Validation light en sortie de GR2 et GR3 uniquement.</li>
- *   <li><b>Hard</b>   : GR1 + 3 grilles totalement à l'aveugle.
- *       Seule la toute dernière lampe est visible.</li>
+ *   <li><b>Easy</b>   : GR1 + une grille à 5 boutons implémentant
+ *       <em>(A∧B) ∧ ¬C ∧ (D⊕A) ∧ (E⊕¬B)</em> → solution unique
+ *       A=1, B=1, C=0, D=0, E=1.</li>
+ *   <li><b>Normal</b> : GR1 + GR2 + GR3 (prototype Python).</li>
+ *   <li><b>Hard</b>   : GR1 + UNE grosse grille à l'aveugle implémentant les
+ *       10 sous-expressions S1..S10 ANDées ensemble. 15 boutons A..O.</li>
  * </ul>
  */
 public class LogicGateUI extends EnigmaDialog {
@@ -37,9 +35,7 @@ public class LogicGateUI extends EnigmaDialog {
     private enum Difficulty { EASY, NORMAL, HARD }
     private enum Sens { RIGHT, LEFT, UP, DOWN }
 
-    /** Taille pixel d'une unité Python ("TPT"). Variable selon difficulté. */
     private final int PT;
-
     private final Difficulty diff;
     private final boolean showAnimations;
     private final boolean showGateColors;
@@ -59,22 +55,17 @@ public class LogicGateUI extends EnigmaDialog {
         this.showGateColors = (diff == Difficulty.EASY);
         this.showGateNames  = (diff == Difficulty.EASY);
 
-        // Bouton reset placé dynamiquement dans le coin inférieur droit
         this.btnReset = new Rectangle(widthFor(diff) - 200, heightFor(diff) - 100, 170, 36);
 
         construire();
-
-        // Init logique (évalue toutes les portes, dont les NOT qui doivent
-        // s'allumer dès le départ si leur entrée est OFF).
+        // Init : on évalue une première fois (pour les NOT à 1 dès le départ)
         for (Grid g : grids) g.evaluate();
 
         setStatus("Basculez les interrupteurs pour ALLUMER la lampe finale.",
                   new Color(41, 128, 185));
     }
 
-    /* ════════════════════════════════════════════════════════════════════════
-     *                          Tailles / Difficulté
-     * ════════════════════════════════════════════════════════════════════════ */
+    /* ════════════════════════════════════════════════════════════════════════ */
 
     private static Difficulty diffFrom(Save save) {
         String d = (save != null && save.getDifficulty() != null) ? save.getDifficulty() : "Normal";
@@ -87,14 +78,14 @@ public class LogicGateUI extends EnigmaDialog {
 
     private static int widthFor(Difficulty d) {
         return switch (d) {
-            case EASY   -> 980;
+            case EASY   -> 1000;
             case NORMAL -> 1320;
             case HARD   -> 1320;
         };
     }
     private static int heightFor(Difficulty d) {
         return switch (d) {
-            case EASY   -> 580;
+            case EASY   -> 620;
             case NORMAL -> 820;
             case HARD   -> 820;
         };
@@ -103,13 +94,11 @@ public class LogicGateUI extends EnigmaDialog {
         return switch (d) {
             case EASY   -> 11;
             case NORMAL -> 8;
-            case HARD   -> 8;
+            case HARD   -> 7;
         };
     }
 
-    /* ════════════════════════════════════════════════════════════════════════
-     *                        Construction des grilles
-     * ════════════════════════════════════════════════════════════════════════ */
+    /* ════════════════════════════════════════════════════════════════════════ */
 
     private void construire() {
         Grid g1 = buildGR1(40, 50);
@@ -132,21 +121,18 @@ public class LogicGateUI extends EnigmaDialog {
                 winLight = g3.output;
             }
             case HARD -> {
-                int g2x = 40 + 40 * PT + 30;
-                Grid g2 = buildHardG2(g2x, 50, g1);
+                int g2y = 50 + 28 * PT + 30;
+                Grid g2 = buildHardBig(40, g2y, g1);
                 grids.add(g2);
-                int row2Y = 50 + 28 * PT + 30;
-                Grid g3 = buildHardG3(40, row2Y, g2);
-                grids.add(g3);
-                int g4x = 40 + g3.tx * PT + 30;
-                Grid g4 = buildHardG4(g4x, row2Y, g3);
-                grids.add(g4);
-                winLight = g4.output;
+                winLight = g2.output;
             }
         }
     }
 
-    /** GR1 : reproduction fidèle du prototype Python (4 boutons, 5 portes, 9 lights sondes). */
+    /* ════════════════════════════════════════════════════════════════════════
+     *                      GR1 — Reproduction du prototype
+     * ════════════════════════════════════════════════════════════════════════ */
+
     private Grid buildGR1(int gx, int gy) {
         Grid g = new Grid(gx, gy, 40, 27, "Grille 1", PT);
 
@@ -171,17 +157,12 @@ public class LogicGateUI extends EnigmaDialog {
         Light L8 = (Light) g.place(new Light(Sens.RIGHT, true), 2, 2,  7, 4);
         Light L9 = (Light) g.place(new Light(Sens.DOWN,  true), 3, 2,  8, 7);
 
-        L1.connect(B1);
-        L2.connect(B2);
-        L3.connect(B3);
-        L4.connect(B3);
-        L5.connect(B4);
+        L1.connect(B1); L2.connect(B2); L3.connect(B3);
+        L4.connect(B3); L5.connect(B4);
         G1.connect(L2, L1);
         G2.connect(L3);
         G3.connect(L5, L4);
-        L6.connect(G1);
-        L7.connect(G2);
-        L8.connect(G3);
+        L6.connect(G1); L7.connect(G2); L8.connect(G3);
         G4.connect(L7, L6);
         G5.connect(L8, G4);
         L9.connect(G5);
@@ -191,7 +172,10 @@ public class LogicGateUI extends EnigmaDialog {
         return g;
     }
 
-    /** GR2 du prototype Python (5 boutons, 10 portes, lampe de sortie). */
+    /* ════════════════════════════════════════════════════════════════════════
+     *                                  GR2 / GR3
+     * ════════════════════════════════════════════════════════════════════════ */
+
     private Grid buildGR2(int gx, int gy, Grid input) {
         Grid g = new Grid(gx, gy, 54, 27, "Grille 2", PT);
         g.upstream = input;
@@ -215,24 +199,16 @@ public class LogicGateUI extends EnigmaDialog {
 
         Light Lout = (Light) g.place(new Light(Sens.RIGHT, true), 5, 2, 7, 5);
 
-        G1.connect(B1, B1);
-        G3.connect(B3);
-        G4.connect(B4, G3);
-        G5.connect(B5);
-        G6.connect(G5);
-        G8.connect(B1, B2);
-        G2.connect(G8);
-        G7.connect(G1, G2);
-        G9.connect(G4, G6);
-        G10.connect(G7, G9);
-        Lout.connect(G10);
+        G1.connect(B1, B1); G3.connect(B3); G4.connect(B4, G3);
+        G5.connect(B5); G6.connect(G5); G8.connect(B1, B2);
+        G2.connect(G8); G7.connect(G1, G2); G9.connect(G4, G6);
+        G10.connect(G7, G9); Lout.connect(G10);
 
         g.output = Lout;
         g.buildWires();
         return g;
     }
 
-    /** GR3 du prototype Python. */
     private Grid buildGR3(int gx, int gy, Grid input) {
         Grid g = new Grid(gx, gy, 99, 27, "Grille 3", PT);
         g.upstream = input;
@@ -271,170 +247,197 @@ public class LogicGateUI extends EnigmaDialog {
 
         Light L1 = (Light) g.place(new Light(Sens.RIGHT, true), 10, 2, 8, 8);
 
-        G1.connect(B5, B6);
-        G2.connect(B1);
-        G3.connect(B2, G2);
-        G4.connect(B1, G1);
-        G5.connect(G3, G4);
-        G6.connect(B4);
-        G7.connect(B3);
-        G8.connect(G6, G7);
-        G9.connect(G8, G5);
-        G10.connect(B7);
-        G11.connect(B6, G10);
-        G12.connect(G11);
-        G13.connect(B7, B8);
-        G14.connect(G13, B8);
-        G15.connect(B9);
-        G16.connect(G15, B10);
-        G17.connect(G14, G16);
-        G18.connect(G12, G17);
-        G19.connect(G18, null);  // null = upstream
-        G20.connect(G9, G19);
-        L1.connect(G20);
+        G1.connect(B5, B6); G2.connect(B1); G3.connect(B2, G2);
+        G4.connect(B1, G1); G5.connect(G3, G4); G6.connect(B4);
+        G7.connect(B3); G8.connect(G6, G7); G9.connect(G8, G5);
+        G10.connect(B7); G11.connect(B6, G10); G12.connect(G11);
+        G13.connect(B7, B8); G14.connect(G13, B8); G15.connect(B9);
+        G16.connect(G15, B10); G17.connect(G14, G16);
+        G18.connect(G12, G17); G19.connect(G18, null);
+        G20.connect(G9, G19); L1.connect(G20);
 
         g.output = L1;
         g.buildWires();
         return g;
     }
 
-    /**
-     * Easy G2 — solution UNIQUE.
-     * <p>Fonction : {@code E AND NOT(F) AND G AND X}  (X = sortie de GR1)</p>
-     * Solution unique : E=ON, F=OFF, G=ON (et GR1 résolue).
-     */
+    /* ════════════════════════════════════════════════════════════════════════
+     *  EASY G2 — (A∧B) ∧ ¬C ∧ (D⊕A) ∧ (E⊕¬B)   [solution unique : 1 1 0 0 1]
+     * ════════════════════════════════════════════════════════════════════════ */
+
     private Grid buildEasyG2(int gx, int gy, Grid input) {
-        Grid g = new Grid(gx, gy, 30, 27, "Grille 2", PT);
+        Grid g = new Grid(gx, gy, 36, 27, "Grille 2 - Easy", PT);
         g.upstream = input;
 
-        Button E = (Button) g.place(new Button(Sens.RIGHT), 0, 0, 3, 3);
-        Button F = (Button) g.place(new Button(Sens.RIGHT), 0, 1, 3, 5);
-        Button G_btn = (Button) g.place(new Button(Sens.RIGHT), 0, 2, 3, 5);
+        // Boutons en colonne gauche
+        Button A = (Button) g.placePT(new Button(Sens.RIGHT), 4,  3);
+        Button B = (Button) g.placePT(new Button(Sens.RIGHT), 4,  8);
+        Button C = (Button) g.placePT(new Button(Sens.RIGHT), 4, 13);
+        Button D = (Button) g.placePT(new Button(Sens.RIGHT), 4, 19);
+        Button E = (Button) g.placePT(new Button(Sens.RIGHT), 4, 24);
 
-        // NOT(F)
-        Gate notF = (Gate) g.place(new Gate("NOT", Sens.RIGHT), 1, 1, 4, 1);
-        // AND(E, NOT(F))
-        Gate andEF = (Gate) g.place(new Gate("AND", Sens.RIGHT), 1, 0, 8, 7);
-        // AND(prev, G)
-        Gate andG  = (Gate) g.place(new Gate("AND", Sens.RIGHT), 2, 1, 5, 3);
-        // AND(prev, X)
-        Gate andX  = (Gate) g.place(new Gate("AND", Sens.RIGHT), 2, 2, 5, 3);
+        // Niveau 1 : portes unaires & XOR
+        Gate t1 = (Gate) g.placePT(new Gate("AND", Sens.RIGHT), 13,  5); // A∧B
+        Gate t4 = (Gate) g.placePT(new Gate("NOT", Sens.DOWN),  10, 10); // ¬B (route vers le bas)
+        Gate t2 = (Gate) g.placePT(new Gate("NOT", Sens.RIGHT), 13, 13); // ¬C
+        Gate t3 = (Gate) g.placePT(new Gate("XOR", Sens.RIGHT), 13, 21); // D⊕A
+        Gate t5 = (Gate) g.placePT(new Gate("XOR", Sens.RIGHT), 16, 26); // E⊕¬B  (¬B = t4)
 
-        Light Lout = (Light) g.place(new Light(Sens.RIGHT, true), 3, 2, 1, 3);
+        // Niveau 2 : combinaisons par paires
+        Gate top = (Gate) g.placePT(new Gate("AND", Sens.RIGHT), 22,  9); // t1∧t2
+        Gate bot = (Gate) g.placePT(new Gate("AND", Sens.RIGHT), 22, 23); // t3∧t5
 
-        notF.connect(F);
-        andEF.connect(E, notF);
-        andG.connect(andEF, G_btn);
-        andX.connect(andG, null); // upstream bus
-        Lout.connect(andX);
+        // Niveau 3 : fusion
+        Gate expr  = (Gate) g.placePT(new Gate("AND", Sens.RIGHT), 27, 16); // top∧bot
+        Gate withX = (Gate) g.placePT(new Gate("AND", Sens.RIGHT), 31, 16); // expr ∧ upstream
+
+        Light Lout = (Light) g.placePT(new Light(Sens.RIGHT, true), 34, 16);
+
+        t1.connect(A, B);
+        t4.connect(B);
+        t2.connect(C);
+        t3.connect(D, A);
+        t5.connect(E, t4);
+        top.connect(t1, t2);
+        bot.connect(t3, t5);
+        expr.connect(top, bot);
+        withX.connect(expr, null); // upstream bus
+        Lout.connect(withX);
 
         g.output = Lout;
         g.buildWires();
         return g;
     }
 
-    /**
-     * Hard G2 — arbre de 4 boutons, solution unique.
-     * <p>Fonction : {@code E AND NOT(F) AND G AND NOT(H) AND X}</p>
-     * Solution : E=ON, F=OFF, G=ON, H=OFF.
-     */
-    private Grid buildHardG2(int gx, int gy, Grid input) {
-        Grid g = new Grid(gx, gy, 41, 27, "Grille 2", PT);
+    /* ════════════════════════════════════════════════════════════════════════
+     *  HARD — 1 grosse grille à l'aveugle implémentant S1..S10 (AND de tout).
+     *
+     *  Signaux :
+     *    S1  = (A⊕B) ∧ (C⊕D)
+     *    S2  = E ⊕ (A∧C)
+     *    S3  = F ⊕ (B∧D)
+     *    S4  = G ⊕ (E⊕F)
+     *    S5  = H ⊕ (¬A ∧ G)
+     *    S6  = I ⊕ (C ∧ ¬F)
+     *    S7  = J ⊕ (H⊕I)
+     *    S8  = (K ⊕ (A∧D∧J)) ∧ (L ⊕ (B∧C∧¬J))
+     *    S9  = (M ⊕ (K⊕L)) ∧ (N ⊕ (G ∧ ¬M))
+     *    S10 = O ⊕ (M ⊕ (N ∧ ¬E))
+     *
+     *  Sortie finale = S1 ∧ … ∧ S10 ∧ X(upstream).
+     *  Solutions : 4 (les 4 combinaisons (A,B,C,D) satisfaisant S1 imposent
+     *  E..O par les autres équations).
+     * ════════════════════════════════════════════════════════════════════════ */
+
+    private Grid buildHardBig(int gx, int gy, Grid input) {
+        Grid g = new Grid(gx, gy, 165, 50, "Grille 2 - Hard", PT);
         g.upstream = input;
 
-        Button E = (Button) g.place(new Button(Sens.RIGHT), 0, 0, 3, 3);
-        Button F = (Button) g.place(new Button(Sens.RIGHT), 1, 0, 3, 3);
-        Button G_b = (Button) g.place(new Button(Sens.RIGHT), 2, 0, 3, 3);
-        Button H = (Button) g.place(new Button(Sens.RIGHT), 3, 0, 3, 3);
+        // Boutons A..O en haut, espacés de 11 PT (pour bien voir)
+        Button[] btn = new Button[15];
+        for (int i = 0; i < 15; i++) {
+            btn[i] = (Button) g.placePT(new Button(Sens.RIGHT), 6 + i * 11, 4);
+        }
+        Button A=btn[0],B=btn[1],C=btn[2],D=btn[3],E=btn[4],F=btn[5],
+               G_=btn[6],H=btn[7],I=btn[8],J=btn[9],K=btn[10],L=btn[11],
+               M=btn[12],N=btn[13],O=btn[14];
 
-        // NOT(F), NOT(H)
-        Gate notF = (Gate) g.place(new Gate("NOT", Sens.DOWN), 1, 0, 3, 9);
-        Gate notH = (Gate) g.place(new Gate("NOT", Sens.DOWN), 3, 0, 3, 9);
-        // AND par paires
-        Gate andL = (Gate) g.place(new Gate("AND", Sens.DOWN), 0, 1, 8, 6);
-        Gate andR = (Gate) g.place(new Gate("AND", Sens.DOWN), 2, 1, 8, 6);
-        // Fusion
-        Gate merge = (Gate) g.place(new Gate("AND", Sens.RIGHT), 1, 2, 8, 4);
-        // Combinaison upstream
-        Gate withX = (Gate) g.place(new Gate("AND", Sens.RIGHT), 3, 2, 5, 4);
+        // === S1 = (A⊕B) ∧ (C⊕D) ==========================================
+        Gate xorAB = (Gate) g.placePT(new Gate("XOR", Sens.DOWN), 11, 12);
+        Gate xorCD = (Gate) g.placePT(new Gate("XOR", Sens.DOWN), 33, 12);
+        Gate S1    = (Gate) g.placePT(new Gate("AND", Sens.RIGHT), 22, 19);
+        xorAB.connect(A, B); xorCD.connect(C, D); S1.connect(xorAB, xorCD);
 
-        // Sortie cachée
-        Light hiddenOut = (Light) g.place(new Light(Sens.RIGHT, false), 4, 2, 1, 4);
+        // === S2 = E ⊕ (A∧C) ===============================================
+        Gate andAC = (Gate) g.placePT(new Gate("AND", Sens.DOWN), 17, 12);
+        Gate S2    = (Gate) g.placePT(new Gate("XOR", Sens.DOWN), 50, 12);
+        andAC.connect(A, C); S2.connect(E, andAC);
 
-        notF.connect(F);
-        notH.connect(H);
-        andL.connect(E, notF);
-        andR.connect(G_b, notH);
-        merge.connect(andL, andR);
-        withX.connect(merge, null); // upstream
-        hiddenOut.connect(withX);
+        // === S3 = F ⊕ (B∧D) ===============================================
+        Gate andBD = (Gate) g.placePT(new Gate("AND", Sens.DOWN), 28, 12);
+        Gate S3    = (Gate) g.placePT(new Gate("XOR", Sens.DOWN), 61, 12);
+        andBD.connect(B, D); S3.connect(F, andBD);
 
-        g.output = hiddenOut;
-        g.buildWires();
-        return g;
-    }
+        // === S4 = G ⊕ (E⊕F) ===============================================
+        Gate xorEF = (Gate) g.placePT(new Gate("XOR", Sens.DOWN), 55, 19);
+        Gate S4    = (Gate) g.placePT(new Gate("XOR", Sens.DOWN), 72, 12);
+        xorEF.connect(E, F); S4.connect(G_, xorEF);
 
-    /**
-     * Hard G3 — arbre de 4 boutons, solution unique.
-     * <p>Fonction : {@code NOT(I) AND J AND K AND NOT(L) AND X}</p>
-     * Solution : I=OFF, J=ON, K=ON, L=OFF.
-     */
-    private Grid buildHardG3(int gx, int gy, Grid input) {
-        Grid g = new Grid(gx, gy, 41, 27, "Grille 3", PT);
-        g.upstream = input;
+        // === S5 = H ⊕ (¬A ∧ G) ============================================
+        Gate notA1   = (Gate) g.placePT(new Gate("NOT", Sens.DOWN),  6, 11);
+        Gate andNAG  = (Gate) g.placePT(new Gate("AND", Sens.DOWN), 70, 19);
+        Gate S5      = (Gate) g.placePT(new Gate("XOR", Sens.DOWN), 83, 12);
+        notA1.connect(A); andNAG.connect(notA1, G_); S5.connect(H, andNAG);
 
-        Button I = (Button) g.place(new Button(Sens.RIGHT), 0, 0, 3, 3);
-        Button J = (Button) g.place(new Button(Sens.RIGHT), 1, 0, 3, 3);
-        Button K = (Button) g.place(new Button(Sens.RIGHT), 2, 0, 3, 3);
-        Button L = (Button) g.place(new Button(Sens.RIGHT), 3, 0, 3, 3);
+        // === S6 = I ⊕ (C ∧ ¬F) ============================================
+        Gate notF1   = (Gate) g.placePT(new Gate("NOT", Sens.DOWN), 61, 19);
+        Gate andCNF  = (Gate) g.placePT(new Gate("AND", Sens.DOWN), 80, 26);
+        Gate S6      = (Gate) g.placePT(new Gate("XOR", Sens.DOWN), 94, 12);
+        notF1.connect(F); andCNF.connect(C, notF1); S6.connect(I, andCNF);
 
-        Gate notI = (Gate) g.place(new Gate("NOT", Sens.DOWN), 0, 0, 3, 9);
-        Gate notL = (Gate) g.place(new Gate("NOT", Sens.DOWN), 3, 0, 3, 9);
-        Gate andL = (Gate) g.place(new Gate("AND", Sens.DOWN), 0, 1, 8, 6);
-        Gate andR = (Gate) g.place(new Gate("AND", Sens.DOWN), 2, 1, 8, 6);
-        Gate merge = (Gate) g.place(new Gate("AND", Sens.RIGHT), 1, 2, 8, 4);
-        Gate withX = (Gate) g.place(new Gate("AND", Sens.RIGHT), 3, 2, 5, 4);
+        // === S7 = J ⊕ (H⊕I) ===============================================
+        Gate xorHI = (Gate) g.placePT(new Gate("XOR", Sens.DOWN),  88, 19);
+        Gate S7    = (Gate) g.placePT(new Gate("XOR", Sens.DOWN), 105, 12);
+        xorHI.connect(H, I); S7.connect(J, xorHI);
 
-        Light hiddenOut = (Light) g.place(new Light(Sens.RIGHT, false), 4, 2, 1, 4);
+        // === S8 = (K ⊕ (A∧D∧J)) ∧ (L ⊕ (B∧C∧¬J)) ==========================
+        Gate andAD  = (Gate) g.placePT(new Gate("AND", Sens.DOWN), 115, 12);
+        Gate andADJ = (Gate) g.placePT(new Gate("AND", Sens.DOWN), 117, 19);
+        Gate xorK   = (Gate) g.placePT(new Gate("XOR", Sens.DOWN), 118, 26);
+        Gate notJ1  = (Gate) g.placePT(new Gate("NOT", Sens.DOWN), 105, 19);
+        Gate andBC  = (Gate) g.placePT(new Gate("AND", Sens.DOWN), 125, 12);
+        Gate andBCJ = (Gate) g.placePT(new Gate("AND", Sens.DOWN), 127, 19);
+        Gate xorL   = (Gate) g.placePT(new Gate("XOR", Sens.DOWN), 128, 26);
+        Gate S8     = (Gate) g.placePT(new Gate("AND", Sens.RIGHT), 123, 33);
+        andAD.connect(A, D); andADJ.connect(andAD, J);
+        xorK.connect(K, andADJ);
+        notJ1.connect(J);
+        andBC.connect(B, C); andBCJ.connect(andBC, notJ1);
+        xorL.connect(L, andBCJ);
+        S8.connect(xorK, xorL);
 
-        notI.connect(I);
-        notL.connect(L);
-        andL.connect(notI, J);
-        andR.connect(K, notL);
-        merge.connect(andL, andR);
-        withX.connect(merge, null);
-        hiddenOut.connect(withX);
+        // === S9 = (M ⊕ (K⊕L)) ∧ (N ⊕ (G ∧ ¬M)) ============================
+        Gate xorKL  = (Gate) g.placePT(new Gate("XOR", Sens.DOWN), 134, 12);
+        Gate xorM   = (Gate) g.placePT(new Gate("XOR", Sens.DOWN), 138, 19);
+        Gate notM1  = (Gate) g.placePT(new Gate("NOT", Sens.DOWN), 134, 26);
+        Gate andGNM = (Gate) g.placePT(new Gate("AND", Sens.DOWN), 145, 19);
+        Gate xorN   = (Gate) g.placePT(new Gate("XOR", Sens.DOWN), 148, 26);
+        Gate S9     = (Gate) g.placePT(new Gate("AND", Sens.RIGHT), 143, 33);
+        xorKL.connect(K, L); xorM.connect(M, xorKL);
+        notM1.connect(M); andGNM.connect(G_, notM1);
+        xorN.connect(N, andGNM);
+        S9.connect(xorM, xorN);
 
-        g.output = hiddenOut;
-        g.buildWires();
-        return g;
-    }
+        // === S10 = O ⊕ (M ⊕ (N ∧ ¬E)) =====================================
+        Gate notE1   = (Gate) g.placePT(new Gate("NOT", Sens.DOWN), 50, 19);
+        Gate andNNE  = (Gate) g.placePT(new Gate("AND", Sens.DOWN),155, 19);
+        Gate xorMNE  = (Gate) g.placePT(new Gate("XOR", Sens.DOWN),158, 26);
+        Gate S10     = (Gate) g.placePT(new Gate("XOR", Sens.RIGHT),162, 33);
+        notE1.connect(E); andNNE.connect(N, notE1);
+        xorMNE.connect(M, andNNE);
+        S10.connect(O, xorMNE);
 
-    /**
-     * Hard G4 — 3 boutons, solution unique. Sortie = lampe finale visible.
-     * <p>Fonction : {@code M AND NOT(N) AND O AND X}</p>
-     * Solution : M=ON, N=OFF, O=ON.
-     */
-    private Grid buildHardG4(int gx, int gy, Grid input) {
-        Grid g = new Grid(gx, gy, 35, 27, "Grille 4", PT);
-        g.upstream = input;
+        // === Cascade finale : AND de tous les S_i ∧ upstream ==============
+        // On combine en arbre binaire à droite (caseY=4)
+        Gate a12   = (Gate) g.placePT(new Gate("AND", Sens.RIGHT),  40, 40); // S1∧S2
+        Gate a34   = (Gate) g.placePT(new Gate("AND", Sens.RIGHT),  60, 40); // S3∧S4
+        Gate a1234 = (Gate) g.placePT(new Gate("AND", Sens.RIGHT),  75, 40); // (S1S2)∧(S3S4)
+        Gate a56   = (Gate) g.placePT(new Gate("AND", Sens.RIGHT),  90, 40); // S5∧S6
+        Gate a78   = (Gate) g.placePT(new Gate("AND", Sens.RIGHT), 110, 40); // S7∧S8
+        Gate a5678 = (Gate) g.placePT(new Gate("AND", Sens.RIGHT), 125, 40); // (S5S6)∧(S7S8)
+        Gate a9_10 = (Gate) g.placePT(new Gate("AND", Sens.RIGHT), 145, 40); // S9∧S10
+        Gate all1  = (Gate) g.placePT(new Gate("AND", Sens.RIGHT), 100, 45); // (S1..4)∧(S5..8)
+        Gate all2  = (Gate) g.placePT(new Gate("AND", Sens.RIGHT), 140, 45); // ((..)∧(..))∧(S9S10)
+        Gate withX = (Gate) g.placePT(new Gate("AND", Sens.RIGHT), 155, 47); // ∧ upstream
+        a12.connect(S1, S2); a34.connect(S3, S4); a1234.connect(a12, a34);
+        a56.connect(S5, S6); a78.connect(S7, S8); a5678.connect(a56, a78);
+        a9_10.connect(S9, S10);
+        all1.connect(a1234, a5678);
+        all2.connect(all1, a9_10);
+        withX.connect(all2, null); // upstream
 
-        Button M = (Button) g.place(new Button(Sens.RIGHT), 0, 0, 3, 3);
-        Button N = (Button) g.place(new Button(Sens.RIGHT), 1, 0, 3, 5);
-        Button O_b = (Button) g.place(new Button(Sens.RIGHT), 2, 0, 3, 3);
-
-        Gate notN = (Gate) g.place(new Gate("NOT", Sens.RIGHT), 1, 1, 4, 1);
-        Gate andMN = (Gate) g.place(new Gate("AND", Sens.RIGHT), 1, 0, 8, 7);
-        Gate andO  = (Gate) g.place(new Gate("AND", Sens.RIGHT), 2, 1, 5, 3);
-        Gate andX  = (Gate) g.place(new Gate("AND", Sens.RIGHT), 2, 2, 5, 3);
-
-        Light finalLight = (Light) g.place(new Light(Sens.RIGHT, true), 3, 2, 1, 3);
-
-        notN.connect(N);
-        andMN.connect(M, notN);
-        andO.connect(andMN, O_b);
-        andX.connect(andO, null);
-        finalLight.connect(andX);
+        Light finalLight = (Light) g.placePT(new Light(Sens.RIGHT, true), 162, 47);
+        finalLight.connect(withX);
 
         g.output = finalLight;
         g.buildWires();
@@ -483,6 +486,16 @@ public class LogicGateUI extends EnigmaDialog {
         for (Grid gr : grids) gr.drawWires(g, showAnimations);
         for (Grid gr : grids) gr.drawComponents(g, showGateColors, showGateNames);
 
+        // Voyants d'état des grilles (en haut à gauche) en mode Easy
+        if (this.diff == Difficulty.EASY) {
+            for (int i = 0; i < grids.size(); i++) {
+                Grid gr = grids.get(i);
+                Color c = (gr.output != null && gr.output.state)
+                        ? new Color(46, 204, 113) : new Color(120, 50, 50);
+                Draw.circle(g, 18, 16 + 16 * i, 6, c);
+            }
+        }
+
         // Bouton reset
         g.setColor(new Color(192, 57, 43));
         g.fillRoundRect(btnReset.x, btnReset.y, btnReset.width, btnReset.height, 14, 14);
@@ -494,22 +507,10 @@ public class LogicGateUI extends EnigmaDialog {
         int tw = g.getFontMetrics().stringWidth(t);
         g.drawString(t, btnReset.x + (btnReset.width - tw) / 2, btnReset.y + 24);
 
-        // Voyants d'état des grilles (en haut à gauche) en mode Easy
-        if (this.diff.equals(Difficulty.EASY)){
-            for (int i = 0; i < grids.size(); i++) {
-                Grid gr = grids.get(i);
-                Color c = (gr.output != null && gr.output.state)
-                        ? new Color(46, 204, 113) : new Color(120, 50, 50);
-                Draw.circle(g, 18, 16 + 16 * i, 6, c);
-            }
-        }
-
-        // Statut final discret
         if (winLight != null) {
             g.setFont(new Font("SansSerif", Font.BOLD, 13));
             g.setColor(winLight.state ? new Color(46, 204, 113) : new Color(220, 220, 220));
-            g.drawString("Lampe finale : " + (winLight.state ? "ON" : "OFF"),
-                         30, h - 60);
+            g.drawString("Lampe finale : " + (winLight.state ? "ON" : "OFF"), 30, h - 60);
         }
     }
 
@@ -549,14 +550,11 @@ public class LogicGateUI extends EnigmaDialog {
 
         @Override void computeAnchors() {
             int r = 22;
-            // Sortie : côté indiqué par sens (RIGHT par défaut → +x)
             int[] o  = rotate(x + r, y, x, y, sensAngle(sens));
             int[] op = rotate(x + 2 * r, y, x, y, sensAngle(sens));
             outX  = o[0];  outY  = o[1];
             outXp = op[0]; outYp = op[1];
-            // Pas d'entrées physiques
-            inA = new int[0][2];
-            inAp = new int[0][2];
+            inA = new int[0][2]; inAp = new int[0][2];
         }
 
         @Override void draw(Graphics2D g, boolean colored, boolean showName) {
@@ -572,10 +570,6 @@ public class LogicGateUI extends EnigmaDialog {
         }
     }
 
-    /**
-     * Light : sonde / lampe. Si {@code visible == false}, c'est juste un
-     * point de propagation invisible (pour les grilles à l'aveugle).
-     */
     static class Light extends Component {
         final boolean visible;
         Component upstream;
@@ -589,7 +583,6 @@ public class LogicGateUI extends EnigmaDialog {
             int[] in0 = rotate(x - 2 * r, y, x, y, sensAngle(sens));
             inA  = new int[][]{ { x, y } };
             inAp = new int[][]{ in0 };
-            // Sortie côté sens (au cas où une autre porte se connecte derrière une light)
             int[] o  = rotate(x + r, y, x, y, sensAngle(sens));
             int[] op = rotate(x + 2 * r, y, x, y, sensAngle(sens));
             outX = o[0]; outY = o[1];
@@ -751,9 +744,21 @@ public class LogicGateUI extends EnigmaDialog {
             this.name = name; this.PT = PT;
         }
 
+        /** Place par coord Python (case + local). */
         Component place(Component c, int caseX, int caseY, int localX, int localY) {
             int px = dx + ((caseX * 9 + localX - 1) * PT);
             int py = dy + ((caseY * 9 + localY - 1) * PT);
+            return placeAtPixels(c, px, py);
+        }
+
+        /** Place par coord PT directe (1-based). */
+        Component placePT(Component c, int ptX, int ptY) {
+            int px = dx + (ptX - 1) * PT;
+            int py = dy + (ptY - 1) * PT;
+            return placeAtPixels(c, px, py);
+        }
+
+        private Component placeAtPixels(Component c, int px, int py) {
             c.x = px; c.y = py;
             c.computeAnchors();
             all.add(c);
@@ -873,7 +878,7 @@ public class LogicGateUI extends EnigmaDialog {
         Component dst;
         int inputIdx;
         Grid busGrid;
-        int orderIdx; // pour stagger les coudes
+        int orderIdx;
 
         Wire(Component src, Component dst, int inputIdx) {
             this.src = src; this.dst = dst; this.inputIdx = inputIdx;
@@ -898,10 +903,9 @@ public class LogicGateUI extends EnigmaDialog {
                 x1 = src.outX;  y1 = src.outY;
                 x1p = src.outXp; y1p = src.outYp;
             }
-            int x2 = dst.inA[inputIdx][0],  y2 = dst.inA[inputIdx][1];
+            int x2  = dst.inA[inputIdx][0],  y2  = dst.inA[inputIdx][1];
             int x2p = dst.inAp[inputIdx][0], y2p = dst.inAp[inputIdx][1];
 
-            // Petit décalage pour différencier des câbles parallèles
             int stagger = (orderIdx * 3) % 9 - 4;
 
             int[][] pts;
@@ -925,12 +929,10 @@ public class LogicGateUI extends EnigmaDialog {
 
         private void drawSegments(Graphics2D g, boolean withAnim, int[][] pts) {
             boolean on = activeState();
-            // Halo sombre derrière pour faire ressortir le câble
             g.setStroke(new BasicStroke(5, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
             g.setColor(new Color(20, 25, 35));
             for (int i = 0; i < pts.length - 1; i++)
                 g.drawLine(pts[i][0], pts[i][1], pts[i+1][0], pts[i+1][1]);
-            // Cœur
             g.setStroke(new BasicStroke(2, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
             g.setColor(on ? new Color(255, 220, 120) : new Color(120, 130, 145));
             for (int i = 0; i < pts.length - 1; i++)
@@ -960,9 +962,7 @@ public class LogicGateUI extends EnigmaDialog {
         }
     }
 
-    /* ════════════════════════════════════════════════════════════════════════
-     *                              Utilitaires
-     * ════════════════════════════════════════════════════════════════════════ */
+    /* ════════════════════════════════════════════════════════════════════════ */
 
     static int[] rotate(int px, int py, int cx, int cy, int angleDeg) {
         double a = Math.toRadians(angleDeg);
