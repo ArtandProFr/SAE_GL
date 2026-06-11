@@ -29,12 +29,64 @@ public class RotaryDialUI extends EnigmaDialog {
 
     @Override
     protected void onMousePressed(Vec2 p) {
-        if (dial == null) return;
-        if (dial.win) return;
-        dial.update(p, true);
-        if (dial.win) {
-            setStatus("Porte déverrouillée !", new Color(46, 204, 113));
-            markSolvedAndClose();
+        if (dial == null || dial.win || dial.enAnimation) return;
+
+        // On sauvegarde l'ancienne position pour savoir d'où on part
+        int anciennePos = dial.position;
+
+        // Exécution du déplacement logique
+        boolean coupValide = dial.coupValide(p);
+        if (!dial.enAnimation) dial.update(p, true);
+
+        // Si la position a changé, on lance l'animation graphique
+        if (!dial.enAnimation && dial.position != anciennePos) {
+            dial.enAnimation = true;
+            
+            double distanceAngle;
+            if (coupValide) {
+                // CORRECTION DU DERNIER CRAN :
+                // Si dial.position est retombé à 0 (ou inférieur) à cause du bouclage de victoire,
+                // le nombre de cases avancées est : (taille totale - anciennePos) + dial.position
+                int nbCasesAvancees = (dial.position <= anciennePos) 
+                                      ? (dial.taille - anciennePos + dial.position) 
+                                      : (dial.position - anciennePos);
+                                      
+                distanceAngle = -(nbCasesAvancees * dial.angle_unite);
+            } else {
+                // CORRECTION DU PREMIER CRAN (Erreur sur la première case) :
+                // Si le joueur fait une erreur dès la case 0 (anciennePos == 0) et que le cadran doit bouger,
+                // ou pour tout autre reset, on force le recul de la distance logique nécessaire.
+                int nbCasesReculees = (anciennePos == 0) ? dial.taille : anciennePos;
+                
+                distanceAngle = nbCasesReculees * dial.angle_unite;
+            }
+
+            // On initialise l'animation à l'exact opposé pour annuler la téléportation
+            dial.angleAnimation = -distanceAngle;
+
+            // La vitesse va faire progresser angleAnimation vers 0
+            final double vitesse = coupValide ? -4.0 : 4.0;
+
+            // Création du Timer d'animation
+            javax.swing.Timer timer = new javax.swing.Timer(16, null);
+            timer.addActionListener(e -> {
+                dial.angleAnimation += vitesse;
+
+                // Condition d'arrêt : dès qu'on a comblé le décalage (on atteint ou dépasse 0)
+                if ((vitesse > 0 && dial.angleAnimation >= 0.0) || (vitesse < 0 && dial.angleAnimation <= 0.0)) {
+                    dial.angleAnimation = 0.0; // Recalage parfait à destination
+                    dial.enAnimation = false;  // Redonne la main au joueur
+                    timer.stop();
+
+                    // Vérification de la victoire à la fin de la rotation
+                    if (dial.win) {
+                        setStatus("Porte déverrouillée !", new Color(46, 204, 113));
+                        markSolvedAndClose();
+                    }
+                }
+                canvas.repaint(); // Rafraîchissement graphique
+            });
+            timer.start();
         }
     }
 
@@ -57,7 +109,7 @@ public class RotaryDialUI extends EnigmaDialog {
 
     @Override
     protected boolean isCursorInteractive(Vec2 p) {
-        if (dial == null) return false;
+        if (dial == null || dial.enAnimation || dial.win) return false;
         double d = p.distanceTo(dial.coord);
         return d > dial.rayon_int && d < dial.rayon_ext;
     }

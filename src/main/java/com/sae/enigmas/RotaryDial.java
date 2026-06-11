@@ -29,6 +29,9 @@ public class RotaryDial {
     // Angles absolus fixes du cadran
     private double[] angle_cadran;
 
+    public double angleAnimation = 0.0; // L'angle d'affichage dynamique
+    public boolean enAnimation = false;  // Bloque les interactions
+
     public final boolean isValid(){
         return (liste != EMPTY_LIST && (1 < taille_possib && taille_possib < taille));
     }
@@ -40,6 +43,8 @@ public class RotaryDial {
             pushed[i] = false;
         }
         win = false;
+        this.angleAnimation = 0.0;
+        this.enAnimation = false;
     }
 
     /**
@@ -128,11 +133,32 @@ public class RotaryDial {
             for (int i = 0; i < taille; i++) {
                 this.angle_cadran[i] = (i * angle_unite) % 360;
             }
-            
             reset();
+            this.angleAnimation = 0.0;
+            this.enAnimation = false;
         } else {
             throw new Exception("Initialization error : length must be strictly positive.");
         }
+    }
+
+    public boolean coupValide(Vec2 mouseCoord){
+        double dist = mouseCoord.distanceTo(coord);
+        if (rayon_int < dist && dist < rayon_ext){
+            double dx = mouseCoord.x - coord.x;
+            double dy = mouseCoord.y - coord.y;
+                
+            // Calcul de l'angle de la souris : 0° en haut, tourne dans le sens des aiguilles d'une montre
+            double angle = Math.toDegrees(Math.atan2(dx, -dy)) % 360;
+            if (angle < 0) angle += 360;
+
+            int pos = getSelectedPos(angle);
+            if (pos >= 0) {
+                if (isCaseJouable(pos)) {
+                    if (!pushed[pos]) return true;
+                }
+            }
+        }
+        return false;
     }
 
     public void update(Vec2 mouseCoord, boolean leftClick){
@@ -218,16 +244,15 @@ public class RotaryDial {
                 double a1 = angle_cadran[i];
                 double a2 = angle_cadran[(i + 1) % taille];
                 if (a2 < a1) a2 += 360;
-
-                double startAngle = 90 - a1;
+                double startAngle = (90 - a1 + angleAnimation);
                 double extent = -(a2 - a1);
 
                 // Épaisseur de 6px avec une couleur gris métallique clair
                 g.setStroke(new BasicStroke(6.0f));
                 g.setColor(new Color(200, 205, 215)); // Gris acier métallique clair
 
-                double rad1 = Math.toRadians(90 - a1);
-                double rad2 = Math.toRadians(90 - a2);
+                double rad1 = Math.toRadians(startAngle);
+                double rad2 = Math.toRadians(startAngle + extent);
 
                 // Tracé de l'encadré rotatif épais recalé pile sur les rayons de base (4)
                 // Arc extérieur
