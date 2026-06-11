@@ -16,12 +16,14 @@ public class RotaryDialUI extends EnigmaDialog {
     private final RotaryDial dial;
     private final int W = 640;
     private final int H = 560;
+    private Save save = null;
 
     public RotaryDialUI(Window parent, Save save) {
         super(parent, "Verrou rotatif - Porte de Louis", 640, 600);
         String diff = (save != null && save.getDifficulty() != null) ? save.getDifficulty() : "Normal";
-        this.dial = RotaryDial.create(diff, new Vec2(W / 2.0, H / 2.0 - 10), 210, 0.55);
-        setStatus("Tournez le cadran pour aligner les secteurs verts. Évitez les pièges.",
+        this.save = save;
+        this.dial = RotaryDial.create(diff, new Vec2(W / 2.0, H / 2.0 - 30), 210, 0.55);
+        setStatus("Activez tous les boutons.",
                 new Color(41, 128, 185));
     }
 
@@ -45,10 +47,12 @@ public class RotaryDialUI extends EnigmaDialog {
             return;
         }
         dial.draw(g);
-        g.setColor(new Color(180, 185, 195));
-        g.setFont(new Font("SansSerif", Font.ITALIC, 12));
-        g.drawString("Cliquez sur un secteur jaune pour avancer. Cliquer sur un secteur sombre réinitialise.",
-                20, h - 16);
+        if (save.getDifficulty().equals("Easy")){
+            g.setColor(new Color(180, 185, 195));
+            g.setFont(new Font("SansSerif", Font.ITALIC, 12));
+            g.drawString("Cliquez sur un bouton du cadran pour avancer. Cliquer sur un autre bouton pour réinitialiser.",
+                    20, h - 12);
+        }
     }
 
     @Override

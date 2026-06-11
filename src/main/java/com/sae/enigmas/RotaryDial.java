@@ -1,5 +1,6 @@
 package com.sae.enigmas;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
@@ -156,7 +157,7 @@ public class RotaryDial {
                             if (isFinished()) {
                                 win = true;
                             } else if (isStuck()) {
-                                reset(); 
+                                //reset(); 
                             }
                         }
                     } else {
@@ -176,45 +177,96 @@ public class RotaryDial {
         Draw.circle(g, coord.x, coord.y, rayon_ext, new Color(38, 42, 50));
         Draw.circle(g, coord.x, coord.y, rayon_int, new Color(18, 20, 24));
 
-        // Dessin des secteurs
-        for (int i = 0; i < taille; i++){
+        // =========================================================================
+        // PASSE 1 : DESSIN DES FONDS ET DES CONTOURS DE BASE DE TOUTES LES CASES
+        // =========================================================================
+        for (int i = 0; i < taille; i++) {
             double a1 = angle_cadran[i];
             double a2 = angle_cadran[(i + 1) % taille];
             if (a2 < a1) a2 += 360;
             
-            boolean estJouable = isCaseJouable(i);
-            Color base;
+            // Couleurs de fond (Marron clair cannelle par défaut, plus foncé si pressé)
+            Color base = pushed[i] ? new Color(135, 100, 75) : new Color(210, 180, 145);
             
-            if (pushed[i]) base = new Color(46, 204, 113);          // Vert
-            else if (estJouable) base = new Color(241, 196, 15);    // Jaune actif
-            else base = new Color(52, 58, 68);                      // Sombre
+            double startAngle = 90 - a1;
+            double extent = -(a2 - a1);
 
-            // TRÈS IMPORTANT : Java dessine en trigo (0° à droite). 
-            // Pour afficher notre repère horaire (0° en haut), on doit faire : 90 - angle.
-            // Comme portionCouronne prend un start et une ouverture (ou a1 et a2), on applique la conversion :
-            double drawA1 = 90 - a2;
-            double drawA2 = 90 - a1;
+            // 1) Remplissage de la forme de la case
+            Draw.portionCouronne(g, coord.x, coord.y, rayon_int + 4, rayon_ext - 4, startAngle, startAngle + extent, base);
 
-            Draw.portionCouronne(g, coord.x, coord.y, rayon_int + 4, rayon_ext - 4, drawA1, drawA2, base);
+            // 2) Contour sombre standard de la case (Passe 1)
+            g.setStroke(new BasicStroke(3.5f));
+            g.setColor(new Color(25, 22, 20)); // Grosse bordure de fond sombre
 
-            // Séparateurs de cases (alignés sur l'affichage)
-            double aRad = Math.toRadians(90 - a1);
-            double xs1 = coord.x + Math.cos(aRad) * rayon_int;
-            double ys1 = coord.y + Math.sin(aRad) * rayon_int;
-            double xs2 = coord.x + Math.cos(aRad) * rayon_ext;
-            double ys2 = coord.y + Math.sin(aRad) * rayon_ext;
-            Draw.line(g, xs1, ys1, xs2, ys2, new Color(20, 22, 28), 2);
+            double rad1 = Math.toRadians(90 - a1);
+            double rad2 = Math.toRadians(90 - a2);
 
-            // Texte des chiffres de saut (au milieu de la case)
-            double midAngle = a1 + (angle_unite / 2.0);
+            // Tracé des 4 lignes de contour par défaut
+            g.drawArc((int)(coord.x - rayon_ext + 4), (int)(coord.y - rayon_ext + 4), (int)(rayon_ext * 2 - 8), (int)(rayon_ext * 2 - 8), (int)startAngle, (int)extent);
+            g.drawArc((int)(coord.x - rayon_int - 4), (int)(coord.y - rayon_int - 4), (int)(rayon_int * 2 + 8), (int)(rayon_int * 2 + 8), (int)startAngle, (int)extent);
+            g.drawLine((int)(coord.x + Math.cos(rad1) * (rayon_int + 4)), (int)(coord.y - Math.sin(rad1) * (rayon_int + 4)),
+                    (int)(coord.x + Math.cos(rad1) * (rayon_ext - 4)), (int)(coord.y - Math.sin(rad1) * (rayon_ext - 4)));
+            g.drawLine((int)(coord.x + Math.cos(rad2) * (rayon_int + 4)), (int)(coord.y - Math.sin(rad2) * (rayon_int + 4)),
+                    (int)(coord.x + Math.cos(rad2) * (rayon_ext - 4)), (int)(coord.y - Math.sin(rad2) * (rayon_ext - 4)));
+        }
+
+        // =========================================================================
+        // PASSE 2 : DESSIN DES GROS CONTOURS DE LA PARTIE ROTATIVE ACTIVE (PAR-DESSUS)
+        // =========================================================================
+        for (int i = 0; i < taille; i++) {
+            if (isCaseJouable(i)) {
+                double a1 = angle_cadran[i];
+                double a2 = angle_cadran[(i + 1) % taille];
+                if (a2 < a1) a2 += 360;
+
+                double startAngle = 90 - a1;
+                double extent = -(a2 - a1);
+
+                // Épaisseur de 6px avec une couleur gris métallique clair
+                g.setStroke(new BasicStroke(6.0f));
+                g.setColor(new Color(200, 205, 215)); // Gris acier métallique clair
+
+                double rad1 = Math.toRadians(90 - a1);
+                double rad2 = Math.toRadians(90 - a2);
+
+                // Tracé de l'encadré rotatif épais recalé pile sur les rayons de base (4)
+                // Arc extérieur
+                g.drawArc((int)(coord.x - rayon_ext + 4), (int)(coord.y - rayon_ext + 4), 
+                        (int)(rayon_ext * 2 - 8), (int)(rayon_ext * 2 - 8), (int)startAngle, (int)extent);
+
+                // Arc intérieur
+                g.drawArc((int)(coord.x - rayon_int - 4), (int)(coord.y - rayon_int - 4), 
+                        (int)(rayon_int * 2 + 8), (int)(rayon_int * 2 + 8), (int)startAngle, (int)extent);
+
+                // Bord latéral gauche
+                g.drawLine((int)(coord.x + Math.cos(rad1) * (rayon_int + 4)), (int)(coord.y - Math.sin(rad1) * (rayon_int + 4)),
+                        (int)(coord.x + Math.cos(rad1) * (rayon_ext - 4)), (int)(coord.y - Math.sin(rad1) * (rayon_ext - 4)));
+
+                // Bord latéral droit
+                g.drawLine((int)(coord.x + Math.cos(rad2) * (rayon_int + 4)), (int)(coord.y - Math.sin(rad2) * (rayon_int + 4)),
+                        (int)(coord.x + Math.cos(rad2) * (rayon_ext - 4)), (int)(coord.y - Math.sin(rad2) * (rayon_ext - 4)));
+            }
+        }
+
+        // =========================================================================
+        // PASSE 3 : AFFICHAGE DU TEXTE AU PREMIER PLAN FINAL
+        // =========================================================================
+        for (int i = 0; i < taille; i++) {
+            double a1 = angle_cadran[i];
+            double a2 = angle_cadran[(i + 1) % taille];
+            if (a2 < a1) a2 += 360;
+
+            Color texteColor = pushed[i] ? new Color(245, 235, 220) : new Color(55, 40, 25);
+
+            double midAngle = a1 + ((a2 - a1) / 2.0);
             double aMidRad = Math.toRadians(90 - midAngle);
             double rTxt = (rayon_int + rayon_ext) / 2.0;
+            
             double tx = coord.x + Math.cos(aMidRad) * rTxt;
-            double ty = coord.y + Math.sin(aMidRad) * rTxt; // Swing possède un axe Y vers le bas donc + pour descendre, mais avec la conversion 90-angle le sinus gère l'inversion nativement
+            double ty = coord.y - Math.sin(aMidRad) * rTxt; 
             
             g.setFont(new Font("SansSerif", Font.BOLD, Math.max(12, rayon_ext / 12)));
-            Draw.textCentered(g, tx, ty, String.valueOf(liste[i]),
-                    pushed[i] ? Color.WHITE : new Color(230, 230, 230), Math.max(12, rayon_ext / 12));
+            Draw.textCentered(g, tx, ty, String.valueOf(liste[i]), texteColor, Math.max(12, rayon_ext / 12));
         }
 
         // Centre de l'interface
