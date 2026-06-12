@@ -1,6 +1,8 @@
 package com.roxane.app;
 
+import com.sae.core.Phase;
 import com.sae.core.Save;
+import com.sae.core.Time;
 
 import javafx.embed.swing.SwingNode;
 import javafx.geometry.Insets;
@@ -204,6 +206,7 @@ public class NewGameScreen {
      * Un appui sur ÉCHAP affiche/masque l'overlay de pause contenant les options.
      */
     void launchSwingGameInScene(Save save) {
+        Phase phase = new Phase(0.0);
         SwingNode swingNode = new SwingNode();
 
         StackPane gameRoot = new StackPane(swingNode);
@@ -246,7 +249,12 @@ public class NewGameScreen {
         backButton.setPrefWidth(240);
         backButton.setPrefHeight(50);
         if (minecraftFont != null) backButton.setFont(Font.font(minecraftFont.getFamily(), 16));
-        backButton.setOnAction(ev -> onBackToMenu.run());
+        backButton.setOnAction(ev -> {
+            if (phase.getPoids() != 0){
+                save.addTime(((int) (Time.now() - save.getLastSave())) / 1000);
+            }
+            save.save(); 
+            onBackToMenu.run();});
 
         // Agencement vertical des boutons de pause
         VBox pauseButtonsBox = new VBox(15); // Espace de 15px entre les boutons
@@ -274,7 +282,7 @@ public class NewGameScreen {
 
         // Lancement sur l'Event Dispatch Thread (EDT)
         javax.swing.SwingUtilities.invokeLater(() -> {
-            com.sae.game.Jeu jeu = new com.sae.game.Jeu(save);
+            com.sae.game.Jeu jeu = new com.sae.game.Jeu(save, phase);
 
             // Branchement du curseur JavaFX
             jeu.setCursorChangeListener(surElementInteractif -> {

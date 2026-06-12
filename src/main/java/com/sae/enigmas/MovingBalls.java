@@ -151,14 +151,17 @@ public class MovingBalls{
         }
     }
 
-    public final void updBalls(){
-
-        /* Cette méthode met à jour les coordonnées des boules. */
-
-        for (int j = 0; j < balls.length; j++){
-            for (int i = 0; i < balls[j].length; i++){
-                Vec2 c = new Vec2(coord.x-taille_tot/2 + (i+1/2) * taille_case, coord.y-taille_tot/2 + (j+1/2) * taille_case);
-                balls[j][i].setCoord(c);
+    public void updBalls(){
+        /* Cette méthode met à jour les coordonnées d'affichage des billes. */
+        for (int j = 0; j < this.balls.length; j++){
+            for (int i = 0; i < this.balls[0].length; i++){
+                // AJOUT : On ne met à jour la bille que si elle existe sur cette case !
+                if (this.balls[j][i] != null) {
+                    double rayon = this.balls[j][i].rayon;
+                    Vec2 c = new Vec2(this.coord.x - this.taille_tot/2 + (i + 0.5) * this.taille_case, 
+                                      this.coord.y - this.taille_tot/2 + (j + 0.5) * this.taille_case);
+                    this.balls[j][i].setDrawingInfo(c, this.taille_case * BALL_RADIUS);
+                }
             }
         }
     }
@@ -193,7 +196,7 @@ public class MovingBalls{
                     sens = Slide.DOWN;
                 }
                 if (sens != null){
-                    Vec2 c = new Vec2(coord.x-(taille_tot+2*taille_case)/2 + (i+1/2) * taille_case, coord.y-(taille_tot + 2*taille_case)/2 + (j+1/2) * taille_case);
+                    Vec2 c = new Vec2(coord.x-(taille_tot+2*taille_case)/2 + (i+0.5) * taille_case, coord.y-(taille_tot + 2*taille_case)/2 + (j+0.5) * taille_case);
                     buttons[j][i] = new MovingBallsButton(c, taille_case, sens);
                 }
             }
@@ -233,15 +236,15 @@ public class MovingBalls{
                     this.slides[j][i].directions.remove(Slide.LEFT);
                     this.slides[j][i].provenances.remove(Slide.RIGHT);
                 }
-                if (j == this.slides.length && this.slides[j][i].canGoTo(Slide.DOWN)){
+                if (j == this.slides.length-1 && this.slides[j][i].canGoTo(Slide.DOWN)){
                     this.slides[j][i].directions.remove(Slide.DOWN);
                     this.slides[j][i].provenances.remove(Slide.UP);
                 }
-                if (i == this.slides[0].length && this.slides[j][i].canGoTo(Slide.RIGHT)){
+                if (i == this.slides[0].length-1 && this.slides[j][i].canGoTo(Slide.RIGHT)){
                     this.slides[j][i].directions.remove(Slide.RIGHT);
                     this.slides[j][i].provenances.remove(Slide.LEFT);
                 }
-                Vec2 c = new Vec2(this.coord.x-this.taille_tot/2 + (i+1/2) * this.taille_case, this.coord.y-this.taille_tot/2 + (j+1/2) * this.taille_case);
+                Vec2 c = new Vec2(this.coord.x-this.taille_tot/2 + (i+0.5) * this.taille_case, this.coord.y-this.taille_tot/2 + (j+0.5) * this.taille_case);
                 this.slides[j][i].setDrawingInfo(c, this.taille_case);
             }
         }
@@ -266,19 +269,29 @@ public class MovingBalls{
         // Grille
         for (Slide[] line : slides){
             for (Slide s : line){
-                if (s != null) s.draw(g);
+                if (s != null) s.draw(g, "BALLS");
             }
         }
-        // Boules
+
+        // Goals
+        for (Slide[] line : slides){
+            for (Slide s : line){
+                if (s != null) s.drawGoal(g);
+            }
+        }
+
+        // Billes
         for (Slider[] line : balls){
             for (Slider b : line){
+                // AJOUT EN SÉCURITÉ : Ne dessine la bille que si elle existe
                 if (b != null) b.drawBall(g);
             }
         }
+
         // Boutons
         for (MovingBallsButton[] line : buttons){
-            for (MovingBallsButton btn : line){
-                if (btn != null) btn.draw(g);
+            for (MovingBallsButton b : line){
+                if (b != null) b.draw(g);
             }
         }
     }

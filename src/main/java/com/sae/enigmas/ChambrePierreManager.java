@@ -83,7 +83,7 @@ public class ChambrePierreManager {
             Rectangle zoneFiole = new Rectangle((int)(iw * 0.46), (int)(ih * 0.35), (int)(iw * 0.08), (int)(ih * 0.22));
             if (zoneFiole.contains(clic)) {
                 javax.swing.JOptionPane.showMessageDialog(jeu, 
-                    "Une fiole de poison numérique... Serait-ce l'arme du crime ?\nPierre cache bien son jeu.", 
+                    "Une fiole... Peut-être que c'est du poison... Serait-ce l'arme du crime ?\nPierre cache bien son jeu.", 
                     "Indice Suspect", javax.swing.JOptionPane.INFORMATION_MESSAGE);
             }
         }

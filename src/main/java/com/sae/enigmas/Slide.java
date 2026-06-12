@@ -3,7 +3,6 @@ package com.sae.enigmas;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
-
 import java.util.HashSet;
 
 public class Slide{
@@ -133,25 +132,34 @@ public class Slide{
 
     /* ====== AFFICHAGE ====== */
 
-    public void draw(Graphics2D g){
+    public void draw(Graphics2D g, String game){
         if (coord == null) return;
         // Fond de case
-        Color bgCase = isGoal ? new Color(46, 100, 60) : new Color(30, 32, 38);
+        //Color bgCase = isGoal ? new Color(46, 100, 60) : new Color(30, 32, 38);
+        Color bgCase = new Color(30, 32, 38);
         Draw.rect(g, coord.x - taille/2, coord.y - taille/2, taille, taille, bgCase);
         Draw.rectOutline(g, coord.x - taille/2, coord.y - taille/2, taille, taille,
                 new Color(60, 65, 75), 1);
-
+        
+        double w;
         // Rails (épaisseur ~ taille/6, couleur claire)
-        double w = Math.max(4, taille / 6.0);
+        if (game.equals("LIGHTS")){
+            w = Math.max(4, taille / 6.0);
+        } else if(game.equals("BALLS")){
+            w = Math.max(4, taille / 1.2);
+        } else {
+            w = Math.max(4, taille / 6.0);
+        }
         g.setStroke(new BasicStroke((float) w, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
         g.setColor(new Color(160, 170, 185));
         if (canGoTo(UP))    g.drawLine((int) coord.x, (int) coord.y, (int) coord.x, (int) (coord.y - taille/2));
         if (canGoTo(DOWN))  g.drawLine((int) coord.x, (int) coord.y, (int) coord.x, (int) (coord.y + taille/2));
         if (canGoTo(LEFT))  g.drawLine((int) coord.x, (int) coord.y, (int) (coord.x - taille/2), (int) coord.y);
         if (canGoTo(RIGHT)) g.drawLine((int) coord.x, (int) coord.y, (int) (coord.x + taille/2), (int) coord.y);
-
+    }
+    public void drawGoal(Graphics2D g){
         if (isGoal){
-            Draw.circle(g, coord.x, coord.y, taille * 0.15, new Color(46, 204, 113, 180));
+            Draw.circle(g, coord.x, coord.y, taille * 0.75/2.0, new Color(46, 46, 46, 180));
         }
     }
 }

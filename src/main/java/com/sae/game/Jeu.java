@@ -131,14 +131,15 @@ public class Jeu extends JFrame {
     private final Save save;
     private final Phase phase;
 
-    public Jeu(Save save) {
+    public Jeu(Save save, Phase phase) {
         this.save = save;
 
         // Extraction et lissage de la phase sauvegardée
         double numPhaseSauvegardee = (this.save != null) ? this.save.getPhase() : 0.1;
         if (numPhaseSauvegardee <= 0) numPhaseSauvegardee = 0.1;
         numPhaseSauvegardee = Math.round(numPhaseSauvegardee * 10) / 10.0;
-        this.phase = new Phase(numPhaseSauvegardee);
+        this.phase = phase;
+        this.phase.change(new Phase(numPhaseSauvegardee));
         if (this.save != null) this.save.save();
         setTitle(Translations.t(GameInfos.GAMENAME_TYPE_2));
         setSize(800, 600);
@@ -710,24 +711,25 @@ public class Jeu extends JFrame {
     private void gererClicJacques(Point clic, int iw, int ih) {
         if (numPhase() != 52) return;
         Rectangle plafond = new Rectangle((int)(iw * 0), (int)(ih * 0), (int)(iw * 1), (int)(ih * 0.1));
-        Rectangle tiroir  = new Rectangle((int)(iw * 0.30), (int)(ih * 0.55), (int)(iw * 0.18), (int)(ih * 0.15));
-        Rectangle fiole   = new Rectangle((int)(iw * 0.32), (int)(ih * 0.58), (int)(iw * 0.14), (int)(ih * 0.10));
+        //Rectangle fiole   = new Rectangle((int)(iw * 0.32), (int)(ih * 0.58), (int)(iw * 0.14), (int)(ih * 0.10));
 
         if (lampeUVRamassee && plafond.contains(clic) && subStep == 0) {
             lancerUVLamp();
             return;
         }
-        if (!tiroirJacquesOuvert && tiroir.contains(clic) && indexDecor == 0) {
-            lancerEnigmeBoules();
+        if (!tiroirJacquesOuvert && zoneTiroirB4(iw, ih).contains(clic) && indexDecor == 0) {
+            lancerEnigmeBoules(0); // 0 en niveau normal correspond à l'énigme de la maquette (version originale de Escape Memoirs)
             return;
         }
+        /*
         if (tiroirJacquesOuvert && !fioleTrouvee && fiole.contains(clic)) {
             fioleTrouvee = true;
-            afficherIndice("Une fiole de poison vide... Voilà l'arme du crime !");
             avancerPhase(); // 5.2 → 6.1
+            afficherIndice("Une fiole de poison vide... Voilà l'arme du crime !");
             cinematiqueRevelations();
             return;
         }
+        */
     }
 
     private void gererClicSdb(Point clic, int iw, int ih) {
@@ -944,15 +946,17 @@ public class Jeu extends JFrame {
         rafraichirAffichage();
     }
 
-    private void lancerEnigmeBoules() {
+    private void lancerEnigmeBoules(int num) {
         modeEnigmeActive = true;
-        MovingBallsUI ui = new MovingBallsUI(dialogParent(), this.save);
+        MovingBallsUI ui = new MovingBallsUI(dialogParent(), this.save, num);
         ui.setVisible(true);
         modeEnigmeActive = false;
         if (ui.isReussite()) {
             ui = null;
             tiroirJacquesOuvert = true;
-            afficherInfo("Le tiroir s'ouvre. Une fiole vide est dissimulée à l'intérieur...");
+            afficherInfo2("Le tiroir s'ouvre. Une fiole de poison vide est dissimulée à l'intérieur... Voilà l'arme du crime !", "Info");
+            avancerPhase();
+            cinematiqueRevelations();
         }
         rafraichirAffichage();
     }
@@ -1081,6 +1085,10 @@ public class Jeu extends JFrame {
         JOptionPane.showMessageDialog(this, msg, title, JOptionPane.WARNING_MESSAGE);
     }
 
+    private void afficherInfo2(String msg, String title){
+        JOptionPane.showMessageDialog(this, msg, title, JOptionPane.INFORMATION_MESSAGE);
+    }
+
     private void notifierChangementCurseur(boolean surElementInteractif) {
         if (cursorChangeListener != null) cursorChangeListener.onCursorChanged(surElementInteractif);
     }
@@ -1144,6 +1152,10 @@ public class Jeu extends JFrame {
         return new Rectangle((int)(iw * 0.63), (int)(ih * 0.356), (int)(iw * 0.014), (int)(ih * 0.132));
     }
 
+    private Rectangle zoneTiroirB4(int iw, int ih){
+        return new Rectangle((int)(iw * 0.764), (int)(ih * 0.646), (int)(iw * 0.066), (int)(ih * 0.039));
+    }
+
     private boolean zoneLouisInter(Point clic, int iw, int ih) {
         int n = numPhase();
         if (n == 32 && indexDecor == 0) {
@@ -1161,8 +1173,7 @@ public class Jeu extends JFrame {
     private boolean zoneJacquesInter(Point clic, int iw, int ih) {
         if (numPhase() != 52) return false;
         Rectangle plafond = new Rectangle((int)(iw * 0), (int)(ih * 0), (int)(iw * 1), (int)(ih * 0.1));
-        Rectangle tiroir  = new Rectangle((int)(iw * 0.30), (int)(ih * 0.55), (int)(iw * 0.18), (int)(ih * 0.15));
-        return plafond.contains(clic) || (indexDecor == 0 && tiroir.contains(clic));
+        return plafond.contains(clic) || (numPhase() == 52 && indexDecor == 0 && zoneTiroirB4(iw, ih).contains(clic));
     }
 
     private boolean zoneSdbInter(Point clic, int iw, int ih) {
