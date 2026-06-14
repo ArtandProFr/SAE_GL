@@ -13,6 +13,10 @@ public class Vec2{
         this.x = x;
         this.y = y;
     }
+    public Vec2(Vec2 v){
+        this.x = v.x;
+        this.y = v.y;
+    }
     public double distanceTo(Vec2 point){
         double dx = this.x - point.x;
         double dy = this.y - point.y;

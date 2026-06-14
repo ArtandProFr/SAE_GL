@@ -1,7 +1,8 @@
 package com.sae.enigmas;
 
 import java.awt.Graphics2D;
-
+import java.util.ArrayList;
+import java.util.List;
 
 public class MovingBalls{
     public static final double BALL_RADIUS = 1.0/3.0;
@@ -16,6 +17,11 @@ public class MovingBalls{
     public int nb_balls;
     public MovingBallsButton[][] buttons;
     private final Slider[][] debut;
+
+    public boolean isAnimating = false;
+    private double animationProgress = 0; // 0.0 à 1.0
+    private final double ANIM_SPEED = 0.05; // Ajuste pour la vitesse
+    private final List<MovingBallTrack> activeAnimations = new ArrayList<>();
 
     public MovingBalls(Vec2 coord, double taille, int[][] balls, int[][] goals, Slide[][] slides){
 
@@ -37,15 +43,49 @@ public class MovingBalls{
 
     public void update(Vec2 mouseCoord, boolean leftClickPushed, boolean leftClickPressed){
 
-        /* Cette méthode met à jour l'énigme en fonction des actions de l'utilisateur. */
-
-        if (!win){
+        if (!win && !isAnimating) { 
+            activeAnimations.clear(); // On s'assure que la liste est propre
+            
             if (this.updButton(mouseCoord, leftClickPushed, leftClickPressed)){
-                this.updBalls();
+                // Si un bouton a été cliqué, move() a été appelée et a rempli activeAnimations
+                if (!activeAnimations.isEmpty()) {
+                    isAnimating = true;
+                    animationProgress = 0;
+                }
             }
-            if (verifWin()){
-                win = true;
-            }
+        }
+        
+        if (isAnimating) {
+            animate(); 
+        }
+        
+        if (!isAnimating && verifWin()){
+            win = true;
+        }
+    }
+
+    private void animate() {
+        animationProgress += ANIM_SPEED;
+
+        // On anime chaque bille enregistrée de façon totalement sécurisée
+        for (MovingBallTrack track : activeAnimations) {
+            double startX = track.startPos.x;
+            double startY = track.startPos.y;
+            double endX = track.endPos.x;
+            double endY = track.endPos.y;
+
+            // Calcul de l'interpolation linéaire (LERP)
+            double currentX = startX + (endX - startX) * animationProgress;
+            double currentY = startY + (endY - startY) * animationProgress;
+
+            track.ball.setCoord(new Vec2(currentX, currentY));
+        }
+
+        if (animationProgress >= 1.0) {
+            isAnimating = false;
+            animationProgress = 0;
+            activeAnimations.clear(); // On vide les animations terminées
+            updBalls(); // On recale parfaitement toutes les billes sur leurs cases finales
         }
     }
 
@@ -82,70 +122,108 @@ public class MovingBalls{
         return false;
     }
 
+    public Vec2 goodCoord(int i, int j){
+
+        /* Cette méthode renvoie les coordonnées du centre d'une case de la grille. */
+
+        return new Vec2(this.coord.x - this.taille_tot/2 + (i + 0.5) * this.taille_case, 
+                        this.coord.y - this.taille_tot/2 + (j + 0.5) * this.taille_case);
+    }
+
     public void move(int i_b, int j_b){
+        /* 1. On prend une photo de la grille avant tout déplacement */
+        Slider[][] grilleDepart = getCopy(balls);
+        activeAnimations.clear();
 
-        /* Cette méthode déplace les boules selon le bouton qui a été pressé. */
-
-        // Attention ici i_b et j_b sont les coordonnées du bouton cliqué, ainsi la colonne 0 de balls est la colonne 1 de bouton
+        // Vers la gauche
         if (i_b == 0){
-            // Vers la gauche
             int j = j_b-1;
-            for (int i = 1; i < taille; i++){
-                Slider b = balls[j][i];
+            // De gauche à droite
+            for (int i = 0; i < taille; i++){
+                Slider b = grilleDepart[j][i]; // On lit depuis la photo de départ
+                if (b == null) continue;
+                
                 int decal = 0;
                 while (i-decal > 0 && slides[j][i-decal].canGoTo(Slide.LEFT) && balls[j][i-decal-1] == null){
                     decal += 1;
                 }
                 if (decal != 0){
-                    balls[j][i-decal] = b;
-                    balls[j][i] = null;
+                    // On récupère le VRAI slider de la grille active
+                    Slider vraieBille = balls[j][i];
+                    if (vraieBille != null) {
+                        activeAnimations.add(new MovingBallTrack(vraieBille, goodCoord(i, j), goodCoord(i - decal, j)));
+                        balls[j][i-decal] = vraieBille;
+                        balls[j][i] = null;
+                    }
                 }
             }
         }
+        
+        // Vers la droite
         if (i_b == taille+1){
-            // Vers la droite
             int j = j_b-1;
-            for (int i2 = 0; i2 < taille-1; i2++){
-                int i = taille-2-i2;
-                Slider b = balls[j][i];
+            // De droite à gauche
+            for (int i = taille - 1; i >= 0; i--){
+                Slider b = grilleDepart[j][i]; // On lit depuis la photo de départ
+                if (b == null) continue;
+                
                 int decal = 0;
                 while (i+decal < taille-1 && slides[j][i+decal].canGoTo(Slide.RIGHT) && balls[j][i+decal+1] == null){
                     decal += 1;
                 }
                 if (decal != 0){
-                    balls[j][i+decal] = b;
-                    balls[j][i] = null;
+                    Slider vraieBille = balls[j][i];
+                    if (vraieBille != null) {
+                        activeAnimations.add(new MovingBallTrack(vraieBille, goodCoord(i, j), goodCoord(i + decal, j)));
+                        balls[j][i+decal] = vraieBille;
+                        balls[j][i] = null;
+                    }
                 }
             }
         }
+        
+        // Vers le haut
         if (j_b == 0){
-            // Vers le haut
             int i = i_b-1;
-            for (int j = 1; j < taille; j++){
-                Slider b = balls[j][i];
+            // De haut en bas
+            for (int j = 0; j < taille; j++){
+                Slider b = grilleDepart[j][i]; // On lit depuis la photo de départ
+                if (b == null) continue;
+                
                 int decal = 0;
                 while (j-decal > 0 && slides[j-decal][i].canGoTo(Slide.UP) && balls[j-decal-1][i] == null){
                     decal += 1;
                 }
                 if (decal != 0){
-                    balls[j-decal][i] = b;
-                    balls[j][i] = null;
+                    Slider vraieBille = balls[j][i];
+                    if (vraieBille != null) {
+                        activeAnimations.add(new MovingBallTrack(vraieBille, goodCoord(i, j), goodCoord(i, j - decal)));
+                        balls[j-decal][i] = vraieBille;
+                        balls[j][i] = null;
+                    }
                 }
             }
         }
+        
+        // Vers le bas
         if (j_b == taille+1){
-            // Vers le bas
             int i = i_b-1;
-            for (int j2 = 0; j2 < taille-1; j2++){
-                int j = taille-2-j2;
-                Slider b = balls[j][i];
+            // De bas en haut
+            for (int j = taille - 1; j >= 0; j--){
+                Slider b = grilleDepart[j][i]; // On lit depuis la photo de départ
+                if (b == null) continue;
+                
                 int decal = 0;
                 while (j+decal < taille-1 && slides[j+decal][i].canGoTo(Slide.DOWN) && balls[j+decal+1][i] == null){
                     decal += 1;
                 }
                 if (decal != 0){
-                    balls[j+decal][i] = b;
-                    balls[j][i] = null;
+                    Slider vraieBille = balls[j][i];
+                    if (vraieBille != null) {
+                        activeAnimations.add(new MovingBallTrack(vraieBille, goodCoord(i, j), goodCoord(i, j + decal)));
+                        balls[j+decal][i] = vraieBille;
+                        balls[j][i] = null;
+                    }
                 }
             }
         }
@@ -158,9 +236,7 @@ public class MovingBalls{
                 // AJOUT : On ne met à jour la bille que si elle existe sur cette case !
                 if (this.balls[j][i] != null) {
                     double rayon = this.balls[j][i].rayon;
-                    Vec2 c = new Vec2(this.coord.x - this.taille_tot/2 + (i + 0.5) * this.taille_case, 
-                                      this.coord.y - this.taille_tot/2 + (j + 0.5) * this.taille_case);
-                    this.balls[j][i].setDrawingInfo(c, this.taille_case * BALL_RADIUS);
+                    this.balls[j][i].setDrawingInfo(goodCoord(i, j), this.taille_case * BALL_RADIUS);
                 }
             }
         }
@@ -293,6 +369,18 @@ public class MovingBalls{
             for (MovingBallsButton b : line){
                 if (b != null) b.draw(g);
             }
+        }
+    }
+
+    private static class MovingBallTrack {
+        Slider ball;
+        Vec2 startPos;
+        Vec2 endPos;
+
+        public MovingBallTrack(Slider ball, Vec2 startPos, Vec2 endPos) {
+            this.ball = ball;
+            this.startPos = startPos;
+            this.endPos = endPos;
         }
     }
 }

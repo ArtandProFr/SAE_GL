@@ -23,6 +23,14 @@ public class MovingBallsUI extends EnigmaDialog {
         this.save = save;
         setStatus("Cliquez sur les boutons périphériques pour faire glisser les billes jusqu'aux cibles.",
                 new Color(41, 128, 185));
+        int fps = 60;
+        javax.swing.Timer timer = new javax.swing.Timer(1000 / fps, e -> {
+            // On appelle update avec de fausses coordonnées de souris quand elle ne bouge pas
+            // pour laisser l'animation tourner de façon fluide
+            enigme.update(new Vec2(), false, false); 
+            repaint(); 
+        });
+        timer.start();
     }
 
     private MovingBalls buildEnigme(String diff, int num) {
