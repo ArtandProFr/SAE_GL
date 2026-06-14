@@ -128,7 +128,7 @@ public class EnigmeEmpreinteUI extends JDialog {
                 BorderFactory.createLineBorder(Color.GRAY, 2), 
                 " FICHIER SÉLECTIONNÉ ", TitledBorder.LEFT, TitledBorder.TOP, null, Color.LIGHT_GRAY));
         
-        lblEmpreinteSuspect = new JLabel("Verrouillé : Reconstituez d'abord le puzzle à gauche", SwingConstants.CENTER);
+        lblEmpreinteSuspect = new JLabel("Verrouillé : Reconstituez d'abord le puzzle.", SwingConstants.CENTER);
         lblEmpreinteSuspect.setForeground(Color.GRAY);
         lblEmpreinteSuspect.setFont(new Font("Arial", Font.ITALIC, 11));
         panelEmpreinteSuspect.add(lblEmpreinteSuspect, BorderLayout.CENTER);

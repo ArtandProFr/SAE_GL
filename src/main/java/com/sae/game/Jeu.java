@@ -1059,7 +1059,7 @@ public class Jeu extends JFrame {
                     this.save.save();
                     resetPhase();
                     System.out.println("Phase changée vers : " + input);
-                    
+                    changeTitleProgression();
                     JOptionPane.showMessageDialog(this, "Phase changée avec succès : " + input);
                     restaurerEtatProgression();
                     mettreAJourTexteChambre();

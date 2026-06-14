@@ -1,6 +1,7 @@
 package com.roxane.app;
 
 import com.sae.core.PauseManager;
+import com.sae.core.Phase;
 import com.sae.core.Save;
 import com.sae.core.Time;
 
@@ -37,11 +38,12 @@ public class GameScreen {
     private PauseManager pauseManager;
 
     // Largeurs fixes des colonnes — partagées entre header et items
-    private static final double COL_SAVENAME = 155;
+    private static final double COL_SAVENAME = 130;
     private static final double COL_PLAYER   = 130;
     private static final double COL_DIFF     =  90;
     private static final double COL_DATE     = 175;
-    // COL_TIME : flexible
+    private static final double COL_PERCENT  =  80;
+    private static final double COL_TIME = 100;
 
     public GameScreen(Stage stage, Font minecraftFont, Runnable onBack, Save save, PauseManager pause) {
         this.stage = stage;
@@ -174,7 +176,8 @@ public class GameScreen {
             makeHeaderLabel(Translations.t("JOUEUR"),                 COL_PLAYER),
             makeHeaderLabel(Translations.t("DIFFICULTE"),             COL_DIFF),
             makeHeaderLabel(Translations.t("DATE"),                   COL_DATE),
-            makeHeaderLabelGrow(Translations.t("TEMPS"))
+            makeHeaderLabel(Translations.t("TEMPS"),                  COL_TIME),
+            makeHeaderLabelGrow("%")
         );
 
         // ── Conteneur liste
@@ -231,13 +234,15 @@ public class GameScreen {
         item.setPadding(new Insets(9, 16, 9, 16));
         VBox.setMargin(item, new Insets(4, 0, 0, 0));
         item.setAlignment(Pos.CENTER_LEFT);
-
+        Phase p = new Phase(s.getPhase());
+        String prc = p.getStrPourcentage();
         item.getChildren().addAll(
             makeItemLabelIndent(s.getSavename(),                       COL_SAVENAME),
             makeItemLabel(s.getUsername(),                             COL_PLAYER),
             makeItemLabel(Translations.t(s.getDifficulty()),           COL_DIFF),
             makeItemLabel(Time.stringFromInstant(s.getLastSave()),     COL_DATE),
-            makeItemLabelGrow(Time.chronoToString(s.getTime()))
+            makeItemLabel(Time.chronoToString(s.getTime()),            COL_TIME),
+            makeItemLabelGrow(prc)
         );
 
         item.setOnMouseClicked(e -> {
