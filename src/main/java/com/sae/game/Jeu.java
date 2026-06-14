@@ -59,7 +59,7 @@ import javafx.stage.Stage;
  *       (verre→empreinte→correspondance, clé→armoire, code→déverrouillage, etc.).
  *       Cette valeur n'est PAS persistée : à la reprise d'une partie, elle vaut 0
  *       et le joueur doit (re)déclencher l'énigme qui ouvre la phase.</li>
- *   <li>{@code universActuel} : SALON, PIERRE, LOUIS, JACQUES, BATHROOM, THOMAS, PAUL.</li>
+ *   <li>{@code universActuel} : SALON, PIERRE, LOUIS, JACQUES, SALLE_DE_BAIN, THOMAS, PAUL.</li>
  * </ul>
  */
 public class Jeu extends JFrame {
@@ -71,9 +71,10 @@ public class Jeu extends JFrame {
     private static final String U_PIERRE  = "PIERRE";
     private static final String U_LOUIS   = "LOUIS";
     private static final String U_JACQUES = "JACQUES";
-    private static final String U_BATH    = "BATHROOM";
+    private static final String U_SDB     = "SALLE_DE_BAIN";
     private static final String U_THOMAS  = "THOMAS";
     private static final String U_PAUL    = "PAUL";
+    private static final String U_DEHORS  = "DEHORS";
 
     public interface CursorChangeListener {
         void onCursorChanged(boolean surElementInteractif);
@@ -87,6 +88,7 @@ public class Jeu extends JFrame {
     private final String[] decorsLouis   = {"louis1.jpg", "louis2.jpg"};
     private final String[] decorsJacques = {"jacques1.jpg", "jacques2.jpg"};
     private final String[] decorsSalon   = {"salon1.jpg", "salon2.jpg"};
+    private final String[] decorsSdb     = {"sdb1.jpg", "sdb2.jpg"};
     /** Pour les pièces sans visuel dédié (SDB / Thomas / Paul) : décor procédural. */
     private final String[] decorsPlaceholderSdb     = {"__SDB1__",     "__SDB2__"};
     private final String[] decorsPlaceholderThomas  = {"__THOMAS__"};
@@ -98,7 +100,7 @@ public class Jeu extends JFrame {
 
     /* ─── État de jeu ───────────────────────────────────────────────────────── */
     private boolean dialogueActif = false;
-    private int  indexDialogueLouis = 0;
+    private int  indexDialogue = 0;
     private String texteDialogueCourant = "";
     private String[] textesDialogueCustom = null;
     private boolean modeEnigmeActive = false;
@@ -231,7 +233,7 @@ public class Jeu extends JFrame {
 
         /* ─── État de jeu ───────────────────────────────────────────────────────── */
         dialogueActif = false;
-        indexDialogueLouis = 0;
+        indexDialogue = 0;
         texteDialogueCourant = "";
         textesDialogueCustom = null;
         modeEnigmeActive = false;
@@ -321,11 +323,12 @@ public class Jeu extends JFrame {
             }
             case 43 -> { // 4.3 - Enquête SDB
                 preparerJusqua42();
-                placerDans(U_BATH, decorsPlaceholderSdb, 0);
+                placerDans(U_SDB, decorsPlaceholderSdb, 0);
             }
             case 51 -> { // 5.1 - Paul rentre (cinématique)
                 preparerJusqua43();
                 placerDans(U_SALON, decorsSalon, 0);
+                cinematiquePaul();
             }
             case 52 -> { // 5.2 - Chambre Jacques
                 preparerJusqua43();
@@ -333,7 +336,8 @@ public class Jeu extends JFrame {
             }
             case 61 -> { // 6.1 - Révélations
                 preparerJusqua52();
-                placerDans(U_SALON, decorsSalon, 0);
+                placerDans(U_JACQUES, decorsJacques, 0);
+                cinematiqueRevelations();
             }
             case 71 -> { // 7.1 - Crédits
                 preparerJusqua52();
@@ -455,6 +459,7 @@ public class Jeu extends JFrame {
 
         /* Mode zoom Pierre + clic ailleurs */
         if (universActuel.equals(U_PIERRE) && pierreManager.getModeZoom().equals("AUCUN")) {
+            if (indexDecor == 1 && porteSortiePierre(iw, ih).contains(clic)) transitionner(U_SALON, decorsSalon, 0);
             if (pierreManager.gererClic(indexDecor, clic, iw, ih, Jeu.this)) {
                 // Si on a récupéré la clé en 2.1, on avance sur subStep
                 if (numPhase() == 21 && subStep == 0 && pierreManager.isaLaCle()) {
@@ -484,7 +489,7 @@ public class Jeu extends JFrame {
             gererClicJacques(clic, iw, ih);
             return;
         }
-        if (universActuel.equals(U_BATH)) {
+        if (universActuel.equals(U_SDB)) {
             gererClicSdb(clic, iw, ih);
             return;
         }
@@ -520,7 +525,9 @@ public class Jeu extends JFrame {
         }
 
         if (!inter && universActuel.equals(U_PIERRE)) {
-            inter = pierreManager.verifierSurvol(indexDecor, clic, iw, ih);
+            if (pierreManager.verifierSurvol(indexDecor, clic, iw, ih) || (indexDecor == 1 && porteSortiePierre(iw, ih).contains(clic))){
+                inter = true;
+            }
         }
         if (!inter && universActuel.equals(U_SALON) && indexDecor == 0) {
             if (!enigmeVerre.isCorpsExamine()) {
@@ -537,11 +544,18 @@ public class Jeu extends JFrame {
             if (numPhase() >= 33 && !tableauElectriqueOk) {
                 if (zoneTableauElec(iw, ih).contains(clic)) inter = true;
             }
+            if (porteDehors(iw, ih).contains(clic)) inter = true;
         }
         if (!inter && universActuel.equals(U_SALON) && indexDecor == 1) {
             if (numPhase() == 41 && !telephoneDecroche) {
                 if (zoneTelephone(iw, ih).contains(clic)) inter = true;
             }
+            if (porteSdb(iw, ih).contains(clic)     ||
+                porteLouis(iw, ih).contains(clic)   ||
+                portePierre(iw, ih).contains(clic)  ||
+                portePaul(iw, ih).contains(clic)    ||
+                porteJacques(iw, ih).contains(clic) ||
+                porteThomas(iw, ih).contains(clic)) inter =  true;
         }
         if (!inter && universActuel.equals(U_LOUIS)) {
             inter = zoneLouisInter(clic, iw, ih);
@@ -549,7 +563,7 @@ public class Jeu extends JFrame {
         if (!inter && universActuel.equals(U_JACQUES)) {
             inter = zoneJacquesInter(clic, iw, ih);
         }
-        if (!inter && universActuel.equals(U_BATH)) {
+        if (!inter && universActuel.equals(U_SDB)) {
             inter = zoneSdbInter(clic, iw, ih);
         }
         backgroundPanel.setSetCursorDirect(inter);
@@ -559,7 +573,7 @@ public class Jeu extends JFrame {
 
     private void ouvrirDialogueLouisInitial() {
         dialogueActif = true;
-        indexDialogueLouis = 0;
+        indexDialogue = 0;
         textesDialogueCustom = null;
         btnGauche.setVisible(false);
         btnDroite.setVisible(false);
@@ -568,7 +582,7 @@ public class Jeu extends JFrame {
 
     private void ouvrirDialogueCustom(String... textes) {
         textesDialogueCustom = textes;
-        indexDialogueLouis = 0;
+        indexDialogue = 0;
         dialogueActif = true;
         btnGauche.setVisible(false);
         btnDroite.setVisible(false);
@@ -583,8 +597,11 @@ public class Jeu extends JFrame {
 
     private void avancerDialogue() {
         String[] textes = textesDialogueAffiches();
-        indexDialogueLouis++;
-        if (indexDialogueLouis < textes.length) {
+        indexDialogue++;
+        if (indexDialogue < textes.length) {
+            if (numPhase() == 61 && indexDialogue == 3){
+                transitionner(U_SALON, decorsSalon);
+            }
             backgroundPanel.repaint();
             return;
         }
@@ -600,6 +617,8 @@ public class Jeu extends JFrame {
             avancerPhase(); // 0.1 → 1.1
         } else if (numPhase() == 11 && enigmeVerre.tousVerresTrouves() && subStep == 0) {
             lancerEnigmeEmpreintes();
+        } else if (numPhase() == 51){
+            avancerPhase(); // 5.1 --> 5.2
         } else if (numPhase() == 61){
             avancerPhase(); // 6.1 --> 7.1 (Crédits)
         }
@@ -632,6 +651,11 @@ public class Jeu extends JFrame {
             lancerTableauElectrique();
             return;
         }
+
+        if (porteDehors(iw, ih).contains(clic)) {
+            tenterAller(U_DEHORS);
+            return;
+        }
     }
 
     private void gererClicSalon1(Point clic, int iw, int ih) {
@@ -641,20 +665,30 @@ public class Jeu extends JFrame {
             if (id != -1) { ouvrirDialogueVerre(id); return; }
         }
         // Portes (Louis / Pierre / Jacques)
-        Rectangle porteLouis   = new Rectangle((int)(iw * 0.24), (int)(ih * 0.25), (int)(iw * 0.08), (int)(ih * 0.3));
-        Rectangle portePierre  = new Rectangle((int)(iw * 0.39), (int)(ih * 0.21), (int)(iw * 0.05), (int)(ih * 0.25));
-        Rectangle porteJacques = new Rectangle((int)(iw * 0.56), (int)(ih * 0.22), (int)(iw * 0.06), (int)(ih * 0.2));
+        
 
-        if (porteLouis.contains(clic)) {
+        if (porteLouis(iw, ih).contains(clic)) {
             tenterAllerLouis();
             return;
         }
-        if (portePierre.contains(clic)) {
+        if (portePierre(iw, ih).contains(clic)) {
             tenterAller(U_PIERRE, pierreManager.obtenirDecorsPierre());
             return;
         }
-        if (porteJacques.contains(clic)) {
+        if (porteJacques(iw, ih).contains(clic)) {
             tenterAller(U_JACQUES, decorsJacques);
+            return;
+        }
+        if (porteSdb(iw, ih).contains(clic)){
+            tenterAller(U_SDB, decorsSdb);
+            return;
+        }
+        if (porteThomas(iw, ih).contains(clic)){
+            tenterAller(U_THOMAS);
+            return;
+        }
+        if (portePaul(iw, ih).contains(clic)){
+            tenterAller(U_PAUL);
             return;
         }
 
@@ -666,6 +700,9 @@ public class Jeu extends JFrame {
     }
 
     private void gererClicLouis(Point clic, int iw, int ih) {
+        if (indexDecor == 1 && porteSortieLouis(iw, ih).contains(clic)){
+            transitionner(U_SALON, decorsSalon, 0);
+        }
         // Phase 3.2 : trouver le code (post-it sur décor 1) puis cliquer l'ordi (décor 0)[cite: 4]
         if (numPhase() == 32) {
             if (indexDecor == 0) {
@@ -728,23 +765,17 @@ public class Jeu extends JFrame {
             return;
         }
         if (!tiroirJacquesOuvert && zoneTiroirB4(iw, ih).contains(clic) && indexDecor == 0) {
-            lancerEnigmeBoules(0); // 0 en niveau normal correspond à l'énigme de la maquette (version originale de Escape Memoirs)
+            lancerEnigmeBoules(0); // 0 en niveau normal correspond à l'énigme de la maquette (version originale de Escape Memoirs pour le niveau Normal, sinon un niveau un peu plus compliqué)
             return;
         }
-        /*
-        if (tiroirJacquesOuvert && !fioleTrouvee && fiole.contains(clic)) {
-            fioleTrouvee = true;
-            avancerPhase(); // 5.2 → 6.1
-            afficherIndice("Une fiole de poison vide... Voilà l'arme du crime !");
-            cinematiqueRevelations();
-            return;
+        if (indexDecor == 1 && porteSortieJacques(iw, ih).contains(clic)){
+            transitionner(U_SALON, decorsSalon, 0);
         }
-        */
     }
 
     private void gererClicSdb(Point clic, int iw, int ih) {
         if (numPhase() != 43) return;
-        Rectangle lampe      = new Rectangle((int)(iw * 0.10), (int)(ih * 0.30), (int)(iw * 0.15), (int)(ih * 0.20));
+        Rectangle lampe      = new Rectangle((int)(iw * 0.90), (int)(ih * 0.30), (int)(iw * 0.15), (int)(ih * 0.20));
         Rectangle serviettes = new Rectangle((int)(iw * 0.55), (int)(ih * 0.40), (int)(iw * 0.25), (int)(ih * 0.25));
         if (lampe.contains(clic) && !lampeUVRamassee) {
             lampeUVRamassee = true;
@@ -755,12 +786,19 @@ public class Jeu extends JFrame {
         if (serviettes.contains(clic) && !serviettesVues) {
             serviettesVues = true;
             afficherIndice("Des taches suspectes sur les serviettes, à examiner ailleurs.");
-            if (lampeUVRamassee && serviettesVues) avancerPhase();
+            if (lampeUVRamassee && serviettesVues) {avancerPhase(); cinematiquePaul();}
             return;
         }
-    }
+        if (indexDecor == 1 && porteSortieSdb(iw, ih).contains(clic)){
+            transitionner(U_SALON, decorsSalon, 0);
+        }
+    }   
 
     /* ─── ACCESSIBILITÉ DES PIÈCES ──────────────────────────────────────────── */
+
+    private void tenterAller(String u){
+        tenterAller(u, new String[0]);
+    }
 
     private void tenterAller(String u, String[] decors) {
         if (!peutAcceder(u)) {
@@ -773,7 +811,7 @@ public class Jeu extends JFrame {
     private void tenterAllerLouis() {
         int n = numPhase();
         if (n < 31) {
-            afficherInfo("La chambre de Louis doit contenir des indices...");
+            tenterAller(U_LOUIS);
             return;
         }
         if (n == 31) {
@@ -786,6 +824,7 @@ public class Jeu extends JFrame {
     private boolean peutAcceder(String u) {
         int n = numPhase();
         switch (u) {
+            case U_DEHORS -> { return false; }
             case U_THOMAS -> { return false; }
             case U_PAUL   -> { return false; }
             case U_SALON  -> { return true; }
@@ -796,7 +835,7 @@ public class Jeu extends JFrame {
                 return true;
             }
             case U_JACQUES -> { return n >= 51; }
-            case U_BATH    -> {
+            case U_SDB    -> {
                 if (n < 41) return false;
                 if (n == 41) return false; 
                 if (n == 42) return false;
@@ -809,22 +848,29 @@ public class Jeu extends JFrame {
     private String messageAccesRefuse(String u) {
         int n = numPhase();
         switch (u) {
+            case U_DEHORS -> { return "Je dois d'abord savoir ce qu'il s'est passé..."; }
             case U_THOMAS -> { return "Pourquoi aurais-je besoin de fouiller ma chambre ?"; }
             case U_PAUL   -> { return "Rien ne le suspecte à présent, d'autant qu'il n'était pas là cette nuit..."; }
             case U_PIERRE -> {
                 if (n < 21) return "Je dois d'abord trouver qui est suspect...";
             }
             case U_LOUIS -> {
-                if (n < 31) return "La chambre de Louis doit contenir des indices...";
-                if (n == 31) return "Je dois d'abord déverrouiller la porte...";
+                if (n < 21) return "Il doit y avoir des indices plus importants à côté de son corps...";
+                if (n == 21) return "Voyons d'abord ce que cache Pierre...";
+                if (n == 31) return "Je dois d'abord dévérouiller la porte.";
             }
             case U_JACQUES -> {
-                if (n < 51) return "Voyons d'abord ce que cache Pierre..."; 
+                if (n < 21) return "Je dois d'abord trouver qui est suspect...";
+                if (n == 21) return "Voyons d'abord ce que cache Pierre...";
+                if (n < 41) return "La chambre de Louis doit contenir des indices...";
+                if (n < 51) return "Il doit y avoir des indices dans la salle de bain...";
             }
-            case U_BATH -> {
+            case U_SDB -> {
+                if (n < 21) return "Je dois d'abord trouver qui est suspect...";
+                if (n == 21) return "Voyons d'abord ce que cache Pierre..."; 
+                if (n < 41) return "La chambre de Louis doit contenir des indices...";
                 if (n == 41) return "Le téléphone sonne, j'y enquêterai plus tard...";
                 if (n == 42) return "Le téléphone sonne, je ferais mieux de répondre...";
-                if (n < 41)  return "Il doit y avoir des indices plus importants à côté de son corps...";
             }
         }
         return "Pas maintenant.";
@@ -971,9 +1017,19 @@ public class Jeu extends JFrame {
         rafraichirAffichage();
     }
 
+    private void cinematiquePaul(){
+        transitionner(U_SALON, decorsSalon);
+        ouvrirDialogueCustom("Paul rentre à l'appartement."
+
+        );
+    }
+
     private void cinematiqueRevelations() {
+        
         ouvrirDialogueCustom(
+                "Jacques rentre dans la chambre.",
                 "Jacques : \"Ça suffit. C'est moi qui ai parlé à Paul de Louis.\"",
+                "Viens on va s'expliquer dans le salon, tout le monde est rentré.",
                 "Mais... pourquoi mentir sur le poison ?",
                 "Vous repensez à la nuit dernière. À cette dispute avec Louis.",
                 "Au verre que vous avez préparé. Au geste que vous avez refusé d'admettre.",
@@ -1166,7 +1222,43 @@ public class Jeu extends JFrame {
         return new Rectangle((int)(iw * 0.764), (int)(ih * 0.646), (int)(iw * 0.066), (int)(ih * 0.039));
     }
 
+    private Rectangle porteLouis(int iw, int ih){
+        return new Rectangle((int)(iw * 0.24), (int)(ih * 0.25), (int)(iw * 0.08), (int)(ih * 0.3));
+    }
+    private Rectangle portePierre(int iw, int ih){
+        return new Rectangle((int)(iw * 0.39), (int)(ih * 0.21), (int)(iw * 0.05), (int)(ih * 0.25));
+    } 
+    private Rectangle porteJacques(int iw, int ih){
+        return new Rectangle((int)(iw * 0.56), (int)(ih * 0.22), (int)(iw * 0.06), (int)(ih * 0.2));
+    }
+    private Rectangle porteSdb(int iw, int ih){
+        return new Rectangle((int)(iw * 0.01), (int)(ih * 0.271), (int)(iw * 0.153), (int)(ih * 0.4));
+    }
+    private Rectangle portePaul(int iw, int ih){
+        return new Rectangle((int)(iw * 0.856), (int)(ih * 0.248), (int)(iw * 0.12), (int)(ih * 0.32));
+    }
+    private Rectangle porteThomas(int iw, int ih){
+        return new Rectangle((int)(iw * 0.69), (int)(ih * 0.225), (int)(iw * 0.095), (int)(ih * 0.287));
+    }
+    private Rectangle porteDehors(int iw, int ih){
+        return new Rectangle((int)(iw * 0.86), (int)(ih * 0.248), (int)(iw * 0.148), (int)(ih * 0.349));
+    }
+
+    private Rectangle porteSortiePierre(int iw, int ih){
+        return new Rectangle((int)(iw * 0.197), (int)(ih * 0.217), (int)(iw * 0.161), (int)(ih * 0.512));
+    }
+    private Rectangle porteSortieLouis(int iw, int ih){
+        return new Rectangle((int)(iw * 0.15), (int)(ih * 0.07), (int)(iw * 0.151), (int)(ih * 0.62));
+    }
+    private Rectangle porteSortieSdb(int iw, int ih){
+        return new Rectangle((int)(iw * 0.188), (int)(ih * 0.225), (int)(iw * 0.178), (int)(ih * 0.543));
+    }
+    private Rectangle porteSortieJacques(int iw, int ih){
+        return new Rectangle((int)(iw * 0.725), (int)(ih * 0.248), (int)(iw * 0.174), (int)(ih * 0.504));
+    }
+
     private boolean zoneLouisInter(Point clic, int iw, int ih) {
+        if (indexDecor == 1 && porteSortieLouis(iw, ih).contains(clic)) return true;
         int n = numPhase();
         if (n == 32 && indexDecor == 0) {
             return (zonePostIt(iw, ih).contains(clic) && !postItAffiche) || (zonePostItZoom(iw, ih).contains(clic) && postItAffiche) || zoneOrdi(iw, ih).contains(clic); // Post-it et Post-it gros plan
@@ -1181,14 +1273,16 @@ public class Jeu extends JFrame {
     }
 
     private boolean zoneJacquesInter(Point clic, int iw, int ih) {
+        if (indexDecor == 1 && porteSortieJacques(iw, ih).contains(clic)) return true;
         if (numPhase() != 52) return false;
         Rectangle plafond = new Rectangle((int)(iw * 0), (int)(ih * 0), (int)(iw * 1), (int)(ih * 0.1));
         return plafond.contains(clic) || (numPhase() == 52 && indexDecor == 0 && zoneTiroirB4(iw, ih).contains(clic));
     }
 
     private boolean zoneSdbInter(Point clic, int iw, int ih) {
+        if (indexDecor == 1 && porteSortieSdb(iw, ih).contains(clic)) return true;
         if (numPhase() != 43) return false;
-        Rectangle lampe      = new Rectangle((int)(iw * 0.10), (int)(ih * 0.30), (int)(iw * 0.15), (int)(ih * 0.20));
+        Rectangle lampe      = new Rectangle((int)(iw * 0.90), (int)(ih * 0.30), (int)(iw * 0.15), (int)(ih * 0.20));
         Rectangle serviettes = new Rectangle((int)(iw * 0.55), (int)(ih * 0.40), (int)(iw * 0.25), (int)(ih * 0.25));
         return (lampe.contains(clic) && !lampeUVRamassee) || (serviettes.contains(clic) && !serviettesVues);
     }
@@ -1196,7 +1290,7 @@ public class Jeu extends JFrame {
     /* ─── MINI-MAP & RENDU ──────────────────────────────────────────────────── */
 
     private Rectangle[] miniMapRects = new Rectangle[7];
-    private final String[] miniMapUnivers = { U_PIERRE, U_LOUIS, U_BATH, U_JACQUES, U_SALON, U_THOMAS, U_PAUL };
+    private final String[] miniMapUnivers = { U_PIERRE, U_LOUIS, U_SDB, U_JACQUES, U_SALON, U_THOMAS, U_PAUL };
 
     private boolean surMiniMap(int x, int y) {
         for (Rectangle r : miniMapRects) if (r != null && r.contains(x, y)) return true;
@@ -1212,7 +1306,7 @@ public class Jeu extends JFrame {
                 if (cible.equals(U_PIERRE))   tenterAller(U_PIERRE, pierreManager.obtenirDecorsPierre());
                 else if (cible.equals(U_LOUIS))   tenterAllerLouis();
                 else if (cible.equals(U_JACQUES)) tenterAller(U_JACQUES, decorsJacques);
-                else if (cible.equals(U_BATH))    tenterAller(U_BATH, decorsPlaceholderSdb);
+                else if (cible.equals(U_SDB))    tenterAller(U_SDB, decorsPlaceholderSdb);
                 else if (cible.equals(U_THOMAS))  afficherInfo(messageAccesRefuse(U_THOMAS));
                 else if (cible.equals(U_PAUL))    afficherInfo(messageAccesRefuse(U_PAUL));
                 else if (cible.equals(U_SALON))   transitionner(U_SALON, decorsSalon);
@@ -1239,7 +1333,7 @@ public class Jeu extends JFrame {
             case U_PIERRE  -> txtExplicatif.setText("Chambre de Pierre" + progr);
             case U_LOUIS   -> txtExplicatif.setText("Chambre de Louis" + progr);
             case U_JACQUES -> txtExplicatif.setText("Chambre de Jacques" + progr);
-            case U_BATH    -> txtExplicatif.setText("Salle de bain" + progr);
+            case U_SDB    -> txtExplicatif.setText("Salle de bain" + progr);
             default        -> txtExplicatif.setText(universActuel + progr);
         }
     }
@@ -1337,7 +1431,7 @@ public class Jeu extends JFrame {
             g2d.drawRoundRect(boxX, boxY, boxW, boxH, 15, 15);
             g2d.setColor(Color.WHITE); g2d.setFont(new Font("Arial", Font.PLAIN, 15));
             String[] textes = textesDialogueAffiches();
-            int idx = Math.min(indexDialogueLouis, textes.length - 1);
+            int idx = Math.min(indexDialogue, textes.length - 1);
             String t = idx >= 0 ? textes[idx] : "";
             g2d.drawString(t, boxX + 25, boxY + 40);
             g2d.setFont(new Font("Arial", Font.ITALIC | Font.BOLD, 11)); g2d.setColor(new Color(46, 204, 113));
@@ -1377,7 +1471,7 @@ public class Jeu extends JFrame {
             if (tag.startsWith("__SDB")) {
                 int lx = r.x + (int)(r.width * 0.10);
                 int ly = r.y + (int)(r.height * 0.30);
-                int lw = (int)(r.width * 0.15);
+                int lw = (int)(r.width * 0.9);
                 int lh = (int)(r.height * 0.20);
                 g.setColor(lampeUVRamassee ? new Color(60, 70, 90) : new Color(108, 92, 231));
                 g.fillRoundRect(lx, ly, lw, lh, 16, 16);
@@ -1422,7 +1516,7 @@ public class Jeu extends JFrame {
 
             paintMapCase(g2d, rPierre,  U_PIERRE,  cDef, cAct, cInacc);
             paintMapCase(g2d, rLouis,   U_LOUIS,   cDef, cAct, cInacc);
-            paintMapCase(g2d, rSdb,     U_BATH,    cDef, cAct, cInacc);
+            paintMapCase(g2d, rSdb,     U_SDB,    cDef, cAct, cInacc);
             paintMapCase(g2d, rSalon,   U_SALON,   cDef, cAct, cInacc);
             paintMapCase(g2d, rJacques, U_JACQUES, cDef, cAct, cInacc);
             paintMapCase(g2d, rThomas,  U_THOMAS,  cDef, cAct, cInacc);
