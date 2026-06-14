@@ -45,6 +45,8 @@ import com.sae.enigmas.OrdiLouisUI;
 import com.sae.enigmas.RotaryDialUI;
 import com.sae.enigmas.UVLampUI;
 
+import javafx.stage.Stage;
+
 /**
  * Boucle principale du jeu : navigation entre univers (salon, chambres, sdb),
  * déclenchement des énigmes selon la phase et restauration de l'état au
@@ -130,9 +132,14 @@ public class Jeu extends JFrame {
 
     private final Save save;
     private final Phase phase;
+    private final Stage stage;
+    private final String DEFAULT_TITLE;
 
-    public Jeu(Save save, Phase phase) {
+    public Jeu(Save save, Phase phase, Stage stage) {
         this.save = save;
+        this.stage = stage;
+        this.DEFAULT_TITLE = "Escape Game - " + save.getSavename()
+                + " (" + save.getUsername() + ") / [" + Translations.t(save.getDifficulty()) + "]";
 
         // Extraction et lissage de la phase sauvegardée
         double numPhaseSauvegardee = (this.save != null) ? this.save.getPhase() : 0.1;
@@ -141,6 +148,7 @@ public class Jeu extends JFrame {
         this.phase = phase;
         this.phase.change(new Phase(numPhaseSauvegardee));
         if (this.save != null) this.save.save();
+        changeTitleProgression();
         setTitle(Translations.t(GameInfos.GAMENAME_TYPE_2));
         setSize(800, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -1020,6 +1028,7 @@ public class Jeu extends JFrame {
                 this.save.addTime(((int) (Time.now() - this.save.getLastSave())) / 1000);
             }
             this.save.save();
+            changeTitleProgression();
         }
         subStep = 0;
     }
@@ -1232,6 +1241,18 @@ public class Jeu extends JFrame {
             case U_BATH    -> txtExplicatif.setText("Salle de bain" + progr);
             default        -> txtExplicatif.setText(universActuel + progr);
         }
+    }
+
+    private void changeTitle(String newTitle){
+        final String title = (newTitle != null) ? newTitle : DEFAULT_TITLE;
+        javafx.application.Platform.runLater(()-> {
+            this.stage.setTitle(title);
+        });
+    }
+  
+    private void changeTitleProgression(){
+        String title = DEFAULT_TITLE + " - " + this.phase.getStrPourcentage();
+        changeTitle(title);
     }
 
     /* ─── Panneau de fond (rendu général) ─────────────────────────────────── */

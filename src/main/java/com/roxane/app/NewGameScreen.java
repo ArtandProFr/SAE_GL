@@ -288,7 +288,7 @@ public class NewGameScreen {
 
         // Lancement sur l'Event Dispatch Thread (EDT)
         javax.swing.SwingUtilities.invokeLater(() -> {
-            com.sae.game.Jeu jeu = new com.sae.game.Jeu(save, phase);
+            com.sae.game.Jeu jeu = new com.sae.game.Jeu(save, phase, stage);
 
             // Branchement du curseur JavaFX
             jeu.setCursorChangeListener(surElementInteractif -> {
@@ -306,6 +306,6 @@ public class NewGameScreen {
 
         stage.setScene(gameScene);
         stage.setTitle("Escape Game - " + save.getSavename()
-                + " (" + save.getUsername() + ") / [" + save.getDifficulty() + "]");
+                + " (" + save.getUsername() + ") / [" + Translations.t(save.getDifficulty()) + "]");
     }
 }
