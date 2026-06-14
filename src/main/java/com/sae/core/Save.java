@@ -100,6 +100,20 @@ public class Save{
         return false;
     }
 
+    public void loadSave(Save s){
+
+        /* Met à jour une sauvegarde pour recopier une autre. */
+
+        this.username     = s.getUsername();
+        this.savename     = s.getSavename();
+        this.difficulty   = s.getDifficulty();
+        this.creationDate = s.getCreationDate();
+        this.lastSave     = s.getLastSave();
+        this.phase        = s.getPhase();
+        this.time         = s.getTime();
+        this.checksum     = s.getChecksum();
+    }
+
     public boolean initializeSave(){ return initializeSave(this); }
 
     public static boolean isInitial(Save s){

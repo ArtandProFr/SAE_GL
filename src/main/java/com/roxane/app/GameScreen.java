@@ -1,5 +1,6 @@
 package com.roxane.app;
 
+import com.sae.core.PauseManager;
 import com.sae.core.Save;
 import com.sae.core.Time;
 
@@ -32,6 +33,8 @@ public class GameScreen {
     private String sortMode     = "DATE";
     private String diffFilter   = "All";
     private String searchQuery  = "";
+    private Save save = null;
+    private PauseManager pauseManager;
 
     // Largeurs fixes des colonnes — partagées entre header et items
     private static final double COL_SAVENAME = 155;
@@ -40,10 +43,12 @@ public class GameScreen {
     private static final double COL_DATE     = 175;
     // COL_TIME : flexible
 
-    public GameScreen(Stage stage, Font minecraftFont, Runnable onBack) {
+    public GameScreen(Stage stage, Font minecraftFont, Runnable onBack, Save save, PauseManager pause) {
         this.stage = stage;
         this.minecraftFont = minecraftFont;
         this.onBack = onBack;
+        this.save = save;
+        this.pauseManager = pause;
     }
 
     public void show() {
@@ -260,7 +265,7 @@ public class GameScreen {
         newGameButton.setPrefSize(260, 200);
         if (minecraftFont != null) newGameButton.setFont(Font.font(minecraftFont.getFamily(), 20));
         newGameButton.setOnAction(e ->
-            new NewGameScreen(stage, minecraftFont, this::show, onBack).show()
+            new NewGameScreen(stage, minecraftFont, this::show, onBack, this.save, pauseManager).show()
         );
 
         // Label d'erreur (caché par défaut)
@@ -332,7 +337,7 @@ public class GameScreen {
 
         // Save valide : on lance
         errorLabel.setVisible(false);
-        new NewGameScreen(stage, minecraftFont, this::show, onBack)
+        new NewGameScreen(stage, minecraftFont, this::show, onBack, save, pauseManager)
                 .launchExistingSave(fresh);
     }
 

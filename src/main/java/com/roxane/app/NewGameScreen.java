@@ -1,5 +1,6 @@
 package com.roxane.app;
 
+import com.sae.core.PauseManager;
 import com.sae.core.Phase;
 import com.sae.core.Save;
 import com.sae.core.Time;
@@ -28,13 +29,17 @@ public class NewGameScreen {
     private final Runnable onBackToList;
     private final Runnable onBackToMenu;
     private Save save;
+    private final PauseManager pause;
 
-    public NewGameScreen(Stage stage, Font minecraftFont, Runnable onBackToList, Runnable onBackToMenu) {
+    public NewGameScreen(Stage stage, Font minecraftFont, Runnable onBackToList, Runnable onBackToMenu, Save save, PauseManager pause) {
         this.stage = stage;
         this.minecraftFont = minecraftFont;
         this.onBackToList = onBackToList;
         this.onBackToMenu = onBackToMenu;
-        this.save = new Save();
+        this.save = save;
+        //this.save.reset();
+        this.pause = pause;
+        this.pause.setStatus(false);
     }
 
     public void show() {
@@ -149,7 +154,7 @@ public class NewGameScreen {
                 errorLabel.setVisible(true);
                 save.initializeSaveFromFile();
             }
-            launchSwingGameInScene(save);
+            launchSwingGameInScene();
         });
 
         Bouton backListButton = new Bouton(Translations.t("RETOUR LISTE"));
@@ -181,8 +186,8 @@ public class NewGameScreen {
      * sans passer par le formulaire de création.
      */
     public void launchExistingSave(Save existingSave) {
-        this.save = existingSave;
-        launchSwingGameInScene(existingSave);
+        this.save.loadSave(existingSave);
+        launchSwingGameInScene();
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
@@ -205,7 +210,7 @@ public class NewGameScreen {
      * fenêtre JavaFX courante, sans ouvrir de seconde fenêtre.
      * Un appui sur ÉCHAP affiche/masque l'overlay de pause contenant les options.
      */
-    void launchSwingGameInScene(Save save) {
+    void launchSwingGameInScene() {
         Phase phase = new Phase(0.0);
         SwingNode swingNode = new SwingNode();
 
@@ -228,6 +233,7 @@ public class NewGameScreen {
         resumeButton.setOnAction(ev -> {
             pauseMenu.setVisible(false);
             swingNode.setMouseTransparent(false);
+            save.save();
         });
 
         // 2. Bouton "PARAMÈTRES"
@@ -240,7 +246,7 @@ public class NewGameScreen {
         // On lui demande d'ouvrir ParametresScreen, et au retour, on ré-appelle 
         // cette même méthode pour restaurer l'écran de jeu avec la sauvegarde courante
         settingsButton.setOnAction(ev -> {
-            new ParametresScreen(stage, minecraftFont, () -> launchSwingGameInScene(save), "RETOUR AU JEU").show();
+            new ParametresScreen(stage, minecraftFont, () -> launchSwingGameInScene(), "RETOUR AU JEU").show();
         });
 
         // 3. Bouton "RETOUR MENU"
@@ -249,11 +255,7 @@ public class NewGameScreen {
         backButton.setPrefWidth(240);
         backButton.setPrefHeight(50);
         if (minecraftFont != null) backButton.setFont(Font.font(minecraftFont.getFamily(), 16));
-        backButton.setOnAction(ev -> {
-            if (phase.getPoids() != 0){
-                save.addTime(((int) (Time.now() - save.getLastSave())) / 1000);
-            }
-            save.save(); 
+        backButton.setOnAction(ev -> { 
             onBackToMenu.run();});
 
         // Agencement vertical des boutons de pause
@@ -274,9 +276,13 @@ public class NewGameScreen {
         // ─── GESTION DE LA TOUCHE ÉCHAP (ESCAPE) ─────────────────────────────
         gameScene.setOnKeyPressed(event -> {
             if (event.getCode() == javafx.scene.input.KeyCode.ESCAPE) {
-                boolean isPaused = !pauseMenu.isVisible();
-                pauseMenu.setVisible(isPaused);
-                swingNode.setMouseTransparent(isPaused);
+                this.pause.switchStatus();
+                pauseMenu.setVisible(this.pause.isPaused);
+                swingNode.setMouseTransparent(this.pause.isPaused);
+                if (this.pause.isPaused && phase.getPoids() != 0){
+                        save.addTime(((int) (Time.now() - save.getLastSave())) / 1000);
+                }
+                save.save();
             }
         });
 

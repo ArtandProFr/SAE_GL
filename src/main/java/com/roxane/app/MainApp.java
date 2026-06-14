@@ -1,6 +1,10 @@
 package com.roxane.app;
 
 import com.sae.core.GameInfos;
+import com.sae.core.PauseManager;
+import com.sae.core.Phase;
+import com.sae.core.Save;
+import com.sae.core.Time;
 
 import javafx.application.Application;
 import javafx.geometry.Pos;
@@ -20,11 +24,24 @@ public class MainApp extends Application {
     private Stage primaryStage;
     private Font minecraftFont;
     private Font minecraftFontTitle;
+    private Save save;
+    private PauseManager pauseManager;
 
     @Override
-    public void start(Stage stage) {
+    public void start(Stage stage){
         this.primaryStage = stage;
+        this.save = new Save();
+        this.pauseManager = new PauseManager();
         primaryStage.setOnCloseRequest(event -> {
+            // Sauvegarde la partie en cours
+            if ((this.save != null) && (!this.pauseManager.isPaused)){
+                Phase phase = new Phase(this.save.getPhase());
+                if (phase.getPoids() != 0){
+                    save.addTime(((int) (Time.now() - save.getLastSave())) / 1000);
+                }
+                save.save();
+            }
+            
             // 1. Arrête proprement la plateforme JavaFX
             javafx.application.Platform.exit();
             
@@ -103,7 +120,7 @@ public class MainApp extends Application {
         settingsButton.setEffect(buttonShadow);
         bestTimeButton.setEffect(buttonShadow);
 
-        playButton.setOnAction(e -> new GameScreen(primaryStage, minecraftFont, this::showMenu).show());
+        playButton.setOnAction(e -> new GameScreen(primaryStage, minecraftFont, this::showMenu, this.save, this.pauseManager).show());
         settingsButton.setOnAction(e -> new ParametresScreen(primaryStage, minecraftFont, this::showMenu, "RETOUR MENU").show());
         bestTimeButton.setOnAction(e -> new MeilleurTempsScreen(primaryStage, minecraftFont, this::showMenu).show());
 
