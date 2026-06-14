@@ -595,11 +595,13 @@ public class Jeu extends JFrame {
         btnGauche.setVisible(true);
         btnDroite.setVisible(true);
 
-        if (etaitDecouverteCorps) {
+        if (numPhase() == 1 && etaitDecouverteCorps) {
             enigmeVerre.setCorpsExamine(true);
             avancerPhase(); // 0.1 → 1.1
         } else if (numPhase() == 11 && enigmeVerre.tousVerresTrouves() && subStep == 0) {
             lancerEnigmeEmpreintes();
+        } else if (numPhase() == 61){
+            avancerPhase(); // 6.1 --> 7.1 (Crédits)
         }
         mettreAJourTexteChambre();
         recalculerCurseurImmediat();
@@ -978,7 +980,6 @@ public class Jeu extends JFrame {
                 "Vous comprenez. C'est vous qui l'avez fait.",
                 "Le silence retombe."
         );
-        avancerPhase(); // 6.1 → 7.1 (crédits)
     }
 
     /* ─── OUTILLAGE / NAVIGATION ────────────────────────────────────────────── */
