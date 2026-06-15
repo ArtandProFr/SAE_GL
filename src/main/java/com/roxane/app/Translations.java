@@ -40,9 +40,12 @@ public class Translations {
         Map.entry("MON PROPRE ENNEMI", "MY OWN ENEMY"),
         Map.entry("Mon Propre Ennemi", "My Own Enemy"),
         Map.entry("TOUTES", "ALL"),
-        Map.entry("RECHERCHER...", "SEARCH...")
+        Map.entry("RECHERCHER...", "SEARCH..."),
+        Map.entry("AUCUNE SELECTION", "NO SELECTION"),
+        Map.entry("SUPPRIMER PARTIE", "DELETE SAVE")
     );
     private static final Map<String, String> FR = Map.ofEntries(
+        Map.entry("ALL", "TOUTES"),
         Map.entry("Easy", "Facile"),
         Map.entry("Normal", "Normale"),
         Map.entry("Hard", "Difficile"),

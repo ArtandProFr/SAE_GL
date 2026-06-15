@@ -480,7 +480,7 @@ public class Save{
         /* Cette méthode renvoie une liste de Save filtrée par difficulté. */
 
         java.util.ArrayList<Save> result = new java.util.ArrayList<>();
-        for (Save s : arr) if (s.difficulty.equals(diffFilter)) result.add(s);
+        for (Save s : arr) if (diffFilter.equals("ALL") || s.difficulty.equals(diffFilter)) result.add(s);
         return result.toArray(new Save[0]);
     }
 

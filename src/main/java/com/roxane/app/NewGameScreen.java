@@ -1,5 +1,6 @@
 package com.roxane.app;
 
+import com.sae.core.GameInfos;
 import com.sae.core.PauseManager;
 import com.sae.core.Phase;
 import com.sae.core.Save;
@@ -310,7 +311,7 @@ public class NewGameScreen {
         });
 
         stage.setScene(gameScene);
-        stage.setTitle("Escape Game - " + save.getSavename()
+        stage.setTitle(Translations.t(GameInfos.GAMENAME_TYPE_2)+ " - " + save.getSavename()
                 + " (" + save.getUsername() + ") / [" + Translations.t(save.getDifficulty()) + "]");
     }
 }

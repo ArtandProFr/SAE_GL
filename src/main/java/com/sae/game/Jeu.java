@@ -1,5 +1,7 @@
 package com.sae.game;
 
+import java.util.Arrays;
+
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
@@ -17,8 +19,11 @@ import java.awt.RenderingHints;
 import java.awt.Window;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.IOException;
 import java.net.URL;
+import java.awt.image.BufferedImage;
 
+import javax.imageio.ImageIO;
 import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -45,8 +50,8 @@ import com.sae.enigmas.MovingLightsUI;
 import com.sae.enigmas.OndesUI;
 import com.sae.enigmas.OrdiLouisUI;
 import com.sae.enigmas.RotaryDialUI;
-import com.sae.enigmas.UVLampUI;
 import com.sae.enigmas.UVLampServiettesUI;
+import com.sae.enigmas.UVLampUI;
 
 import javafx.stage.Stage;
 
@@ -145,6 +150,9 @@ public class Jeu extends JFrame {
     private final String DEFAULT_TITLE;
 
     private NewGameScreen parent;
+
+    // Cache pour l'image pour éviter de la recharger à chaque frame
+    private BufferedImage iconeCredits = null;
 
     public Jeu(Save save, Phase phase, Stage stage, NewGameScreen parent) {
         this.save = save;
@@ -440,6 +448,7 @@ public class Jeu extends JFrame {
     private void gererClicSouris(MouseEvent e) {
         // Écran de crédits : tout clic ramène au menu principal (sur le thread JavaFX)
         if (creditsMode) {
+            Save.updateLine(save);
             javafx.application.Platform.runLater(() -> parent.retourMenu());
             return;
         }
@@ -1150,7 +1159,6 @@ public class Jeu extends JFrame {
             this.save.save();
             changeTitleProgression();
             if (this.phase.estJeuFini()){
-                Save.updateLine(this.save);
                 entrerModeCredits();
             }
         }
@@ -1527,51 +1535,103 @@ public class Jeu extends JFrame {
             g2d.drawString("[ Cliquer pour continuer > ]", boxX + boxW - 170, boxY + boxH - 15);
         }
 
-        /** Dessine l'écran de crédits final (fond noir + titre + crédits + instruction). */
+        // Méthode utilitaire pour charger l'image (à appeler idéalement au démarrage)
+        private void chargerIconeCredits() {
+            try {
+                iconeCredits = ImageIO.read(getClass().getResourceAsStream("/icons/icon3_base.png"));
+            } catch (IOException | NullPointerException e) {
+                System.err.println("Erreur lors du chargement de l'icône des crédits: " + e.getMessage());
+                iconeCredits = null; // Gérer le cas où l'image est manquante
+            }
+        }
+
         private void dessinerCredits(Graphics2D g2d) {
             int w = getWidth(), h = getHeight();
-            // Fond noir (déjà rempli, on s'assure)
+            
+            // Charger l'image si ce n'est pas déjà fait
+            if (iconeCredits == null) {
+                chargerIconeCredits();
+            }
+
+            // Fond noir
             g2d.setColor(Color.BLACK);
             g2d.fillRect(0, 0, w, h);
 
-            // Titre du jeu
-            g2d.setColor(Color.WHITE);
-            g2d.setFont(new Font("Serif", Font.BOLD, 42));
-            FontMetrics fmTitle = g2d.getFontMetrics();
-            String title = GameInfos.GAMENAME;
-            g2d.drawString(title, (w - fmTitle.stringWidth(title)) / 2, 90);
+            // --- 1. Icône (Abaissée de 10px pour respirer) ---
+            int iconeW = 200; 
+            int iconeH = 200;
+            int iconeX = (w - iconeW) / 2;
+            int iconeY = 30; // Un poil plus bas du bord haut
 
-            // Sous-titre "Crédits"
+            if (iconeCredits != null) {
+                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                g2d.drawImage(iconeCredits, iconeX, iconeY, iconeW, iconeH, null);
+            }
+
+            // --- 2. Variables de Couleurs ---
+            Color couleurTitrePrincipal = Color.WHITE;
+            Color couleurContourTitre = new Color(40, 40, 40); // Gris très foncé ou une couleur du jeu pour le contour
+            Color couleurSection = new Color(160, 82, 45); 
+            Color couleurTexteNormal = new Color(220, 220, 220);
+            Color couleurBouton = new Color(241, 196, 15); // Jaune pour l'instruction du bas
+
+            // --- 3. Titre avec effet de contour complet ---
+            int posTitle = iconeY + iconeH + 75; // ne pas coller à l'image
+            String title = GameInfos.GAMENAME;
+            Font titleFont = new Font("Pixelout Personal Use Only Reg", Font.PLAIN, 80);
+            g2d.setFont(titleFont);
+            FontMetrics fmTitle = g2d.getFontMetrics();
+            int xTitle = (w - fmTitle.stringWidth(title)) / 2;
+
+            // Technique du contour complet (Haut, Bas, Gauche, Droite) sur fond noir
+            g2d.setColor(couleurContourTitre);
+            int epaisseur = 2; // Épaisseur du contour
+            g2d.drawString(title, xTitle - epaisseur, posTitle);
+            g2d.drawString(title, xTitle + epaisseur, posTitle);
+            g2d.drawString(title, xTitle, posTitle - epaisseur);
+            g2d.drawString(title, xTitle, posTitle + epaisseur);
+            
+            // Texte principal en Blanc
+            g2d.setColor(couleurTitrePrincipal);
+            g2d.drawString(title, xTitle, posTitle);
+
+            // --- 4. Section Crédits (Poussée vers le bas pour recentrer le bloc) ---
+            int posCredits = posTitle + 55; 
             g2d.setFont(new Font("SansSerif", Font.ITALIC, 20));
-            g2d.setColor(new Color(200, 200, 200));
+            g2d.setColor(couleurTexteNormal);
             FontMetrics fmSub = g2d.getFontMetrics();
             String sub = "— Crédits —";
-            g2d.drawString(sub, (w - fmSub.stringWidth(sub)) / 2, 130);
+            g2d.drawString(sub, (w - fmSub.stringWidth(sub)) / 2, posCredits);
 
-            // Sections des crédits depuis GameInfos.CREDITS
-            // Force l'initialisation du bloc d'instance (les crédits sont remplis
-            // dans un initializer non-static : on crée une instance temporaire).
-            new GameInfos();
-            int y = 200;
+            // Espacement augmenté avant les noms pour aérer le bloc central
+            int y = posCredits + 70; 
             Font sectionFont = new Font("SansSerif", Font.BOLD, 22);
             Font nameFont    = new Font("SansSerif", Font.PLAIN, 18);
+            
             for (Object key : GameInfos.CREDITS.keySet()) {
                 String sectionTitre = String.valueOf(key);
                 g2d.setFont(sectionFont);
-                g2d.setColor(new Color(46, 204, 113));
+                g2d.setColor(couleurSection);
                 FontMetrics fmS = g2d.getFontMetrics();
                 g2d.drawString(sectionTitre, (w - fmS.stringWidth(sectionTitre)) / 2, y);
-                y += 36;
-
+                y += 40; // Plus d'espace sous le titre de section
+                
                 Object membres = GameInfos.CREDITS.get(key);
                 if (membres instanceof Iterable<?>) {
                     g2d.setFont(nameFont);
-                    g2d.setColor(Color.WHITE);
+                    g2d.setColor(couleurTexteNormal);
                     FontMetrics fmN = g2d.getFontMetrics();
+                    
+                    java.util.List<String> listeNoms = new java.util.ArrayList<>();
                     for (Object membre : (Iterable<?>) membres) {
-                        String nom = String.valueOf(membre);
+                        listeNoms.add(String.valueOf(membre));
+                    }
+                    String[] nomsArr = listeNoms.toArray(new String[0]);
+                    Arrays.sort(nomsArr);
+                    
+                    for (String nom : nomsArr){
                         g2d.drawString(nom, (w - fmN.stringWidth(nom)) / 2, y);
-                        y += 28;
+                        y += 30; // Un poil plus d'espace entre les noms
                     }
                 }
                 y += 20;
@@ -1579,7 +1639,7 @@ public class Jeu extends JFrame {
 
             // Informations académiques
             g2d.setFont(new Font("SansSerif", Font.ITALIC, 14));
-            g2d.setColor(new Color(170, 170, 170));
+            g2d.setColor(couleurTexteNormal); // Gris moyen (déjà défini plus haut)
             String[] infos = {
                 "INSA Hauts-de-France — Sciences et Humanités pour l'Ingénieur (2A)",
                 "SAE Génie Logiciel — Année 2025-2026"
@@ -1593,7 +1653,7 @@ public class Jeu extends JFrame {
 
             // Instruction de retour au menu
             g2d.setFont(new Font("SansSerif", Font.BOLD | Font.ITALIC, 16));
-            g2d.setColor(new Color(46, 204, 113));
+            g2d.setColor(couleurBouton); // On utilise le jaune doré qu'on a appelé "couleurBouton"
             String instr = "[ Cliquer pour revenir au menu ]";
             FontMetrics fmInstr = g2d.getFontMetrics();
             g2d.drawString(instr, (w - fmInstr.stringWidth(instr)) / 2, h - 30);

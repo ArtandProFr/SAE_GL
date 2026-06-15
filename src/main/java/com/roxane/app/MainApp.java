@@ -34,12 +34,14 @@ public class MainApp extends Application {
         this.pauseManager = new PauseManager();
         primaryStage.setOnCloseRequest(event -> {
             // Sauvegarde la partie en cours
-            if ((this.save != null) && (!this.pauseManager.isPaused)){
+            if ((this.save != null) && (!this.pauseManager.isPaused) && this.save.alreadyExists()){
                 Phase phase = new Phase(this.save.getPhase());
                 if (phase.getPoids() != 0){
                     save.addTime(((int) (Time.now() - save.getLastSave())) / 1000);
                 }
-                save.save();
+                if (!phase.estJeuFini())
+                    save.save();
+                else Save.updateLine(save);
             }
             
             // 1. Arrête proprement la plateforme JavaFX

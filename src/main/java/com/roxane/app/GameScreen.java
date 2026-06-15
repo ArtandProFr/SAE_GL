@@ -31,11 +31,11 @@ public class GameScreen {
     private final Runnable onBack;
 
     private Save   selectedSave = null;
-    private String sortMode     = "DATE";
-    private String diffFilter   = "All";
+    private String sortMode     = Translations.t("DATE");
+    private String diffFilter   = Translations.t("ALL");
     private String searchQuery  = "";
     private Save save = null;
-    private PauseManager pauseManager;
+    private final PauseManager pauseManager;
 
     // Largeurs fixes des colonnes — partagées entre header et items
     private static final double COL_SAVENAME = 130;
@@ -151,12 +151,12 @@ public class GameScreen {
 
         ComboBox<String> diffCombo = new ComboBox<>();
         diffCombo.getItems().addAll(
-            Translations.t("TOUTES"),
+            Translations.t("ALL"),
             Translations.t("Easy"),
             Translations.t("Normal"),
             Translations.t("Hard")
         );
-        diffCombo.setValue(diffFilter.equals("All") ? Translations.t("TOUTES") : Translations.t(diffFilter));
+        diffCombo.setValue(diffFilter.equals("ALL") ? Translations.t("ALL") : Translations.t(diffFilter));
         diffCombo.getStyleClass().add("param-combo");
         diffCombo.setPrefWidth(135);
         diffCombo.valueProperty().addListener((obs, oldVal, newVal) -> {
@@ -177,7 +177,7 @@ public class GameScreen {
             makeHeaderLabel(Translations.t("DIFFICULTE"),             COL_DIFF),
             makeHeaderLabel(Translations.t("DATE"),                   COL_DATE),
             makeHeaderLabel(Translations.t("TEMPS"),                  COL_TIME),
-            makeHeaderLabelGrow("%")
+            makeHeaderLabelGrow(Translations.t("%"))
         );
 
         // ── Conteneur liste
@@ -212,7 +212,7 @@ public class GameScreen {
         selectedSave = null;
 
         Save[] saves = Save.searchSaves(searchQuery);
-        if (!diffFilter.equals("All")) saves = Save.difficultyFilter(saves, diffFilter);
+        saves = Save.difficultyFilter(saves, Translations.toEN(diffFilter));
         if (sortMode.equals("DATE"))   Save.lastSaveOrder(saves, -1);
         else                           sortByPlayerName(saves);
 
@@ -287,6 +287,12 @@ public class GameScreen {
         if (minecraftFont != null) launchButton.setFont(Font.font(minecraftFont.getFamily(), 20));
         launchButton.setOnAction(e -> handleLaunch(launchButton, errorLabel));
 
+        Bouton deleteButton = new Bouton(Translations.t("SUPPRIMER PARTIE"));
+        deleteButton.getStyleClass().add("side-action-button");
+        deleteButton.setPrefSize(260, 140);
+        if (minecraftFont != null) deleteButton.setFont(Font.font(minecraftFont.getFamily(), 20));
+        deleteButton.setOnAction(e -> handleDelete(deleteButton, errorLabel));
+
         Region spacer = new Region();
         VBox.setVgrow(spacer, Priority.ALWAYS);
 
@@ -296,7 +302,7 @@ public class GameScreen {
         if (minecraftFont != null) backButton.setFont(Font.font(minecraftFont.getFamily(), 16));
         backButton.setOnAction(e -> onBack.run());
 
-        panel.getChildren().addAll(newGameButton, launchButton, errorLabel, spacer, backButton);
+        panel.getChildren().addAll(newGameButton, launchButton, deleteButton, errorLabel, spacer, backButton);
         return panel;
     }
 
@@ -311,7 +317,7 @@ public class GameScreen {
         if (selectedSave == null) {
             // Aucune sélection
             String original = Translations.t("LANCER PARTIE");
-            launchButton.setText(Translations.t("SELECTIONNEZ UNE PARTIE"));
+            launchButton.setText(Translations.t("AUCUN SELECTION"));
             errorLabel.setVisible(false);
             new Thread(() -> {
                 try { Thread.sleep(1500); } catch (InterruptedException ignored) {}
@@ -344,6 +350,31 @@ public class GameScreen {
         errorLabel.setVisible(false);
         new NewGameScreen(stage, minecraftFont, this::show, onBack, save, pauseManager)
                 .launchExistingSave(fresh);
+    }
+
+    private void handleDelete(Bouton deleteButton, Label errorLabel){
+        if (selectedSave == null) {
+            // Aucune sélection
+            String original = Translations.t("SUPPRIMER PARTIE");
+            deleteButton.setText(Translations.t("AUCUNE SELECTION"));
+            errorLabel.setVisible(false);
+            new Thread(() -> {
+                try { Thread.sleep(1500); } catch (InterruptedException ignored) {}
+                javafx.application.Platform.runLater(() -> deleteButton.setText(original));
+            }).start();
+            return;
+        }
+        // Re-lecture du fichier pour valider l'état actuel (pas la version en mémoire)
+        Save fresh = Save.getSave(selectedSave.getUsername(), selectedSave.getSavename());
+
+        if (fresh != null) {fresh.delete();show();}
+        else {
+            errorLabel.setText(Translations.t("AUCUNE SELECTION"));
+            errorLabel.setVisible(true);
+            selectedSave = null;
+            show();
+            return;
+        }
     }
 
     // ─── Helpers labels ──────────────────────────────────────────────────────
@@ -433,11 +464,11 @@ public class GameScreen {
     // ─── Utilitaires ─────────────────────────────────────────────────────────
 
     private String toEnDiff(String displayed) {
-        if (displayed == null) return "All";
+        if (displayed == null) return "ALL";
         String en = Translations.toEN(displayed);
         if (en != null && !en.equals(displayed)) return en;
         String lower = displayed.toLowerCase();
-        if (lower.contains("all")  || lower.contains("tout"))  return "All";
+        if (lower.contains("all")  || lower.contains("toutes"))  return "ALL";
         if (lower.contains("easy") || lower.contains("facile")) return "Easy";
         if (lower.contains("normal"))                           return "Normal";
         if (lower.contains("hard") || lower.contains("diffi")) return "Hard";

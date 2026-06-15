@@ -25,12 +25,13 @@ public class GameInfos{
     public static String GAMENAME = "MY OWN ENEMY";
     public static String GAMENAME_TYPE_2 = "My Own Enemy";
     public static HashMap CREDITS = new HashMap<>();
-    private final HashSet<String> conception = new HashSet<>();
-    {
+    
+    static {
+        final HashSet<String> conception = new HashSet<>();
         conception.add("DWORNICZAK Arthur");
         conception.add("PERROT Roxane");
         conception.add("GAMON Thomas");
         conception.add("OUERHANI Farès");
-        CREDITS.put("REALISATION", conception);
+        CREDITS.put("REALISATION & DEVELOPPEMENT", conception);
     }
 }

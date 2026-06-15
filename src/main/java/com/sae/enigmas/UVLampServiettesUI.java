@@ -28,8 +28,8 @@ public class UVLampServiettesUI extends EnigmaDialog {
     private boolean tacheRevelee = false;
 
     /** Six serviettes : libellé + zone à l'écran (en coordonnées du panneau interne). */
-    private final String[] initiales = { "JA.", "PA.", "Pi.", "LD.", "TH.", "FR." };
-    private final Rectangle[] serviettes = new Rectangle[6];
+    private final String[] initiales = { "Ja.", "Pa.", "Pi.", "Lo.", "Th." };
+    private final Rectangle[] serviettes = new Rectangle[5];
     /** Index de la serviette portant la tache (JA. = 0). */
     private static final int IDX_JACQUES = 0;
 
@@ -57,7 +57,7 @@ public class UVLampServiettesUI extends EnigmaDialog {
     protected void onMousePressed(Vec2 p) {
         if (btnContinuer.contains((int) p.x, (int) p.y)) {
             if (tacheRevelee) {
-                setStatus("Tache identifiée sur la serviette de Jacques (JA.).",
+                setStatus("Tache identifiée sur la serviette de Jacques (Ja.).",
                           new Color(46, 204, 113));
             } else {
                 setStatus("Vous quittez la salle de bain.", new Color(200, 200, 200));
