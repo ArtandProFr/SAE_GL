@@ -1,5 +1,6 @@
 package com.sae.enigmas;
 
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,11 +23,13 @@ public class MovingBalls{
     private double animationProgress = 0; // 0.0 à 1.0
     private final double ANIM_SPEED = 0.05; // Ajuste pour la vitesse
     private final List<MovingBallTrack> activeAnimations = new ArrayList<>();
+    private final MovingBallsUI parent;
 
-    public MovingBalls(Vec2 coord, double taille, int[][] balls, int[][] goals, Slide[][] slides){
+    public MovingBalls(Vec2 coord, double taille, int[][] balls, int[][] goals, Slide[][] slides, MovingBallsUI parent){
 
         /* Constructeur de l'énigme */
 
+        this.parent = parent;
         this.taille = slides.length;
         this.coord = coord;
         this.taille_tot = taille;
@@ -61,6 +64,8 @@ public class MovingBalls{
         
         if (!isAnimating && verifWin()){
             win = true;
+            parent.changeStatus("Tiroir déverrouillé !", new Color(46, 204, 113));
+            parent.markSolvedAndClose();
         }
     }
 

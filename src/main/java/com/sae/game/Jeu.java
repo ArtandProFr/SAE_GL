@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
@@ -29,6 +30,7 @@ import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 
+import com.roxane.app.NewGameScreen;
 import com.roxane.app.Translations;
 import com.sae.core.GameInfos;
 import com.sae.core.Phase;
@@ -44,6 +46,7 @@ import com.sae.enigmas.OndesUI;
 import com.sae.enigmas.OrdiLouisUI;
 import com.sae.enigmas.RotaryDialUI;
 import com.sae.enigmas.UVLampUI;
+import com.sae.enigmas.UVLampServiettesUI;
 
 import javafx.stage.Stage;
 
@@ -108,6 +111,10 @@ public class Jeu extends JFrame {
     /** Avancée intra-phase non persistée (cf. javadoc de la classe). */
     private int subStep = 0;
 
+    /** Mode crédits : à la fin du jeu, on affiche les crédits sur fond noir
+     *  et un clic ramène au menu (déclenché sur le thread JavaFX). */
+    private boolean creditsMode = false;
+
     /** Flags d'objets ramassés / découverts par phase 3 / 4 / 5. */
     private boolean postItAffiche       = false;
     private boolean codeLouisTrouve     = false;  // post-it lu
@@ -137,8 +144,11 @@ public class Jeu extends JFrame {
     private final Stage stage;
     private final String DEFAULT_TITLE;
 
-    public Jeu(Save save, Phase phase, Stage stage) {
+    private NewGameScreen parent;
+
+    public Jeu(Save save, Phase phase, Stage stage, NewGameScreen parent) {
         this.save = save;
+        this.parent = parent;
         this.stage = stage;
         this.DEFAULT_TITLE = "Escape Game - " + save.getSavename()
                 + " (" + save.getUsername() + ") / [" + Translations.t(save.getDifficulty()) + "]";
@@ -323,7 +333,7 @@ public class Jeu extends JFrame {
             }
             case 43 -> { // 4.3 - Enquête SDB
                 preparerJusqua42();
-                placerDans(U_SDB, decorsPlaceholderSdb, 0);
+                placerDans(U_SDB, decorsSdb, 0);
             }
             case 51 -> { // 5.1 - Paul rentre (cinématique)
                 preparerJusqua43();
@@ -342,6 +352,7 @@ public class Jeu extends JFrame {
             case 71 -> { // 7.1 - Crédits
                 preparerJusqua52();
                 placerDans(U_SALON, decorsSalon, 0);
+                entrerModeCredits();
             }
             default -> {
                 enigmeVerre.setCorpsExamine(false);
@@ -427,6 +438,12 @@ public class Jeu extends JFrame {
     }
 
     private void gererClicSouris(MouseEvent e) {
+        // Écran de crédits : tout clic ramène au menu principal (sur le thread JavaFX)
+        if (creditsMode) {
+            javafx.application.Platform.runLater(() -> parent.retourMenu());
+            return;
+        }
+
         Rectangle imgBounds = backgroundPanel.getImageBounds();
         int iw = imgBounds.width;
         int ih = imgBounds.height;
@@ -496,6 +513,11 @@ public class Jeu extends JFrame {
     }
 
     private void gererMouvementSouris(MouseEvent e) {
+        if (creditsMode) {
+            backgroundPanel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            notifierChangementCurseur(true);
+            return;
+        }
         if (dialogueActif && e.getY() >= backgroundPanel.getHeight() - 110) {
             backgroundPanel.setCursor(new Cursor(Cursor.HAND_CURSOR));
             notifierChangementCurseur(true);
@@ -774,25 +796,66 @@ public class Jeu extends JFrame {
     }
 
     private void gererClicSdb(Point clic, int iw, int ih) {
-        if (numPhase() != 43) return;
-        Rectangle lampe      = new Rectangle((int)(iw * 0.90), (int)(ih * 0.30), (int)(iw * 0.15), (int)(ih * 0.20));
-        Rectangle serviettes = new Rectangle((int)(iw * 0.55), (int)(ih * 0.40), (int)(iw * 0.25), (int)(ih * 0.25));
-        if (lampe.contains(clic) && !lampeUVRamassee) {
-            lampeUVRamassee = true;
-            afficherIndice("Vous récupérez la lampe UV.");
-            if (lampeUVRamassee && serviettesVues) avancerPhase();
-            return;
-        }
-        if (serviettes.contains(clic) && !serviettesVues) {
-            serviettesVues = true;
-            afficherIndice("Des taches suspectes sur les serviettes, à examiner ailleurs.");
-            if (lampeUVRamassee && serviettesVues) {avancerPhase(); cinematiquePaul();}
-            return;
-        }
-        if (indexDecor == 1 && porteSortieSdb(iw, ih).contains(clic)){
+        // Porte de sortie sur sdb2 (toujours active)
+        if (indexDecor == 1 && porteSortieSdb(iw, ih).contains(clic)) {
             transitionner(U_SALON, decorsSalon, 0);
+            return;
         }
-    }   
+        if (numPhase() != 43) return;
+
+        // Vue 0 (sdb1) : la lampe UV est posée sur le plateau de la baignoire
+        if (indexDecor == 0) {
+            Rectangle lampe = zoneLampeUVSdb1(iw, ih);
+            if (lampe.contains(clic) && !lampeUVRamassee) {
+                lampeUVRamassee = true;
+                afficherIndice("Vous récupérez la lampe UV posée près de la baignoire.");
+                if (lampeUVRamassee && serviettesVues) { avancerPhase(); cinematiquePaul(); }
+                return;
+            }
+            return;
+        }
+
+        // Vue 1 (sdb2) : les six serviettes brodées des initiales des colocataires
+        if (indexDecor == 1) {
+            Rectangle serviettes = zoneServiettesSdb2(iw, ih);
+            if (serviettes.contains(clic) && !serviettesVues) {
+                if (!lampeUVRamassee) {
+                    afficherIndice("Six serviettes brodées d'initiales (JA., PA., Pi., LD., TH., FR.) — il fait trop sombre pour distinguer d'éventuelles traces. Une lampe UV serait précieuse.");
+                    return;
+                }
+                lancerUVLampServiettes();
+                return;
+            }
+        }
+    }
+
+    private void lancerUVLampServiettes() {
+        modeEnigmeActive = true;
+        UVLampServiettesUI ui = new UVLampServiettesUI(dialogParent());
+        ui.setVisible(true);
+        modeEnigmeActive = false;
+        serviettesVues = true;
+        if (ui.isTacheRevelee()) {
+            afficherInfo2("Sous la lampe UV, une tache fluorescente apparaît sur la serviette de Jacques (JA.). Une preuve troublante...", "Indice révélé");
+        } else {
+            afficherIndice("Vous quittez la salle de bain sans avoir balayé toutes les serviettes... mais l'enquête doit avancer.");
+        }
+        if (lampeUVRamassee && serviettesVues) {
+            avancerPhase();
+            cinematiquePaul();
+        }
+        rafraichirAffichage();
+    }
+
+    /** Zone cliquable de la lampe UV sur sdb1 (plateau près de la baignoire). */
+    private Rectangle zoneLampeUVSdb1(int iw, int ih) {
+        return new Rectangle((int)(iw * 0.45), (int)(ih * 0.44), (int)(iw * 0.16), (int)(ih * 0.13));
+    }
+
+    /** Zone cliquable des six serviettes brodées sur sdb2. */
+    private Rectangle zoneServiettesSdb2(int iw, int ih) {
+        return new Rectangle((int)(iw * 0.55), (int)(ih * 0.32), (int)(iw * 0.36), (int)(ih * 0.54));
+    }
 
     /* ─── ACCESSIBILITÉ DES PIÈCES ──────────────────────────────────────────── */
 
@@ -1086,8 +1149,28 @@ public class Jeu extends JFrame {
             }
             this.save.save();
             changeTitleProgression();
+            if (this.phase.estJeuFini()){
+                Save.updateLine(this.save);
+                entrerModeCredits();
+            }
         }
         subStep = 0;
+    }
+
+    /** Active l'écran de crédits final : fond noir + crédits + indication
+     *  « Cliquer pour revenir au menu ». Le retour vers le menu JavaFX sera
+     *  déclenché sur le thread JavaFX (Platform.runLater) au clic suivant. */
+    private void entrerModeCredits() {
+        creditsMode = true;
+        dialogueActif = false;
+        modeEnigmeActive = false;
+        if (btnGauche != null)      btnGauche.setVisible(false);
+        if (btnDroite != null)      btnDroite.setVisible(false);
+        if (btnQuitterZoom != null) btnQuitterZoom.setVisible(false);
+        if (txtExplicatif != null)  txtExplicatif.setVisible(false);
+        backgroundPanel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        notifierChangementCurseur(true);
+        backgroundPanel.repaint();
     }
 
     private int numPhase() {
@@ -1282,9 +1365,9 @@ public class Jeu extends JFrame {
     private boolean zoneSdbInter(Point clic, int iw, int ih) {
         if (indexDecor == 1 && porteSortieSdb(iw, ih).contains(clic)) return true;
         if (numPhase() != 43) return false;
-        Rectangle lampe      = new Rectangle((int)(iw * 0.90), (int)(ih * 0.30), (int)(iw * 0.15), (int)(ih * 0.20));
-        Rectangle serviettes = new Rectangle((int)(iw * 0.55), (int)(ih * 0.40), (int)(iw * 0.25), (int)(ih * 0.25));
-        return (lampe.contains(clic) && !lampeUVRamassee) || (serviettes.contains(clic) && !serviettesVues);
+        if (indexDecor == 0 && !lampeUVRamassee && zoneLampeUVSdb1(iw, ih).contains(clic)) return true;
+        if (indexDecor == 1 && !serviettesVues && zoneServiettesSdb2(iw, ih).contains(clic)) return true;
+        return false;
     }
 
     /* ─── MINI-MAP & RENDU ──────────────────────────────────────────────────── */
@@ -1306,7 +1389,7 @@ public class Jeu extends JFrame {
                 if (cible.equals(U_PIERRE))   tenterAller(U_PIERRE, pierreManager.obtenirDecorsPierre());
                 else if (cible.equals(U_LOUIS))   tenterAllerLouis();
                 else if (cible.equals(U_JACQUES)) tenterAller(U_JACQUES, decorsJacques);
-                else if (cible.equals(U_SDB))    tenterAller(U_SDB, decorsPlaceholderSdb);
+                else if (cible.equals(U_SDB))    tenterAller(U_SDB, decorsSdb);
                 else if (cible.equals(U_THOMAS))  afficherInfo(messageAccesRefuse(U_THOMAS));
                 else if (cible.equals(U_PAUL))    afficherInfo(messageAccesRefuse(U_PAUL));
                 else if (cible.equals(U_SALON))   transitionner(U_SALON, decorsSalon);
@@ -1409,6 +1492,12 @@ public class Jeu extends JFrame {
             g2d.setColor(Color.BLACK);
             g2d.fillRect(0, 0, getWidth(), getHeight());
 
+            // ─── Écran de crédits final ───────────────────────────────────
+            if (creditsMode) {
+                dessinerCredits(g2d);
+                return;
+            }
+
             Rectangle r = getImageBounds();
             if (backgroundImage != null) {
                 g2d.drawImage(backgroundImage, r.x, r.y, r.width, r.height, this);
@@ -1436,6 +1525,78 @@ public class Jeu extends JFrame {
             g2d.drawString(t, boxX + 25, boxY + 40);
             g2d.setFont(new Font("Arial", Font.ITALIC | Font.BOLD, 11)); g2d.setColor(new Color(46, 204, 113));
             g2d.drawString("[ Cliquer pour continuer > ]", boxX + boxW - 170, boxY + boxH - 15);
+        }
+
+        /** Dessine l'écran de crédits final (fond noir + titre + crédits + instruction). */
+        private void dessinerCredits(Graphics2D g2d) {
+            int w = getWidth(), h = getHeight();
+            // Fond noir (déjà rempli, on s'assure)
+            g2d.setColor(Color.BLACK);
+            g2d.fillRect(0, 0, w, h);
+
+            // Titre du jeu
+            g2d.setColor(Color.WHITE);
+            g2d.setFont(new Font("Serif", Font.BOLD, 42));
+            FontMetrics fmTitle = g2d.getFontMetrics();
+            String title = GameInfos.GAMENAME;
+            g2d.drawString(title, (w - fmTitle.stringWidth(title)) / 2, 90);
+
+            // Sous-titre "Crédits"
+            g2d.setFont(new Font("SansSerif", Font.ITALIC, 20));
+            g2d.setColor(new Color(200, 200, 200));
+            FontMetrics fmSub = g2d.getFontMetrics();
+            String sub = "— Crédits —";
+            g2d.drawString(sub, (w - fmSub.stringWidth(sub)) / 2, 130);
+
+            // Sections des crédits depuis GameInfos.CREDITS
+            // Force l'initialisation du bloc d'instance (les crédits sont remplis
+            // dans un initializer non-static : on crée une instance temporaire).
+            new GameInfos();
+            int y = 200;
+            Font sectionFont = new Font("SansSerif", Font.BOLD, 22);
+            Font nameFont    = new Font("SansSerif", Font.PLAIN, 18);
+            for (Object key : GameInfos.CREDITS.keySet()) {
+                String sectionTitre = String.valueOf(key);
+                g2d.setFont(sectionFont);
+                g2d.setColor(new Color(46, 204, 113));
+                FontMetrics fmS = g2d.getFontMetrics();
+                g2d.drawString(sectionTitre, (w - fmS.stringWidth(sectionTitre)) / 2, y);
+                y += 36;
+
+                Object membres = GameInfos.CREDITS.get(key);
+                if (membres instanceof Iterable<?>) {
+                    g2d.setFont(nameFont);
+                    g2d.setColor(Color.WHITE);
+                    FontMetrics fmN = g2d.getFontMetrics();
+                    for (Object membre : (Iterable<?>) membres) {
+                        String nom = String.valueOf(membre);
+                        g2d.drawString(nom, (w - fmN.stringWidth(nom)) / 2, y);
+                        y += 28;
+                    }
+                }
+                y += 20;
+            }
+
+            // Informations académiques
+            g2d.setFont(new Font("SansSerif", Font.ITALIC, 14));
+            g2d.setColor(new Color(170, 170, 170));
+            String[] infos = {
+                "INSA Hauts-de-France — Sciences et Humanités pour l'Ingénieur (2A)",
+                "SAE Génie Logiciel — Année 2025-2026"
+            };
+            int yInfo = h - 90;
+            for (String s : infos) {
+                FontMetrics fmI = g2d.getFontMetrics();
+                g2d.drawString(s, (w - fmI.stringWidth(s)) / 2, yInfo);
+                yInfo += 20;
+            }
+
+            // Instruction de retour au menu
+            g2d.setFont(new Font("SansSerif", Font.BOLD | Font.ITALIC, 16));
+            g2d.setColor(new Color(46, 204, 113));
+            String instr = "[ Cliquer pour revenir au menu ]";
+            FontMetrics fmInstr = g2d.getFontMetrics();
+            g2d.drawString(instr, (w - fmInstr.stringWidth(instr)) / 2, h - 30);
         }
 
         private void dessinerPlaceholder(Graphics2D g, Rectangle r, String tag) {

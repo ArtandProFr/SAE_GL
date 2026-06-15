@@ -33,6 +33,10 @@ public class MovingBallsUI extends EnigmaDialog {
         timer.start();
     }
 
+    public void changeStatus(String title, Color c){
+        setStatus(title, c);
+    }
+
     private MovingBalls buildEnigme(String diff, int num) {
         if ("Easy".equalsIgnoreCase(diff)) {
             if (num == 0){
@@ -80,7 +84,7 @@ public class MovingBallsUI extends EnigmaDialog {
                 // Cibles associées
                 int[][] goals = new int[][]{ {1, 2}, {2, 1}, {3, 2} };
 
-                return new MovingBalls(new Vec2((W - 10) / 2.0, (H - 90) / 2.0 - 10), 430, balls, goals, slides);
+                return new MovingBalls(new Vec2((W - 10) / 2.0, (H - 90) / 2.0 - 10), 430, balls, goals, slides, this);
             } else if (num == 1){
                 int N = 4;
                 Slide[][] slides = new Slide[N][N];
@@ -115,7 +119,7 @@ public class MovingBallsUI extends EnigmaDialog {
                 // Cibles associées
                 int[][] goals = new int[][]{ {3, 0}, {2, 2} };
 
-                return new MovingBalls(new Vec2((W - 10) / 2.0, (H - 90) / 2.0 - 10), 430, balls, goals, slides);
+                return new MovingBalls(new Vec2((W - 10) / 2.0, (H - 90) / 2.0 - 10), 430, balls, goals, slides, this);
             } else if (num == 2){
                 int N = 4;
                 Slide[][] slides = new Slide[N][N];
@@ -150,7 +154,7 @@ public class MovingBallsUI extends EnigmaDialog {
                 // Cibles associées
                 int[][] goals = new int[][]{ {1, 0}, {3, 2} };
 
-                return new MovingBalls(new Vec2((W - 10) / 2.0, (H - 90) / 2.0 - 10), 430, balls, goals, slides);
+                return new MovingBalls(new Vec2((W - 10) / 2.0, (H - 90) / 2.0 - 10), 430, balls, goals, slides, this);
             } else {
                 return null;
             }
@@ -196,7 +200,7 @@ public class MovingBallsUI extends EnigmaDialog {
                 // Objectifs d'origine de la maquette
                 int[][] goals = new int[][]{ {2, 0}, {1, 2}, {2, 3}, {4, 3} };
 
-                return new MovingBalls(new Vec2((W - 10) / 2.0, (H - 90) / 2.0 - 10), 430, balls, goals, slides);
+                return new MovingBalls(new Vec2((W - 10) / 2.0, (H - 90) / 2.0 - 10), 430, balls, goals, slides, this);
             } else if (num == 1){
                 int N = 5;
                 Slide[][] slides = new Slide[N][N];
@@ -242,7 +246,7 @@ public class MovingBallsUI extends EnigmaDialog {
                 // Cibles associées
                 int[][] goals = new int[][]{ {2, 1}, {1, 4}, {3, 4} };
 
-                return new MovingBalls(new Vec2((W - 10) / 2.0, (H - 90) / 2.0 - 10), 430, balls, goals, slides);
+                return new MovingBalls(new Vec2((W - 10) / 2.0, (H - 90) / 2.0 - 10), 430, balls, goals, slides, this);
             } else {
                 int N = 5;
                 Slide[][] slides = new Slide[N][N];
@@ -286,7 +290,7 @@ public class MovingBallsUI extends EnigmaDialog {
 
                 // Cibles associées
                 int[][] goals = new int[][]{ {1, 1}, {2, 2}, {4, 3} };
-                return new MovingBalls(new Vec2((W - 10) / 2.0, (H - 90) / 2.0 - 10), 430, balls, goals, slides);
+                return new MovingBalls(new Vec2((W - 10) / 2.0, (H - 90) / 2.0 - 10), 430, balls, goals, slides, this);
             }
 
         } else {
@@ -332,7 +336,7 @@ public class MovingBallsUI extends EnigmaDialog {
                     // Objectifs d'origine de la maquette
                     int[][] goals = new int[][]{ {2, 0}, {1, 2}, {2, 3}, {4, 3} };
 
-                    return new MovingBalls(new Vec2((W - 10) / 2.0, (H - 90) / 2.0 - 10), 430, balls, goals, slides);
+                    return new MovingBalls(new Vec2((W - 10) / 2.0, (H - 90) / 2.0 - 10), 430, balls, goals, slides, this);
                 }
                 case 1 -> {
                     int N = 5;
@@ -379,7 +383,7 @@ public class MovingBallsUI extends EnigmaDialog {
                     // Cibles associées
                     int[][] goals = new int[][]{ {2, 1}, {1, 4}, {3, 4} };
 
-                    return new MovingBalls(new Vec2((W - 10) / 2.0, (H - 90) / 2.0 - 10), 430, balls, goals, slides);
+                    return new MovingBalls(new Vec2((W - 10) / 2.0, (H - 90) / 2.0 - 10), 430, balls, goals, slides, this);
                 }
                 default -> {
                     int N = 5;
@@ -424,7 +428,7 @@ public class MovingBallsUI extends EnigmaDialog {
 
                     // Cibles associées
                     int[][] goals = new int[][]{ {1, 1}, {2, 2}, {4, 3} };
-                    return new MovingBalls(new Vec2((W - 10) / 2.0, (H - 90) / 2.0 - 10), 430, balls, goals, slides);
+                    return new MovingBalls(new Vec2((W - 10) / 2.0, (H - 90) / 2.0 - 10), 430, balls, goals, slides, this);
                 }
             }
         }
@@ -434,10 +438,6 @@ public class MovingBallsUI extends EnigmaDialog {
     protected void onMousePressed(Vec2 p) {
         if (enigme.win) return;
         enigme.update(p, true, true);
-        if (enigme.win) {
-            setStatus("Tiroir déverrouillé !", new Color(46, 204, 113));
-            markSolvedAndClose();
-        }
     }
 
     @Override

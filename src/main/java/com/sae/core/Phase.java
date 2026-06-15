@@ -43,9 +43,6 @@ public class Phase {
 
         // Phase 7
         addPhase("Crédits", 0, true);
-
-        // Phase 8
-        addPhase("Fin", 0, true);
     }
 
     public Phase(double numero){

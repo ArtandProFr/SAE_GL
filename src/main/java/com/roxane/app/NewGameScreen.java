@@ -205,6 +205,11 @@ public class NewGameScreen {
         return row;
     }
 
+    public void retourMenu(){
+        //javax.swing.SwingUtilities.invokeLater(() -> {onBackToMenu.run();});
+        onBackToMenu.run();
+    }
+
     /**
      * Affiche le jeu Swing ({@link com.sae.game.Jeu}) à l'intérieur de la
      * fenêtre JavaFX courante, sans ouvrir de seconde fenêtre.
@@ -288,7 +293,7 @@ public class NewGameScreen {
 
         // Lancement sur l'Event Dispatch Thread (EDT)
         javax.swing.SwingUtilities.invokeLater(() -> {
-            com.sae.game.Jeu jeu = new com.sae.game.Jeu(save, phase, stage);
+            com.sae.game.Jeu jeu = new com.sae.game.Jeu(save, phase, stage, this);
 
             // Branchement du curseur JavaFX
             jeu.setCursorChangeListener(surElementInteractif -> {
