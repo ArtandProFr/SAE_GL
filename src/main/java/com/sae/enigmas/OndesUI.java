@@ -144,7 +144,7 @@ public class OndesUI extends EnigmaDialog {
     private void construireNormal() {
         Shape[] formes  = { Shape.SAW, Shape.TRI, Shape.SQUARE };
         int[]   harmons = { 2,         3,         2            };
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 1; i++) {
             Shape sub2 = formes[i];
             int harm   = harmons[i];
             double f1  = 1.0 + i * 0.5;

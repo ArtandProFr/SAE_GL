@@ -52,9 +52,7 @@ public class ChambrePierreManager {
                         decorPierre2 = "pierre2.jpg"; // On change définitivement l'image de fond (sans cadenas)
                         jeu.activerModeZoom("pierre_armoire.jpg");
                     } else {
-                        javax.swing.JOptionPane.showMessageDialog(jeu, 
-                            "L'armoire à pharmacie est verrouillée par un cadenas.\nIl me faut une clé pour l'ouvrir.", 
-                            "Armoire verrouillée", javax.swing.JOptionPane.WARNING_MESSAGE);
+                        jeu.afficherAvertissement("L'armoire à pharmacie est verrouillée par un cadenas.\nIl me faut une clé pour l'ouvrir.", "Armoire verrouillée");
                     }
                 }
                 return true;
@@ -71,9 +69,7 @@ public class ChambrePierreManager {
             Rectangle zoneCle = new Rectangle((int)(iw * 0.43), (int)(ih * 0.48), (int)(iw * 0.12), (int)(ih * 0.15));
             if (zoneCle.contains(clic)) {
                 aLaCle = true;
-                javax.swing.JOptionPane.showMessageDialog(jeu, 
-                    "Vous avez récupéré la clé de l'armoire à pharmacie !", 
-                    "Objet trouvé", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+                jeu.afficherInfo2("Vous avez récupéré la clé de l'armoire à pharmacie !", "Objet trouvé");
                 
                 // Réalisme : on change instantanément l'image pour afficher le tiroir désormais VIDE
                 jeu.activerModeZoom("pierre_tiroir.jpg");
@@ -82,15 +78,14 @@ public class ChambrePierreManager {
             // Zone de la fiole de poison (médicaments) dans l'armoire
             Rectangle zoneFiole = new Rectangle((int)(iw * 0.46), (int)(ih * 0.35), (int)(iw * 0.08), (int)(ih * 0.22));
             if (zoneFiole.contains(clic)) {
-                javax.swing.JOptionPane.showMessageDialog(jeu, 
-                    "Une fiole... Peut-être que c'est du poison... Serait-ce l'arme du crime ?\nPierre cache bien son jeu.", 
-                    "Indice Suspect", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+                jeu.afficherInfo2("Une fiole... Peut-être que c'est du poison... Serait-ce l'arme du crime ?\nPierre cache bien son jeu.", "Indice Suspect");
             }
         }
     }
 
     /** Vérifie si la souris survole un élément interactif dans la chambre de Pierre */
-    public boolean verifierSurvol(int indexDecor, Point p, int iw, int ih) {
+    public boolean verifierSurvol(int indexDecor, Point p, int iw, int ih, com.sae.game.Jeu jeu) {
+        jeu.forcerMiseAJoursPanel();
         if (modeZoom.equals("TIROIR") && !aLaCle) {
             Rectangle zoneCle = new Rectangle((int)(iw * 0.43), (int)(ih * 0.48), (int)(iw * 0.12), (int)(ih * 0.15));
             return zoneCle.contains(p);

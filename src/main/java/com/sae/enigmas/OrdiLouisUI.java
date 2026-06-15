@@ -21,19 +21,19 @@ import com.sae.core.Save;
 public class OrdiLouisUI extends EnigmaDialog {
 
     private static final int W = 540;
-    private static final int H = 360;
+    private static final int H = 370;
     public  static final String CODE_LOUIS = "4691";
     private String difficulty;
 
     private final JTextField field;
-    private final Rectangle btnValider = new Rectangle(W/2 - 90, 230, 180, 40);
+    private final Rectangle btnValider = new Rectangle(W/2 - 100, 217, 180, 40);
 
     public OrdiLouisUI(Window parent, Save save) {
         super(parent, "Ordinateur de Louis - Verrouillé", W, H);
 
         this.difficulty = save.getDifficulty();
         field = new JTextField();
-        field.setBounds(W/2 - 100, 170, 200, 38);
+        field.setBounds(W/2 - 110, 170, 200, 38);
         field.setFont(new Font("Monospaced", Font.BOLD, 22));
         field.setHorizontalAlignment(JTextField.CENTER);
         field.setBackground(new Color(28, 30, 36));

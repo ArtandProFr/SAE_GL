@@ -22,6 +22,7 @@ import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.net.URL;
 import java.awt.image.BufferedImage;
+import java.awt.image.ImageObserver;
 
 import javax.imageio.ImageIO;
 import javax.swing.AbstractAction;
@@ -138,7 +139,7 @@ public class Jeu extends JFrame {
     private boolean fioleTrouvee        = false;  // 5.2
 
     /* ─── UI Swing ──────────────────────────────────────────────────────────── */
-    private BackgroundPanel backgroundPanel;
+    public BackgroundPanel backgroundPanel;
     private JLabel txtExplicatif;
     private JButton btnGauche;
     private JButton btnDroite;
@@ -153,6 +154,9 @@ public class Jeu extends JFrame {
 
     // Cache pour l'image pour éviter de la recharger à chaque frame
     private BufferedImage iconeCredits = null;
+
+    private BufferedImage imageLampeUV = null;
+
 
     public Jeu(Save save, Phase phase, Stage stage, NewGameScreen parent) {
         this.save = save;
@@ -202,10 +206,17 @@ public class Jeu extends JFrame {
         backgroundPanel.add(btnDroite);
         backgroundPanel.add(btnQuitterZoom);
 
+        chargerLampeUV();
+
         // ─── Restauration de l'état selon la phase ─────────────────────────
         restaurerEtatProgression();
         mettreAJourTexteChambre();
         rafraichirAffichage();
+        this.repaint();
+        Rectangle imgBounds = backgroundPanel.getImageBounds();
+        int iw = imgBounds.width;
+        int ih = imgBounds.height;
+        updateLampeUV(iw, ih);
         this.repaint();
 
         backgroundPanel.addMouseListener(new MouseAdapter() {
@@ -219,10 +230,60 @@ public class Jeu extends JFrame {
         setupAdminKeyBinding();
 
         setContentPane(backgroundPanel);
+
+        this.addWindowFocusListener(new java.awt.event.WindowFocusListener() {
+        @Override
+        public void windowGainedFocus(java.awt.event.WindowEvent e) {
+            // Dès que la fenêtre redevient active après la fermeture de la pop-up :
+            if (backgroundPanel != null) {
+                backgroundPanel.revalidate(); // Force Java à recalculer les layouts et dimensions
+                backgroundPanel.repaint();    // Force le redessin propre des images
+            }
+            
+            // Si tu as une méthode qui repositionne tes boutons/éléments graphiques, appelle-la ici :
+            // Exemple si elle s'appelle repositionnerComposants() :
+            if (backgroundPanel != null) {
+                backgroundPanel.repositionnerComposants(backgroundPanel.getBounds());
+                repaint();
+            }
+        }
+
+        @Override
+        public void windowLostFocus(java.awt.event.WindowEvent e) {
+            // Rien à faire quand on perd le focus
+        }
+        });
+
+        backgroundPanel.addAncestorListener(new javax.swing.event.AncestorListener() {
+        @Override
+        public void ancestorAdded(javax.swing.event.AncestorEvent event) {
+            // Exécuté dès que la fenêtre principale redevient le composant de premier plan
+            java.awt.Rectangle bounds = backgroundPanel.getBounds();
+            if (bounds.width > 0 && bounds.height > 0) {
+                // On force le repositionnement manuel des composants
+                backgroundPanel.repositionnerComposants(bounds);
+            }
+            backgroundPanel.revalidate();
+            backgroundPanel.repaint();
+        }
+
+        @Override
+        public void ancestorRemoved(javax.swing.event.AncestorEvent event) {}
+
+        @Override
+        public void ancestorMoved(javax.swing.event.AncestorEvent event) {}
+        });
+
+        this.addWindowStateListener(e -> {
+        java.awt.Rectangle bounds = backgroundPanel.getBounds();
+        backgroundPanel.repositionnerComposants(bounds);
+        backgroundPanel.revalidate();
+        backgroundPanel.repaint();
+    });
     }
 
     /**
-     * Configure le raccourci clavier global pour la touche '²' (indépendant du focus)[cite: 4]
+     * Configure le raccourci clavier global pour la touche '!' (indépendant du focus)
      */
     private void setupAdminKeyBinding() {
         // Raccourci corrigé sur la touche '!' pour le mode admin
@@ -443,6 +504,7 @@ public class Jeu extends JFrame {
 
     public void debugVisuelArmoire(){
         transitionner(U_PIERRE, pierreManager.obtenirDecorsPierre(), 1);
+        backgroundPanel.forcerMiseAJours();
     }
 
     private void gererClicSouris(MouseEvent e) {
@@ -548,6 +610,8 @@ public class Jeu extends JFrame {
         Rectangle imgBounds = backgroundPanel.getImageBounds();
         int iw = imgBounds.width;
         int ih = imgBounds.height;
+        updateLampeUV(iw, ih);
+        
         boolean inter = false;
 
         // Mini-map : toujours interactive si zoom inactif
@@ -556,7 +620,7 @@ public class Jeu extends JFrame {
         }
 
         if (!inter && universActuel.equals(U_PIERRE)) {
-            if (pierreManager.verifierSurvol(indexDecor, clic, iw, ih) || (indexDecor == 1 && porteSortiePierre(iw, ih).contains(clic))){
+            if (pierreManager.verifierSurvol(indexDecor, clic, iw, ih, this) || (indexDecor == 1 && porteSortiePierre(iw, ih).contains(clic))){
                 inter = true;
             }
         }
@@ -817,6 +881,8 @@ public class Jeu extends JFrame {
             Rectangle lampe = zoneLampeUVSdb1(iw, ih);
             if (lampe.contains(clic) && !lampeUVRamassee) {
                 lampeUVRamassee = true;
+                backgroundPanel.removeImage(0);
+                transitionner(U_SDB, decorsSdb, 0);
                 afficherIndice("Vous récupérez la lampe UV posée près de la baignoire.");
                 if (lampeUVRamassee && serviettesVues) { avancerPhase(); cinematiquePaul(); }
                 return;
@@ -829,7 +895,9 @@ public class Jeu extends JFrame {
             Rectangle serviettes = zoneServiettesSdb2(iw, ih);
             if (serviettes.contains(clic) && !serviettesVues) {
                 if (!lampeUVRamassee) {
-                    afficherIndice("Six serviettes brodées d'initiales (JA., PA., Pi., LD., TH., FR.) — il fait trop sombre pour distinguer d'éventuelles traces. Une lampe UV serait précieuse.");
+                    String indice = "5 serviettes brodées d'initiales (Ja., Pa., Pi., Lo., Th.)";
+                    if (save.getDifficulty().equals("Easy")) indice = indice + " — il fait trop sombre pour distinguer d'éventuelles traces. Une lampe UV serait précieuse.";
+                    afficherIndice(indice);
                     return;
                 }
                 lancerUVLampServiettes();
@@ -858,7 +926,7 @@ public class Jeu extends JFrame {
 
     /** Zone cliquable de la lampe UV sur sdb1 (plateau près de la baignoire). */
     private Rectangle zoneLampeUVSdb1(int iw, int ih) {
-        return new Rectangle((int)(iw * 0.45), (int)(ih * 0.44), (int)(iw * 0.16), (int)(ih * 0.13));
+        return new Rectangle((int)(iw * 0.52), (int)(ih * 0.48), (int)(iw * 0.035), (int)(ih * 0.054));
     }
 
     /** Zone cliquable des six serviettes brodées sur sdb2. */
@@ -1128,6 +1196,7 @@ public class Jeu extends JFrame {
         //decorsActuels = pierreManager.obtenirDecorsPierre();
         backgroundPanel.setNewImage(decorsActuels[indexDecor]);
         recalculerCurseurImmediat();
+        backgroundPanel.forcerMiseAJours();
         if (postItAffiche){
             postItAffiche = false; 
         }
@@ -1231,18 +1300,18 @@ public class Jeu extends JFrame {
         recalculerCurseurImmediat();
     }
 
-    private void afficherIndice(String msg) {
+    public void afficherIndice(String msg) {
         JOptionPane.showMessageDialog(this, msg, "Indice", JOptionPane.INFORMATION_MESSAGE);
     }
-    private void afficherInfo(String msg) {
+    public void afficherInfo(String msg) {
         if (txtExplicatif != null) txtExplicatif.setText(msg);
         else JOptionPane.showMessageDialog(this, msg, "Info", JOptionPane.INFORMATION_MESSAGE);
     }
-    private void afficherAvertissement(String msg, String title){
+    public void afficherAvertissement(String msg, String title){
         JOptionPane.showMessageDialog(this, msg, title, JOptionPane.WARNING_MESSAGE);
     }
 
-    private void afficherInfo2(String msg, String title){
+    public void afficherInfo2(String msg, String title){
         JOptionPane.showMessageDialog(this, msg, title, JOptionPane.INFORMATION_MESSAGE);
     }
 
@@ -1268,6 +1337,19 @@ public class Jeu extends JFrame {
         Rectangle imgBounds = backgroundPanel.getImageBounds();
         if (!imgBounds.contains(p)) return null;
         return new Point(p.x - imgBounds.x, p.y - imgBounds.y);
+    }
+
+    private void updateLampeUV(int iw, int ih){
+        backgroundPanel.removeImage(0);
+        Rectangle zoneLampeUVRect = zoneLampeUVSdb1(iw, ih);
+        if (!lampeUVRamassee && indexDecor == 0 && universActuel.equals(U_SDB)){
+            // Définis la position (X, Y) et la taille (W, H) de la lampe à côté de la baignoire
+            int lampeX = zoneLampeUVRect.x;  // À ajuster selon tes coordonnées exactes dans la SdB
+            int lampeY = zoneLampeUVRect.y;  // À ajuster selon tes coordonnées exactes dans la SdB
+            int lampeW = zoneLampeUVRect.width;   // Largeur de l'item au sol
+            int lampeH = zoneLampeUVRect.height;   // Hauteur de l'item au sol
+            backgroundPanel.addImage(imageLampeUV, lampeX, lampeY, lampeW, lampeH, null, 0);
+        }
     }
 
     private void transitionner(String u, String[] decors, int indexDecor) {
@@ -1407,7 +1489,8 @@ public class Jeu extends JFrame {
         return false;
     }
 
-    public BackgroundPanel getGamePanel() { return backgroundPanel; }
+    public void forcerMiseAJoursPanel(){ backgroundPanel.forcerMiseAJours();}
+    public BackgroundPanel getGamePanel() { return this.backgroundPanel; }
 
     private void mettreAJourTexteChambre() {
         if (txtExplicatif == null) return;
@@ -1441,6 +1524,15 @@ public class Jeu extends JFrame {
         changeTitle(title);
     }
 
+    private void chargerLampeUV() {
+            try {
+                imageLampeUV = ImageIO.read(getClass().getResourceAsStream("/images/Thomas/lampeUV.png"));
+            } catch (IOException | NullPointerException e) {
+                System.err.println("Erreur lors du chargement de l'image LampeUV: " + e.getMessage());
+                imageLampeUV = null; // Gérer le cas où l'image est manquante
+            }
+        }
+
     /* ─── Panneau de fond (rendu général) ─────────────────────────────────── */
 
     class BackgroundPanel extends JPanel {
@@ -1449,8 +1541,69 @@ public class Jeu extends JFrame {
         private int imgHeightOriginal = 1;
         private boolean placeholderMode = false;
         private String placeholderTag = "";
+        private Object[][] otherImages = new Object[20][7];
+        private int countOther = 0;
+
+        {
+            for (int i = 0; i < otherImages.length; i++){
+                otherImages[i] = null;
+            }
+        }
+
+        public void addImage(BufferedImage image, int x, int y, int w, int h, ImageObserver observer, int id) {
+            if (countOther < otherImages.length) {
+                otherImages[countOther] = new Object[]{image, x, y, w, h, observer, id};
+                countOther++;
+            }
+        }
+
+        // Termine celle-ci : cherche l'ID et décale le tableau pour combler le vide
+        public void removeImage(int id) {
+            for (int i = 0; i < countOther; i++) {
+                if (otherImages[i] != null && (int)otherImages[i][6] == id) {
+                    // Décaler tous les éléments suivants vers la gauche
+                    for (int j = i; j < countOther - 1; j++) {
+                        otherImages[j] = otherImages[j + 1];
+                    }
+                    otherImages[countOther - 1] = null;
+                    countOther--;
+                    return;
+                }
+            }
+        }
+
+        // Copie profonde sécurisée
+        public Object[] copier(Object[] arr) {
+            if (arr == null) return null;
+            Object[] ans = new Object[arr.length];
+            System.arraycopy(arr, 0, ans, 0, arr.length);
+            return ans;
+        }
+
+        // Inverser deux éléments par leur index dans le tableau
+        public void inverser(int i, int j) {
+            if (i < 0 || i >= countOther || j < 0 || j >= countOther) return;
+            Object[] temp = otherImages[i];
+            otherImages[i] = otherImages[j];
+            otherImages[j] = temp;
+        }
+
+        public void addImage(BufferedImage image, int x, int y, int w, int h, int id){
+            addImage(image, x, y, w, h, null, id);
+        }
 
         public BackgroundPanel(String path) { setNewImage(path); }
+
+        public void forcerMiseAJours() {
+            // 1. Recalcule les positions des boutons selon la taille ACTUELLE du panel
+            repositionnerComposants(this.getBounds());
+            
+            // 2. Force le layout à se mettre à jour
+            this.revalidate();
+            
+            // 3. Force le dessin à se refaire
+            this.repaint();
+        }
 
         public void setSetCursorDirect(boolean hand) {
             setCursor(new Cursor(hand ? Cursor.HAND_CURSOR : Cursor.DEFAULT_CURSOR));
@@ -1495,6 +1648,10 @@ public class Jeu extends JFrame {
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
+            // On récupère les dimensions réelles actuelles du panneau
+            Rectangle boundsActuelles = getBounds();
+            // On force la méthode de Jeu à recaler les boutons <, > et SYSTEM
+            repositionnerComposants(boundsActuelles);
             Graphics2D g2d = (Graphics2D) g;
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2d.setColor(Color.BLACK);
@@ -1511,6 +1668,13 @@ public class Jeu extends JFrame {
                 g2d.drawImage(backgroundImage, r.x, r.y, r.width, r.height, this);
             } else if (placeholderMode) {
                 dessinerPlaceholder(g2d, r, placeholderTag);
+            }
+
+            for (int i = 0; i < countOther; i++) {
+                if (otherImages[i] != null) {
+                    g.drawImage((Image)otherImages[i][0], (int)otherImages[i][1], (int)otherImages[i][2], 
+                                (int)otherImages[i][3], (int)otherImages[i][4], (ImageObserver)otherImages[i][5]);
+                }
             }
 
             if (dialogueActif) {
@@ -1712,51 +1876,91 @@ public class Jeu extends JFrame {
         }
 
         private void dessinerMiniMap(Graphics2D g2d) {
-            int mapX = 30, mapY = getHeight() - 180, tc = 30;
+            // --- FACTEUR DE TAILLE ---
+            float scale = 1.3f; 
+            
+            int tc = Math.round(30 * scale);
+            int mapX = 30;
+            int mapY = getHeight() - (5 * tc) - 30;
+
+            // Couleurs
             Color cDef = new Color(45, 52, 54, 240);
             Color cAct = new Color(46, 204, 113, 255);
             Color cInacc = new Color(80, 30, 30, 200);
             Color tDef = Color.WHITE, tAct = Color.BLACK;
 
-            Rectangle rPierre = new Rectangle(mapX,             mapY,                tc * 2, tc * 2);
-            Rectangle rLouis  = new Rectangle(mapX,             mapY + tc * 2,       tc * 2, tc * 2);
-            Rectangle rSdb    = new Rectangle(mapX,             mapY + tc * 4,       tc * 2, tc);
-            int largJacques = 46, largT = 22, largP = 22;
-            Rectangle rJacques = new Rectangle(mapX + tc * 2,   mapY,                largJacques, tc);
-            Rectangle rThomas  = new Rectangle(mapX + tc * 2 + largJacques, mapY,    largT, tc);
-            Rectangle rPaul    = new Rectangle(mapX + tc * 2 + largJacques + largT, mapY, largP, tc);
-            Rectangle rSalon   = new Rectangle(mapX + tc * 2,   mapY + tc,           largJacques + largT + largP, tc * 4);
+            // Dimensions scalées
+            int largJacques = Math.round(46 * scale);
+            int largTP = Math.round(45 * scale); // Largeur suffisante pour "Thomas" et "Paul"
 
-            miniMapRects[0] = rPierre;
-            miniMapRects[1] = rLouis;
-            miniMapRects[2] = rSdb;
-            miniMapRects[3] = rJacques;
-            miniMapRects[4] = rSalon;
-            miniMapRects[5] = rThomas;
-            miniMapRects[6] = rPaul;
+            // Rectangles
+            Rectangle rPierre  = new Rectangle(mapX, mapY, tc * 2, tc * 2);
+            Rectangle rLouis   = new Rectangle(mapX, mapY + tc * 2, tc * 2, tc * 2);
+            Rectangle rSdb     = new Rectangle(mapX, mapY + tc * 4, tc * 2, tc);
+            
+            Rectangle rJacques = new Rectangle(mapX + tc * 2, mapY, largJacques, tc);
+            Rectangle rThomas  = new Rectangle(mapX + tc * 2 + largJacques, mapY, largTP, tc);
+            Rectangle rPaul    = new Rectangle(mapX + tc * 2 + largJacques + largTP, mapY, largTP, tc);
+            Rectangle rSalon   = new Rectangle(mapX + tc * 2, mapY + tc, largJacques + (largTP * 2), tc * 4);
 
+            // Stockage
+            miniMapRects[0] = rPierre; miniMapRects[1] = rLouis; miniMapRects[2] = rSdb;
+            miniMapRects[3] = rJacques; miniMapRects[4] = rSalon; miniMapRects[5] = rThomas; miniMapRects[6] = rPaul;
+
+            // Dessin des cases
             paintMapCase(g2d, rPierre,  U_PIERRE,  cDef, cAct, cInacc);
             paintMapCase(g2d, rLouis,   U_LOUIS,   cDef, cAct, cInacc);
-            paintMapCase(g2d, rSdb,     U_SDB,    cDef, cAct, cInacc);
+            paintMapCase(g2d, rSdb,     U_SDB,     cDef, cAct, cInacc);
             paintMapCase(g2d, rSalon,   U_SALON,   cDef, cAct, cInacc);
             paintMapCase(g2d, rJacques, U_JACQUES, cDef, cAct, cInacc);
             paintMapCase(g2d, rThomas,  U_THOMAS,  cDef, cAct, cInacc);
             paintMapCase(g2d, rPaul,    U_PAUL,    cDef, cAct, cInacc);
 
-            g2d.setColor(new Color(200, 200, 200)); g2d.setStroke(new BasicStroke(1.5f));
-            for (Rectangle box : new Rectangle[]{rPierre, rLouis, rSdb, rSalon, rJacques, rThomas, rPaul})
+            // Bordures
+            g2d.setColor(new Color(200, 200, 200)); 
+            g2d.setStroke(new BasicStroke(1.5f));
+            for (Rectangle box : new Rectangle[]{rPierre, rLouis, rSdb, rSalon, rJacques, rThomas, rPaul}) {
                 g2d.drawRect(box.x, box.y, box.width, box.height);
+            }
 
-            g2d.setFont(new Font("Arial", Font.BOLD, 10));
-            labelMap(g2d, rPierre,  "Pierre",  U_PIERRE,  tAct, tDef);
-            labelMap(g2d, rLouis,   "Louis",   U_LOUIS,   tAct, tDef);
-            g2d.setColor(tDef); g2d.drawString("SdB", rSdb.x + 18, rSdb.y + 20);
-            labelMap(g2d, rJacques, "Jacques", U_JACQUES, tAct, tDef);
-            g2d.setColor(new Color(200,170,170));
-            g2d.drawString("T", rThomas.x + 7, rThomas.y + 18);
-            g2d.drawString("P", rPaul.x + 7,   rPaul.y + 18);
-            g2d.setFont(new Font("Arial", Font.BOLD, 12));
-            labelMap(g2d, rSalon, "SALON", U_SALON, tAct, tDef);
+            // Dessin des textes centrés
+            g2d.setFont(new Font("Arial", Font.BOLD, Math.max(8, Math.round(9 * scale))));
+            
+            drawCenteredString(g2d, "Pierre", rPierre, tDef);
+            drawCenteredString(g2d, "Louis", rLouis, tDef);
+            drawCenteredString(g2d, "Salle de bain", rSdb, tDef);
+            drawCenteredString(g2d, "Jacques", rJacques, tDef);
+            drawCenteredString(g2d, "Paul", rPaul, tDef);
+
+            // --- Cas particulier pour Thomas (Texte sur deux lignes) ---
+            FontMetrics fm = g2d.getFontMetrics();
+            g2d.setColor(tDef);
+            int hTexte = fm.getHeight(); // Hauteur d'une ligne de texte
+            
+            // On calcule le centre vertical global de la case, puis on ajuste pour les deux lignes
+            int yThomas1 = rThomas.y + ((rThomas.height - (hTexte * 2)) / 2) + fm.getAscent();
+            int yThomas2 = yThomas1 + hTexte - Math.round(2 * scale); // La ligne "(vous)" juste en dessous
+            
+            // Ligne 1 : Thomas
+            g2d.drawString("Thomas", rThomas.x + (rThomas.width - fm.stringWidth("Thomas")) / 2, yThomas1);
+            
+            // Ligne 2 : (vous) en adaptant légèrement la police pour qu'elle soit plus discrète (optionnel)
+            g2d.setFont(new Font("Arial", Font.ITALIC, Math.max(7, Math.round(8 * scale))));
+            FontMetrics fmVous = g2d.getFontMetrics();
+            g2d.drawString("(vous)", rThomas.x + (rThomas.width - fmVous.stringWidth("(vous)")) / 2, yThomas2);
+
+            // Retour à la police normale pour le Salon
+            g2d.setFont(new Font("Arial", Font.BOLD, Math.max(8, Math.round(12 * scale))));
+            drawCenteredString(g2d, "SALON", rSalon, tDef);
+        }
+
+        // Méthode utilitaire
+        private void drawCenteredString(Graphics2D g2d, String text, Rectangle rect, Color color) {
+            g2d.setColor(color);
+            FontMetrics fm = g2d.getFontMetrics();
+            int x = rect.x + (rect.width - fm.stringWidth(text)) / 2;
+            int y = rect.y + ((rect.height - fm.getHeight()) / 2) + fm.getAscent();
+            g2d.drawString(text, x, y);
         }
 
         private void paintMapCase(Graphics2D g, Rectangle r, String u, Color def, Color act, Color inacc) {
