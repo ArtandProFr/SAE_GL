@@ -24,6 +24,20 @@ import java.util.HashSet;
 public class GameInfos{
     public static String GAMENAME = "BLURRED";
     public static String GAMENAME_TYPE_2 = "Blurred";
+
+    /** Version courante du jeu. */
+    public static final String VERSION = "Alpha";
+
+    /**
+     * Note de version affichée dans le menu PAUSE.
+     * Chaque entrée est un couple de clés de traduction {titre, contenu}.
+     * Ces notes documentent les bugs connus et leurs solutions.
+     */
+    public static final String[][] RELEASE_NOTES = {
+        { "BUG_1_TITLE", "BUG_1_FIX" },
+        { "BUG_2_TITLE", "BUG_2_FIX" }
+    };
+
     public static HashMap CREDITS = new HashMap<>();
     
     static {

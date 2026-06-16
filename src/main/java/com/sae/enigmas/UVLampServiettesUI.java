@@ -1,4 +1,5 @@
 package com.sae.enigmas;
+import com.roxane.app.Translations;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -34,8 +35,8 @@ public class UVLampServiettesUI extends EnigmaDialog {
     private static final int IDX_JACQUES = 0;
 
     public UVLampServiettesUI(Window parent) {
-        super(parent, "Lampe UV - Serviettes de la salle de bain", W, H);
-        setStatus("Balayez les serviettes avec la lampe UV...", new Color(108, 92, 231));
+        super(parent, Translations.t("SERV_TITLE"), W, H);
+        setStatus(Translations.t("SERV_STATUS"), new Color(108, 92, 231));
 
         // Disposition des six serviettes en grille 2 colonnes x 3 lignes
         int gridX = 80, gridY = 50;
@@ -57,10 +58,10 @@ public class UVLampServiettesUI extends EnigmaDialog {
     protected void onMousePressed(Vec2 p) {
         if (btnContinuer.contains((int) p.x, (int) p.y)) {
             if (tacheRevelee) {
-                setStatus("Tache identifiée sur la serviette de Jacques (Ja.).",
+                setStatus(Translations.t("SERV_OK"),
                           new Color(46, 204, 113));
             } else {
-                setStatus("Vous quittez la salle de bain.", new Color(200, 200, 200));
+                setStatus(Translations.t("SERV_QUIT"), new Color(200, 200, 200));
             }
             markSolvedAndClose();
         }
@@ -122,7 +123,7 @@ public class UVLampServiettesUI extends EnigmaDialog {
             g.fillOval(tx + 6, ty + 4, 18, 12);
             g.setColor(new Color(180, 150, 255));
             g.setFont(new Font("SansSerif", Font.BOLD, 11));
-            g.drawString("Tache suspecte", tx - 2, ty + 38);
+            g.drawString(Translations.t("SERV_TACHE"), tx - 2, ty + 38);
         }
 
         // Bouton "Continuer"
@@ -134,7 +135,7 @@ public class UVLampServiettesUI extends EnigmaDialog {
         g.drawRoundRect(btnContinuer.x, btnContinuer.y,
                         btnContinuer.width, btnContinuer.height, 14, 14);
         g.setFont(new Font("SansSerif", Font.BOLD, 14));
-        String t = tacheRevelee ? "J'ai vu — Continuer" : "Continuer";
+        String t = tacheRevelee ? Translations.t("SERV_BTN_VU") : Translations.t("BTN_CONTINUER");
         int tw = g.getFontMetrics().stringWidth(t);
         g.drawString(t, btnContinuer.x + (btnContinuer.width - tw) / 2,
                         btnContinuer.y + 20);

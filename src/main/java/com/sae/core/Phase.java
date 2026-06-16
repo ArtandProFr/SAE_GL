@@ -12,37 +12,37 @@ public class Phase {
 
     static {
         // Phase 0
-        addPhase("Réveil sans Louis.", 0, true);
+        addPhase("PHASE_DESC_0", 0, true);
 
         // Phase 1
-        addPhase("Un empoisonnement ?", 4, true);
+        addPhase("PHASE_DESC_1", 4, true);
 
         // Phase 2
-        addPhase("Pierre, que peut-il bien cacher ?", 3, true);
+        addPhase("PHASE_DESC_2", 3, true);
 
         // Phase 3
-        addPhase("Trouver comment entrer dans la chambre de Louis.", 5);
-        addPhase("Ordinateur de Louis.", 3);
-        addPhase("Coupure de courant.", 2);
-        addPhase("1/2 Remettre le courant.", 5);
-        addPhase("2/2 Remettre le courant.", 6);
-        addPhase("Discussion.", 1);
-        addPhase("Un peu de chimie.", 3, true);
+        addPhase("PHASE_DESC_31", 5);
+        addPhase("PHASE_DESC_32", 3);
+        addPhase("PHASE_DESC_33", 2);
+        addPhase("PHASE_DESC_34", 5);
+        addPhase("PHASE_DESC_35", 6);
+        addPhase("PHASE_DESC_36", 1);
+        addPhase("PHASE_DESC_37", 3, true);
 
         // Phase 4
-        addPhase("Téléphone.", 6);
-        addPhase("Répondeur.", 0);
-        addPhase("Enquête dans la salle de bain.", 4, true);
+        addPhase("PHASE_DESC_41", 6);
+        addPhase("PHASE_DESC_42", 0);
+        addPhase("PHASE_DESC_43", 4, true);
 
         // Phase 5
-        addPhase("Paul rentre à l'appartement.", 0);
-        addPhase("Chambre de Jacques.", 8, true);
+        addPhase("PHASE_DESC_51", 0);
+        addPhase("PHASE_DESC_52", 8, true);
 
         // Phase 6
-        addPhase("Révélations.", 0, true);
+        addPhase("PHASE_DESC_61", 0, true);
 
         // Phase 7
-        addPhase("Crédits", 0, true);
+        addPhase("PHASE_DESC_71", 0, true);
     }
 
     public Phase(double numero){

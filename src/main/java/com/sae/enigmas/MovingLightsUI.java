@@ -1,4 +1,5 @@
 package com.sae.enigmas;
+import com.roxane.app.Translations;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -18,10 +19,10 @@ public class MovingLightsUI extends EnigmaDialog {
     private Save save = null;
 
     public MovingLightsUI(Window parent, Save save) {
-        super(parent, "Tableau électrique - Ampoules", W, H);
+        super(parent, Translations.t("LIGHTS_TITLE"), W, H);
         this.save = save;
         this.enigme = buildEnigme(save != null ? save.getDifficulty() : "Normal");
-        setStatus("Déplacez les ampoules sur les rails.",
+        setStatus(Translations.t("LIGHTS_STATUS"),
                 new Color(41, 128, 185));
     }
 
@@ -140,7 +141,7 @@ public class MovingLightsUI extends EnigmaDialog {
         enigme.update(p, false, true);
         
         if (enigme.win) {
-            setStatus("Toutes les lampes sont alimentées : courant rétabli !", new Color(46, 204, 113));
+            setStatus(Translations.t("LIGHTS_OK"), new Color(46, 204, 113));
             markSolvedAndClose();
         }
     }
@@ -151,7 +152,7 @@ public class MovingLightsUI extends EnigmaDialog {
         if (save.getDifficulty().equals("Easy")){
             g.setColor(new Color(180, 185, 195));
             g.setFont(new Font("SansSerif", Font.ITALIC, 12));
-            g.drawString("Glissez-déposez les ampoules. Celles adjacentes de couleurs différentes s'éteignent.",
+            g.drawString(Translations.t("LIGHTS_HINT_EASY"),
                     20, h - 15);
         }
     }

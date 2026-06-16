@@ -5,6 +5,8 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 
+import com.roxane.app.Translations;
+
 public class RotaryDial {
 
     public static final int[] EMPTY_LIST = new int[] {};
@@ -298,7 +300,7 @@ public class RotaryDial {
         Draw.circle(g, coord.x, coord.y, rayon_int * 0.55, new Color(28, 30, 36));
         Draw.circle(g, coord.x, coord.y, rayon_int * 0.55, new Color(120, 130, 145), 2);
         Draw.textCentered(g, coord.x, coord.y,
-                win ? "OUVERT" : (pushed.length == 0 ? "" : countPushed() + "/" + taille),
+                win ? Translations.t("OUVERT") : (pushed.length == 0 ? "" : countPushed() + "/" + taille),
                 win ? new Color(46, 204, 113) : Color.WHITE,
                 Math.max(13, rayon_ext / 14));
     }

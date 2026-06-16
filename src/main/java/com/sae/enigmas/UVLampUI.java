@@ -1,11 +1,12 @@
 package com.sae.enigmas;
-
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.Window;
+
+import com.roxane.app.Translations;
 
 /**
  * Phase 5.2 (optionnelle) — "Lampe UV" : indication du bon tiroir au plafond.
@@ -19,8 +20,8 @@ public class UVLampUI extends EnigmaDialog {
     private long start = System.currentTimeMillis();
 
     public UVLampUI(Window parent) {
-        super(parent, "Lampe UV - Plafond de Jacques", W, H);
-        setStatus("Vous balayez le plafond avec la lampe UV...", new Color(108, 92, 231));
+        super(parent, Translations.t("UVLAMP_TITLE"), W, H);
+        setStatus(Translations.t("UVLAMP_STATUS"), new Color(108, 92, 231));
     }
 
     @Override
@@ -37,7 +38,7 @@ public class UVLampUI extends EnigmaDialog {
     @Override
     protected void onMousePressed(Vec2 p) {
         if (btnAuto.contains((int) p.x, (int) p.y)) {
-            setStatus("Marquage révélé : tiroir n°2.", new Color(46, 204, 113));
+            setStatus(Translations.t("UVLAMP_REVEAL"), new Color(46, 204, 113));
             markSolvedAndClose();
         }
     }
@@ -65,7 +66,7 @@ public class UVLampUI extends EnigmaDialog {
         if (marquage.intersects(new Rectangle(mx - 90, my - 90, 180, 180))) {
             g.setColor(new Color(180, 150, 255));
             g.setFont(new Font("Monospaced", Font.BOLD, 22));
-            g.drawString("TIROIR B4", marquage.x - 12, marquage.y + 26);
+            g.drawString(Translations.t("TIROIR") + " B4", marquage.x - 12, marquage.y + 26);
         }
 
         // Bouton autosolve (failback : utile si pas de visuel finalisé)
@@ -75,7 +76,7 @@ public class UVLampUI extends EnigmaDialog {
         g.setColor(Color.WHITE);
         g.drawRoundRect(btnAuto.x, btnAuto.y, btnAuto.width, btnAuto.height, 14, 14);
         g.setFont(new Font("SansSerif", Font.BOLD, 14));
-        String t = "Continuer";
+        String t = Translations.t("BTN_CONTINUER");
         int tw = g.getFontMetrics().stringWidth(t);
         g.drawString(t, btnAuto.x + (btnAuto.width - tw) / 2, btnAuto.y + 20);
     }

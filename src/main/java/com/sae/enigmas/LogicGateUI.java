@@ -1,4 +1,5 @@
 package com.sae.enigmas;
+import com.roxane.app.Translations;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -46,7 +47,7 @@ public class LogicGateUI extends EnigmaDialog {
     private final Rectangle btnReset;
 
     public LogicGateUI(Window parent, Save save) {
-        super(parent, "Tableau électrique - Portes logiques",
+        super(parent, Translations.t("LOGIC_TITLE"),
               widthFor(diffFrom(save)), heightFor(diffFrom(save)));
         this.diff = diffFrom(save);
         this.PT  = ptFor(diff);
@@ -61,7 +62,7 @@ public class LogicGateUI extends EnigmaDialog {
         // Init : on évalue une première fois (pour les NOT à 1 dès le départ)
         for (Grid g : grids) g.evaluate();
 
-        setStatus("Basculez les interrupteurs pour ALLUMER la lampe finale.",
+        setStatus(Translations.t("LOGIC_STATUS"),
                   new Color(41, 128, 185));
     }
 
@@ -451,7 +452,7 @@ public class LogicGateUI extends EnigmaDialog {
     private void evaluate() {
         for (Grid gr : grids) gr.evaluate();
         if (winLight != null && winLight.state) {
-            setStatus("Lampe FINALE allumée : courant rétabli !",
+            setStatus(Translations.t("LOGIC_OK"),
                       new Color(46, 204, 113));
             if (!reussite) markSolvedAndClose();
         }
@@ -503,14 +504,14 @@ public class LogicGateUI extends EnigmaDialog {
         g.setColor(Color.WHITE);
         g.drawRoundRect(btnReset.x, btnReset.y, btnReset.width, btnReset.height, 14, 14);
         g.setFont(new Font("SansSerif", Font.BOLD, 13));
-        String t = "Tout remettre à OFF";
+        String t = Translations.t("LOGIC_RESET");
         int tw = g.getFontMetrics().stringWidth(t);
         g.drawString(t, btnReset.x + (btnReset.width - tw) / 2, btnReset.y + 24);
 
         if (winLight != null) {
             g.setFont(new Font("SansSerif", Font.BOLD, 13));
             g.setColor(winLight.state ? new Color(46, 204, 113) : new Color(220, 220, 220));
-            g.drawString("Lampe finale : " + (winLight.state ? "ON" : "OFF"), 30, h - 60);
+            g.drawString(String.format(Translations.t("LOGIC_FINAL_FMT"), (winLight.state ? "ON" : "OFF")), 30, h - 60);
         }
     }
 

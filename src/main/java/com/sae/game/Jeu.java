@@ -128,6 +128,7 @@ public class Jeu extends JFrame {
     private boolean tableauElectriqueOk = false;  // 3.4 résolue
     private boolean lumieresOk          = false;  // 3.5 résolue
     private boolean discussionLue       = false;  // 3.6
+    private boolean discussionDialogueEnCours = false; // 3.6 -> indice livre de chimie à la sortie du PC
     private boolean livreChimieOuvert   = false;  // 3.7
     private boolean telephoneDecroche   = false;  // 4.1
     private boolean repondeurEcoute     = false;  // 4.2
@@ -743,6 +744,12 @@ public class Jeu extends JFrame {
         }
         mettreAJourTexteChambre();
         recalculerCurseurImmediat();
+
+        // À la sortie du PC après la discussion (3.6), on guide vers le livre de chimie.
+        if (discussionDialogueEnCours) {
+            discussionDialogueEnCours = false;
+            afficherInfo2(Translations.t("Info_Cherche_Livre_Chimie"), Translations.t("TITRE_INDICE"));
+        }
     }
 
     /* ─── CLICS PAR PIÈCE/VUE ───────────────────────────────────────────────── */
@@ -834,7 +841,7 @@ public class Jeu extends JFrame {
                     return;
                 }
                 if (zonePostItZoom(iw, ih).contains(clic) && postItAffiche){
-                    afficherIndice("Un post-it sur le mur : \"Quatre colocs te cherchent depuis six heures, mais à neuf heures, il n’en restera qu’un.\".");
+                    afficherIndice(Translations.t("INDICE_POSTIT"));
                 }
             }
             if (indexDecor == 0) {
@@ -848,12 +855,13 @@ public class Jeu extends JFrame {
         if (numPhase() == 36) {
             if (indexDecor == 0 && zoneOrdi(iw, ih).contains(clic)) {
                 ouvrirDialogueCustom(
-                        "Une conversation est ouverte entre Louis et Pierre.",
-                        "Louis : \"Tu ne peux pas continuer comme ça, Pierre.\"",
-                        "Pierre : \"Tu ne sais rien de ce que je vis. Lâche-moi.\"",
-                        "Louis : \"Si tu ne m'écoutes pas, j'en parle à Jacques demain.\""
+                        Translations.t("Message_Discussion_1"),
+                        Translations.t("Message_Discussion_2"),
+                        Translations.t("Message_Discussion_3"),
+                        Translations.t("Message_Discussion_4")
                 );
                 discussionLue = true;
+                discussionDialogueEnCours = true;
                 avancerPhase(); // 3.6 → 3.7
                 return;
             }
@@ -863,10 +871,10 @@ public class Jeu extends JFrame {
             if (zoneLivre(iw, ih).contains(clic) && !livreChimieOuvert) {
                 livreChimieOuvert = true;
                 ouvrirDialogueCustom(
-                        "Un livre de chimie est posé sur le bureau de Louis.",
-                        "Une page est marquée : synthèse de composés cyanurés.",
-                        "Quelqu'un a soigneusement annoté la recette du poison.",
-                        "Tout désigne désormais une piste dans la salle de bain..."
+                        Translations.t("Message_Chimie_1"),
+                        Translations.t("Message_Chimie_2"),
+                        Translations.t("Message_Chimie_3"),
+                        Translations.t("Message_Chimie_4")
                 );
                 avancerPhase(); // 3.7 → 4.1
                 return;
@@ -907,7 +915,7 @@ public class Jeu extends JFrame {
                 lampeUVRamassee = true;
                 backgroundPanel.removeImage(0);
                 transitionner(U_SDB, decorsSdb, 0);
-                afficherIndice("Vous récupérez la lampe UV posée près de la baignoire.");
+                afficherIndice(Translations.t("INDICE_LAMPE_UV"));
                 if (lampeUVRamassee && serviettesVues) { avancerPhase(); cinematiquePaul(); }
                 return;
             }
@@ -919,8 +927,8 @@ public class Jeu extends JFrame {
             Rectangle serviettes = zoneServiettesSdb2(iw, ih);
             if (serviettes.contains(clic) && !serviettesVues) {
                 if (!lampeUVRamassee) {
-                    String indice = "5 serviettes brodées d'initiales (Ja., Pa., Pi., Lo., Th.)";
-                    if (save.getDifficulty().equals("Easy")) indice = indice + " — il fait trop sombre pour distinguer d'éventuelles traces. Une lampe UV serait précieuse.";
+                    String indice = Translations.t("INDICE_SERVIETTES_LISTE");
+                    if (save.getDifficulty().equals("Easy")) indice = indice + Translations.t("INDICE_SERVIETTES_SOMBRE_SUFFIX");
                     afficherIndice(indice);
                     return;
                 }
@@ -937,9 +945,9 @@ public class Jeu extends JFrame {
         modeEnigmeActive = false;
         serviettesVues = true;
         if (ui.isTacheRevelee()) {
-            afficherInfo2("Sous la lampe UV, une tache fluorescente apparaît sur la serviette de Jacques (JA.). Une preuve troublante...", "Indice révélé");
+            afficherInfo2(Translations.t("INFO_TACHE_SERVIETTE"), Translations.t("TITRE_INDICE_REVELE"));
         } else {
-            afficherIndice("Vous quittez la salle de bain sans avoir balayé toutes les serviettes... mais l'enquête doit avancer.");
+            afficherIndice(Translations.t("INDICE_SERVIETTES_INCOMPLET"));
         }
         if (lampeUVRamassee && serviettesVues) {
             avancerPhase();
@@ -1012,32 +1020,32 @@ public class Jeu extends JFrame {
     private String messageAccesRefuse(String u) {
         int n = numPhase();
         switch (u) {
-            case U_DEHORS -> { return "Je dois d'abord savoir ce qu'il s'est passé..."; }
-            case U_THOMAS -> { return "Pourquoi aurais-je besoin de fouiller ma chambre ?"; }
-            case U_PAUL   -> { return "Rien ne le suspecte à présent, d'autant qu'il n'était pas là cette nuit..."; }
+            case U_DEHORS -> { return Translations.t("ACCES_SAVOIR_PASSE"); }
+            case U_THOMAS -> { return Translations.t("ACCES_THOMAS"); }
+            case U_PAUL   -> { return Translations.t("ACCES_PAUL"); }
             case U_PIERRE -> {
-                if (n < 21) return "Je dois d'abord trouver qui est suspect...";
+                if (n < 21) return Translations.t("ACCES_TROUVER_SUSPECT");
             }
             case U_LOUIS -> {
-                if (n < 21) return "Il doit y avoir des indices plus importants à côté de son corps...";
-                if (n == 21) return "Voyons d'abord ce que cache Pierre...";
-                if (n == 31) return "Je dois d'abord dévérouiller la porte.";
+                if (n < 21) return Translations.t("ACCES_INDICES_CORPS");
+                if (n == 21) return Translations.t("ACCES_PIERRE_CACHE");
+                if (n == 31) return Translations.t("ACCES_DEVERROUILLER_PORTE");
             }
             case U_JACQUES -> {
-                if (n < 21) return "Je dois d'abord trouver qui est suspect...";
-                if (n == 21) return "Voyons d'abord ce que cache Pierre...";
-                if (n < 41) return "La chambre de Louis doit contenir des indices...";
-                if (n < 51) return "Il doit y avoir des indices dans la salle de bain...";
+                if (n < 21) return Translations.t("ACCES_TROUVER_SUSPECT");
+                if (n == 21) return Translations.t("ACCES_PIERRE_CACHE");
+                if (n < 41) return Translations.t("ACCES_LOUIS_INDICES");
+                if (n < 51) return Translations.t("ACCES_SDB_INDICES");
             }
             case U_SDB -> {
-                if (n < 21) return "Je dois d'abord trouver qui est suspect...";
-                if (n == 21) return "Voyons d'abord ce que cache Pierre..."; 
-                if (n < 41) return "La chambre de Louis doit contenir des indices...";
-                if (n == 41) return "Le téléphone sonne, j'y enquêterai plus tard...";
-                if (n == 42) return "Le téléphone sonne, je ferais mieux de répondre...";
+                if (n < 21) return Translations.t("ACCES_TROUVER_SUSPECT");
+                if (n == 21) return Translations.t("ACCES_PIERRE_CACHE"); 
+                if (n < 41) return Translations.t("ACCES_LOUIS_INDICES");
+                if (n == 41) return Translations.t("ACCES_TEL_PLUS_TARD");
+                if (n == 42) return Translations.t("ACCES_TEL_REPONDRE");
             }
         }
-        return "Pas maintenant.";
+        return Translations.t("ACCES_PAS_MAINTENANT");
     }
 
     /* ─── LANCEMENTS DES ÉNIGMES (par phase) ────────────────────────────────── */
@@ -1065,7 +1073,7 @@ public class Jeu extends JFrame {
         if (ui.isReussite()) {
             subStep = 0;
             ui = null;
-            afficherInfo("Empreinte de Pierre confirmée. Direction sa chambre !");
+            afficherInfo(Translations.t("INFO_EMPREINTE_PIERRE"));
             avancerPhase(); // 1.1 → 2.1
         }
         rafraichirAffichage();
@@ -1096,7 +1104,7 @@ public class Jeu extends JFrame {
             ordiLouisDeverr = true;
             ui = null;
             avancerPhase(); // 3.2 → 3.3
-            afficherAvertissement("Vous êtes connecté à la session de Louis. Mais soudain... Le courant est coupé.", "Coupure de courant");
+            afficherAvertissement(Translations.t("AVERT_COUPURE"), Translations.t("TITRE_COUPURE"));
         }
         rafraichirAffichage();
     }
@@ -1120,7 +1128,7 @@ public class Jeu extends JFrame {
                 ui2 = null;
                 tableauElectriqueOk = true;
                 lumieresOk = true;
-                afficherInfo("Le courant est rétabli !");
+                afficherInfo(Translations.t("INFO_COURANT_RETABLI"));
                 avancerPhase(); // 3.5 → 3.6
                 transitionner(U_LOUIS, decorsLouis);
                 indexDecor = 0;
@@ -1146,10 +1154,10 @@ public class Jeu extends JFrame {
                 avancerPhase(); // 4.1 → 4.2
             }
             ouvrirDialogueCustom(
-                    "Vous décrochez. C'est un message vocal en différé.",
-                    "Jacques : \"Paul t'en veux, on en parle quand je serai rentré.\"",
-                    "Une piste de plus...",
-                    "Direction la salle de bain."
+                    Translations.t("Message_Tel_1"),
+                    Translations.t("Message_Tel_2"),
+                    Translations.t("Message_Tel_3"),
+                    Translations.t("Message_Tel_4")
             );
             if (numPhase() == 42){
                 avancerPhase(); // 4.2 → 4.3
@@ -1174,7 +1182,7 @@ public class Jeu extends JFrame {
         if (ui.isReussite()) {
             ui = null;
             tiroirJacquesOuvert = true;
-            afficherInfo2("Le tiroir s'ouvre. Une fiole de poison vide est dissimulée à l'intérieur... Voilà l'arme du crime !", "Info");
+            afficherInfo2(Translations.t("INFO_TIROIR_FIOLE"), Translations.t("TITRE_INFO"));
             avancerPhase();
             cinematiqueRevelations();
         }
@@ -1183,22 +1191,24 @@ public class Jeu extends JFrame {
 
     private void cinematiquePaul(){
         transitionner(U_SALON, decorsSalon);
-        ouvrirDialogueCustom("Paul rentre à l'appartement."
-
+        ouvrirDialogueCustom(
+                Translations.t("Message_Cinematique_Paul_1"),
+                Translations.t("Message_Cinematique_Paul_2"),
+                Translations.t("Message_Cinematique_Paul_3")
         );
     }
 
     private void cinematiqueRevelations() {
         
         ouvrirDialogueCustom(
-                "Jacques rentre dans la chambre.",
-                "Jacques : \"Ça suffit. C'est moi qui ai parlé à Paul de Louis.\"",
-                "Viens on va s'expliquer dans le salon, tout le monde est rentré.",
-                "Mais... pourquoi mentir sur le poison ?",
-                "Vous repensez à la nuit dernière. À cette dispute avec Louis.",
-                "Au verre que vous avez préparé. Au geste que vous avez refusé d'admettre.",
-                "Vous comprenez. C'est vous qui l'avez fait.",
-                "Le silence retombe."
+                Translations.t("Message_Revelation_1"),
+                Translations.t("Message_Revelation_2"),
+                Translations.t("Message_Revelation_3"),
+                Translations.t("Message_Revelation_4"),
+                Translations.t("Message_Revelation_5"),
+                Translations.t("Message_Revelation_6"),
+                Translations.t("Message_Revelation_7"),
+                Translations.t("Message_Revelation_8")
         );
     }
 
@@ -1228,7 +1238,7 @@ public class Jeu extends JFrame {
 
     private void naviguerDecor(int dir) {
         if (!enigmeVerre.isCorpsExamine() && universActuel.equals(U_SALON) && indexDecor == 0) {
-            if (dir > 0) txtExplicatif.setText("Je devrais d'abord aller voir ce qu'a Louis sur le canapé...");
+            if (dir > 0) txtExplicatif.setText(Translations.t("HINT_VOIR_LOUIS"));
             return;
         }
         if (decorsActuels.length <= 1) return;
@@ -1520,19 +1530,19 @@ public class Jeu extends JFrame {
     private void mettreAJourTexteChambre() {
         if (txtExplicatif == null) return;
         if (!enigmeVerre.isCorpsExamine() && universActuel.equals(U_SALON) && indexDecor == 0) {
-            txtExplicatif.setText("Salon | Louis est allongé sur le canapé... Il ne bouge plus.");
+            txtExplicatif.setText(Translations.t("SALON_CORPSE"));
             return;
         }
-        String progr = "  |         " + this.phase.getDescription();
+        String progr = "  |         " + Translations.t(this.phase.getDescription());
         if (enigmeVerre.isCorpsExamine() && numPhase() == 11 && !enigmeVerre.tousVerresTrouves()) {
-            progr = "  |         Fouille l'appartement : Trouve les 5 verres rouges (" + enigmeVerre.compterVerresTrouves() + "/5)";
+            progr = "  |         " + String.format(Translations.t("VERRES_HUNT_FMT"), enigmeVerre.compterVerresTrouves());
         }
         switch (universActuel) {
-            case U_SALON   -> txtExplicatif.setText("Salon" + progr);
-            case U_PIERRE  -> txtExplicatif.setText("Chambre de Pierre" + progr);
-            case U_LOUIS   -> txtExplicatif.setText("Chambre de Louis" + progr);
-            case U_JACQUES -> txtExplicatif.setText("Chambre de Jacques" + progr);
-            case U_SDB    -> txtExplicatif.setText("Salle de bain" + progr);
+            case U_SALON   -> txtExplicatif.setText(Translations.t("ROOM_SALON") + progr);
+            case U_PIERRE  -> txtExplicatif.setText(Translations.t("ROOM_PIERRE") + progr);
+            case U_LOUIS   -> txtExplicatif.setText(Translations.t("ROOM_LOUIS") + progr);
+            case U_JACQUES -> txtExplicatif.setText(Translations.t("ROOM_JACQUES") + progr);
+            case U_SDB    -> txtExplicatif.setText(Translations.t("ROOM_SDB") + progr);
             default        -> txtExplicatif.setText(universActuel + progr);
         }
     }
@@ -1721,7 +1731,7 @@ public class Jeu extends JFrame {
             String t = idx >= 0 ? textes[idx] : "";
             g2d.drawString(t, boxX + 25, boxY + 40);
             g2d.setFont(new Font("Arial", Font.ITALIC | Font.BOLD, 11)); g2d.setColor(new Color(46, 204, 113));
-            g2d.drawString("[ Cliquer pour continuer > ]", boxX + boxW - 170, boxY + boxH - 15);
+            g2d.drawString(Translations.t("DIALOGUE_CONTINUER"), boxX + boxW - 170, boxY + boxH - 15);
         }
 
         // Méthode utilitaire pour charger l'image (à appeler idéalement au démarrage)
@@ -1789,7 +1799,7 @@ public class Jeu extends JFrame {
             g2d.setFont(new Font("SansSerif", Font.ITALIC, 20));
             g2d.setColor(couleurTexteNormal);
             FontMetrics fmSub = g2d.getFontMetrics();
-            String sub = "— Crédits —";
+            String sub = Translations.t("CREDITS_SUB");
             g2d.drawString(sub, (w - fmSub.stringWidth(sub)) / 2, posCredits);
 
             // Espacement augmenté avant les noms pour aérer le bloc central
@@ -1798,7 +1808,7 @@ public class Jeu extends JFrame {
             Font nameFont    = new Font("SansSerif", Font.PLAIN, 18);
             
             for (Object key : GameInfos.CREDITS.keySet()) {
-                String sectionTitre = String.valueOf(key);
+                String sectionTitre = Translations.t(String.valueOf(key));
                 g2d.setFont(sectionFont);
                 g2d.setColor(couleurSection);
                 FontMetrics fmS = g2d.getFontMetrics();
@@ -1830,8 +1840,8 @@ public class Jeu extends JFrame {
             g2d.setFont(new Font("SansSerif", Font.ITALIC, 14));
             g2d.setColor(couleurTexteNormal); // Gris moyen (déjà défini plus haut)
             String[] infos = {
-                "INSA Hauts-de-France — Sciences et Humanités pour l'Ingénieur (2A)",
-                "SAE Génie Logiciel — Année 2025-2026"
+                Translations.t("CREDITS_INFO_1"),
+                Translations.t("CREDITS_INFO_2")
             };
             int yInfo = h - 90;
             for (String s : infos) {
@@ -1843,7 +1853,7 @@ public class Jeu extends JFrame {
             // Instruction de retour au menu
             g2d.setFont(new Font("SansSerif", Font.BOLD | Font.ITALIC, 16));
             g2d.setColor(couleurBouton); // On utilise le jaune doré qu'on a appelé "couleurBouton"
-            String instr = "[ Cliquer pour revenir au menu ]";
+            String instr = Translations.t("CREDITS_RETURN");
             FontMetrics fmInstr = g2d.getFontMetrics();
             g2d.drawString(instr, (w - fmInstr.stringWidth(instr)) / 2, h - 30);
         }
@@ -1854,19 +1864,19 @@ public class Jeu extends JFrame {
             switch (tag) {
                 case "__SDB1__", "__SDB2__" -> {
                     bg = new Color(34, 60, 80); accent = new Color(140, 200, 230);
-                    titre = "Salle de bain"; sousTitre = "Recherchez la lampe UV et examinez les serviettes.";
+                    titre = Translations.t("ROOM_SDB"); sousTitre = Translations.t("PH_SDB_SUB");
                 }
                 case "__THOMAS__" -> {
                     bg = new Color(48, 50, 64); accent = new Color(160, 165, 185);
-                    titre = "Chambre de Thomas"; sousTitre = "(Pourquoi aurais-je besoin de fouiller ma chambre ?)";
+                    titre = Translations.t("ROOM_THOMAS"); sousTitre = Translations.t("PH_THOMAS_SUB");
                 }
                 case "__PAUL__" -> {
                     bg = new Color(48, 36, 36); accent = new Color(220, 150, 150);
-                    titre = "Chambre de Paul"; sousTitre = "(Rien ne le suspecte à présent...)";
+                    titre = Translations.t("ROOM_PAUL"); sousTitre = Translations.t("PH_PAUL_SUB");
                 }
                 default -> {
                     bg = new Color(30, 32, 38); accent = Color.WHITE;
-                    titre = "Salle"; sousTitre = "";
+                    titre = Translations.t("PH_DEFAULT_TITLE"); sousTitre = "";
                 }
             }
             g.setColor(bg);
@@ -1887,7 +1897,7 @@ public class Jeu extends JFrame {
                 g.fillRoundRect(lx, ly, lw, lh, 16, 16);
                 g.setColor(Color.WHITE);
                 g.setFont(new Font("SansSerif", Font.BOLD, 14));
-                g.drawString(lampeUVRamassee ? "Lampe UV (prise)" : "Lampe UV", lx + 10, ly + lh / 2);
+                g.drawString(lampeUVRamassee ? Translations.t("PH_LAMPE_PRISE") : Translations.t("PH_LAMPE"), lx + 10, ly + lh / 2);
                 
                 int sx = r.x + (int)(r.width * 0.55);
                 int sy = r.y + (int)(r.height * 0.40);
@@ -1896,7 +1906,7 @@ public class Jeu extends JFrame {
                 g.setColor(serviettesVues ? new Color(60, 70, 90) : new Color(200, 200, 220));
                 g.fillRoundRect(sx, sy, sw, sh, 12, 12);
                 g.setColor(Color.BLACK);
-                g.drawString(serviettesVues ? "Serviettes examinées" : "Serviettes", sx + 10, sy + sh / 2);
+                g.drawString(serviettesVues ? Translations.t("PH_SERVIETTES_VUES") : Translations.t("PH_SERVIETTES"), sx + 10, sy + sh / 2);
             }
         }
 
@@ -1955,11 +1965,11 @@ public class Jeu extends JFrame {
             // Dessin des textes centrés
             g2d.setFont(new Font("Arial", Font.BOLD, Math.max(8, Math.round(9 * scale))));
             
-            drawCenteredString(g2d, "Pierre", rPierre, tDef);
-            drawCenteredString(g2d, "Louis", rLouis, tDef);
-            drawCenteredString(g2d, "Salle de bain", rSdb, tDef);
-            drawCenteredString(g2d, "Jacques", rJacques, tDef);
-            drawCenteredString(g2d, "Paul", rPaul, tDef);
+            drawCenteredString(g2d, Translations.t("MAP_PIERRE"), rPierre, tDef);
+            drawCenteredString(g2d, Translations.t("MAP_LOUIS"), rLouis, tDef);
+            drawCenteredString(g2d, Translations.t("MAP_SDB"), rSdb, tDef);
+            drawCenteredString(g2d, Translations.t("MAP_JACQUES"), rJacques, tDef);
+            drawCenteredString(g2d, Translations.t("MAP_PAUL"), rPaul, tDef);
 
             // --- Cas particulier pour Thomas (Texte sur deux lignes) ---
             FontMetrics fm = g2d.getFontMetrics();
@@ -1971,16 +1981,16 @@ public class Jeu extends JFrame {
             int yThomas2 = yThomas1 + hTexte - Math.round(2 * scale); // La ligne "(vous)" juste en dessous
             
             // Ligne 1 : Thomas
-            g2d.drawString("Thomas", rThomas.x + (rThomas.width - fm.stringWidth("Thomas")) / 2, yThomas1);
+            g2d.drawString(Translations.t("MAP_THOMAS"), rThomas.x + (rThomas.width - fm.stringWidth(Translations.t("MAP_THOMAS"))) / 2, yThomas1);
             
             // Ligne 2 : (vous) en adaptant légèrement la police pour qu'elle soit plus discrète (optionnel)
             g2d.setFont(new Font("Arial", Font.ITALIC, Math.max(7, Math.round(8 * scale))));
             FontMetrics fmVous = g2d.getFontMetrics();
-            g2d.drawString("(vous)", rThomas.x + (rThomas.width - fmVous.stringWidth("(vous)")) / 2, yThomas2);
+            g2d.drawString(Translations.t("MAP_VOUS"), rThomas.x + (rThomas.width - fmVous.stringWidth(Translations.t("MAP_VOUS"))) / 2, yThomas2);
 
             // Retour à la police normale pour le Salon
             g2d.setFont(new Font("Arial", Font.BOLD, Math.max(8, Math.round(12 * scale))));
-            drawCenteredString(g2d, "SALON", rSalon, tDef);
+            drawCenteredString(g2d, Translations.t("MAP_SALON"), rSalon, tDef);
         }
 
         // Méthode utilitaire

@@ -1,4 +1,5 @@
 package com.sae.enigmas;
+import com.roxane.app.Translations;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -69,7 +70,7 @@ public class EnigmeEmpreinteUI extends JDialog {
 
     // Le constructeur accepte désormais la Frame parent ET la sauvegarde actuelle (Requis par Jeu.java)
     public EnigmeEmpreinteUI(Frame parent, Save save) {
-        super(parent, "Laboratoire d'Analyse Criminelle - Empreintes", true);
+        super(parent, Translations.t("EMP_TITLE"), true);
         
         // Configuration dynamique de la difficulté basée sur la sauvegarde
         String diff = (save != null && save.getDifficulty() != null) ? save.getDifficulty().toUpperCase() : "NORMAL";
@@ -98,7 +99,7 @@ public class EnigmeEmpreinteUI extends JDialog {
 
         JPanel panelNord = new JPanel();
         panelNord.setBackground(new Color(45, 52, 54));
-        JLabel lblTitre = new JLabel("STATION D'ANALYSE : RECONSTITUER L'ÉCHANTILLON PUIS CHERCHER LA CORRESPONDANCE");
+        JLabel lblTitre = new JLabel(Translations.t("EMP_HEADER"));
         lblTitre.setForeground(Color.WHITE);
         lblTitre.setFont(new Font("Consolas", Font.BOLD, 14));
         panelNord.add(lblTitre);
@@ -112,7 +113,7 @@ public class EnigmeEmpreinteUI extends JDialog {
         panelEmpreinteVerre.setBackground(new Color(25, 25, 25));
         panelEmpreinteVerre.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(Color.RED, 2), 
-                " ÉCHANTILLON : VERRE (À RECONSTITUER) ", TitledBorder.LEFT, TitledBorder.TOP, null, Color.RED));
+                Translations.t("EMP_VERRE_TITLE"), TitledBorder.LEFT, TitledBorder.TOP, null, Color.RED));
         
         // Applique dynamiquement le nombre de lignes et colonnes calculé
         panelPuzzleGrid = new JPanel(new GridLayout(this.lignes, this.colonnes, 2, 2));
@@ -126,9 +127,9 @@ public class EnigmeEmpreinteUI extends JDialog {
         panelEmpreinteSuspect.setBackground(new Color(25, 25, 25));
         panelEmpreinteSuspect.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(Color.GRAY, 2), 
-                " FICHIER SÉLECTIONNÉ ", TitledBorder.LEFT, TitledBorder.TOP, null, Color.LIGHT_GRAY));
+                Translations.t("EMP_FICHIER_SEL"), TitledBorder.LEFT, TitledBorder.TOP, null, Color.LIGHT_GRAY));
         
-        lblEmpreinteSuspect = new JLabel("Verrouillé : Reconstituez d'abord le puzzle.", SwingConstants.CENTER);
+        lblEmpreinteSuspect = new JLabel(Translations.t("EMP_LOCKED"), SwingConstants.CENTER);
         lblEmpreinteSuspect.setForeground(Color.GRAY);
         lblEmpreinteSuspect.setFont(new Font("Arial", Font.ITALIC, 11));
         panelEmpreinteSuspect.add(lblEmpreinteSuspect, BorderLayout.CENTER);
@@ -142,7 +143,7 @@ public class EnigmeEmpreinteUI extends JDialog {
         panelDroite.setLayout(new BoxLayout(panelDroite, BoxLayout.Y_AXIS));
         panelDroite.setBorder(BorderFactory.createEmptyBorder(20, 15, 20, 15));
 
-        JLabel lblSuspects = new JLabel("BASE DE DONNÉES :");
+        JLabel lblSuspects = new JLabel(Translations.t("EMP_DB"));
         lblSuspects.setForeground(Color.WHITE);
         lblSuspects.setFont(new Font("Arial", Font.BOLD, 12));
         lblSuspects.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -151,7 +152,7 @@ public class EnigmeEmpreinteUI extends JDialog {
 
         String[] colocs = {"Louis", "Jacques", "Paul", "Pierre"};
         for (String coloc : colocs) {
-            JButton btnColoc = new JButton("Fichier: " + coloc);
+            JButton btnColoc = new JButton(String.format(Translations.t("EMP_FICHIER_FMT"), coloc));
             btnColoc.setMaximumSize(new Dimension(180, 35));
             btnColoc.setAlignmentX(Component.CENTER_ALIGNMENT);
             btnColoc.setFont(new Font("Arial", Font.PLAIN, 13));
@@ -165,7 +166,7 @@ public class EnigmeEmpreinteUI extends JDialog {
 
         panelDroite.add(Box.createVerticalGlue());
 
-        btnValider = new JButton("CONFIRMER ACCUSATION");
+        btnValider = new JButton(Translations.t("EMP_CONFIRM"));
         btnValider.setMaximumSize(new Dimension(180, 45));
         btnValider.setAlignmentX(Component.CENTER_ALIGNMENT);
         btnValider.setBackground(Color.GRAY);
@@ -286,8 +287,8 @@ public class EnigmeEmpreinteUI extends JDialog {
                 rafraichirGrillePuzzle();
                 
                 JOptionPane.showMessageDialog(this, 
-                    "Structure de l'échantillon reconstituée avec succès !\nBase de données déverrouillée.", 
-                    "Analyseur d'Empreintes", JOptionPane.INFORMATION_MESSAGE);
+                    Translations.t("EMP_RECONSTITUTED"), 
+                    Translations.t("EMP_ANALYZER"), JOptionPane.INFORMATION_MESSAGE);
                 
                 afficherImageEntierePropre();
                 activerComposantsBase();
@@ -303,7 +304,7 @@ public class EnigmeEmpreinteUI extends JDialog {
         panelEmpreinteVerre.add(lblImageLisse, BorderLayout.CENTER); 
         panelEmpreinteVerre.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(Color.GREEN, 2), 
-                " ÉCHANTILLON RECONSTITUÉ ", TitledBorder.LEFT, TitledBorder.TOP, null, Color.GREEN));
+                Translations.t("EMP_VERRE_DONE"), TitledBorder.LEFT, TitledBorder.TOP, null, Color.GREEN));
         panelEmpreinteVerre.revalidate();
         panelEmpreinteVerre.repaint();
     }
@@ -329,10 +330,10 @@ public class EnigmeEmpreinteUI extends JDialog {
         btnValider.setEnabled(true);
         btnValider.setBackground(new Color(38, 166, 91));
         
-        lblEmpreinteSuspect.setText("Sélectionnez un suspect à comparer");
+        lblEmpreinteSuspect.setText(Translations.t("EMP_SELECT_SUSPECT"));
         panelEmpreinteSuspect.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(Color.GREEN, 2), 
-                " BASE DÉVERROUILLÉE ", TitledBorder.LEFT, TitledBorder.TOP, null, Color.GREEN));
+                Translations.t("EMP_DB_UNLOCKED"), TitledBorder.LEFT, TitledBorder.TOP, null, Color.GREEN));
     }
 
     private void chargerImageEmpreinte(JLabel label, String nomFichier) {
@@ -354,7 +355,7 @@ public class EnigmeEmpreinteUI extends JDialog {
         suspectSelectionne = nom;
         panelEmpreinteSuspect.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(new Color(46, 204, 113), 2), 
-                " RELEVÉ : " + nom.toUpperCase() + " ", TitledBorder.LEFT, TitledBorder.TOP, null, new Color(46, 204, 113)));
+                String.format(Translations.t("EMP_RELEVE_FMT"), nom.toUpperCase()), TitledBorder.LEFT, TitledBorder.TOP, null, new Color(46, 204, 113)));
         chargerImageEmpreinte(lblEmpreinteSuspect, "empreinte_" + nom.toLowerCase() + ".png");
         repaint();
     }
@@ -362,8 +363,8 @@ public class EnigmeEmpreinteUI extends JDialog {
     private void validerAnalyse() {
         if (suspectSelectionne.isEmpty()) {
             JOptionPane.showMessageDialog(this, 
-                "Veuillez d'abord sélectionner un fichier de suspect.", 
-                "Analyse impossible", JOptionPane.WARNING_MESSAGE);
+                Translations.t("EMP_NO_SELECT"), 
+                Translations.t("EMP_NO_SELECT_TITLE"), JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -372,8 +373,8 @@ public class EnigmeEmpreinteUI extends JDialog {
             dispose(); 
         } else {
             JOptionPane.showMessageDialog(this, 
-                "ANALYSE : Correspondance négative.\nLes minuties et bifurcations des lignes ne correspondent pas.", 
-                "Échec de l'alignement", JOptionPane.ERROR_MESSAGE);
+                Translations.t("EMP_FAIL"), 
+                Translations.t("EMP_FAIL_TITLE"), JOptionPane.ERROR_MESSAGE);
         }
     }
 

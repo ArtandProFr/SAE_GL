@@ -2,6 +2,7 @@ package com.sae.enigmas;
 
 import java.awt.Point;
 import java.awt.Rectangle;
+import com.roxane.app.Translations;
 
 public class EnigmeVerre {
 
@@ -10,24 +11,28 @@ public class EnigmeVerre {
     
     // Dialogues initiaux de Louis
     private final String[] textesLouis = {
-        "Louis... ? Oh non, il ne respire plus. Son corps est déjà froid...",
-        "Regarde ses lèvres... elles ont une étrange teinte bleutée. Un empoisonnement ? C'est impensable...",
-        "Je n'ai pas le choix. Je dois fouiller l'appartement et trouver les indices qui mèneront au coupable."
+        "VERRE_LOUIS_1",
+        "VERRE_LOUIS_2",
+        "VERRE_LOUIS_3"
     };
 
     // Indices textuels associés à chaque verre rouge
     private final String[] indicesVerres = {
-        "Une trace de lèvres grasse... Ce verre appartient à Jacques.", // Verre 0 (Plante Salon 1)
-        "Ce verre sent fortement le soda tiède. C'est le mien.",        // Verre 1 (Table basse Salon 1)
-        "Ce verre de jus est intact et propre. Paul n'y a pas touché.",         // Verre 2 (Cuisine Salon 1)
-        "De la poudre blanche s'est déposée au fond... C'est le verre empoisonné de Louis !", // Verre 3 (Table Salon 2)
-        "Des empreintes digitales très nettes entourent ce verre... Ce sont celles de Pierre."  // Verre 4 (Table Salon 2)
+        "VERRE_IND_0", // Verre 0 (Plante Salon 1)
+        "VERRE_IND_1",        // Verre 1 (Table basse Salon 1)
+        "VERRE_IND_2",         // Verre 2 (Cuisine Salon 1)
+        "VERRE_IND_3", // Verre 3 (Table Salon 2)
+        "VERRE_IND_4"  // Verre 4 (Table Salon 2)
     };
 
     public boolean isCorpsExamine() { return corpsExamine; }
     public void setCorpsExamine(boolean examine) { this.corpsExamine = examine; }
 
-    public String[] getTextesLouis() { return textesLouis; }
+    public String[] getTextesLouis() {
+        String[] out = new String[textesLouis.length];
+        for (int i = 0; i < textesLouis.length; i++) out[i] = Translations.t(textesLouis[i]);
+        return out;
+    }
 
     /** Vérifie si un clic touche un verre non trouvé selon l'univers et le décor actuel */
     public int obtenirIdVerreClique(String univers, int indexDecor, Point clic, int iw, int ih) {
@@ -57,7 +62,7 @@ public class EnigmeVerre {
     public String inspecterVerre(int id) {
         if (id >= 0 && id < verresTrouves.length) {
             verresTrouves[id] = true;
-            return indicesVerres[id];
+            return Translations.t(indicesVerres[id]);
         }
         return "";
     }

@@ -1,4 +1,5 @@
 package com.sae.enigmas;
+import com.roxane.app.Translations;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -19,11 +20,11 @@ public class RotaryDialUI extends EnigmaDialog {
     private Save save = null;
 
     public RotaryDialUI(Window parent, Save save) {
-        super(parent, "Verrou rotatif - Porte de Louis", 640, 600);
+        super(parent, Translations.t("ROTARY_TITLE"), 640, 600);
         String diff = (save != null && save.getDifficulty() != null) ? save.getDifficulty() : "Normal";
         this.save = save;
         this.dial = RotaryDial.create(diff, new Vec2(W / 2.0, H / 2.0 - 30), 210, 0.55);
-        setStatus("Activez tous les boutons.",
+        setStatus(Translations.t("ROTARY_STATUS"),
                 new Color(41, 128, 185));
     }
 
@@ -80,7 +81,7 @@ public class RotaryDialUI extends EnigmaDialog {
 
                     // Vérification de la victoire à la fin de la rotation
                     if (dial.win) {
-                        setStatus("Porte déverrouillée !", new Color(46, 204, 113));
+                        setStatus(Translations.t("ROTARY_OK"), new Color(46, 204, 113));
                         markSolvedAndClose();
                     }
                 }
@@ -95,14 +96,14 @@ public class RotaryDialUI extends EnigmaDialog {
         if (dial == null) {
             g.setColor(Color.WHITE);
             g.setFont(new Font("SansSerif", Font.BOLD, 18));
-            g.drawString("Erreur : énigme non chargée.", 20, 40);
+            g.drawString(Translations.t("ROTARY_ERROR_LOAD"), 20, 40);
             return;
         }
         dial.draw(g);
         if (save.getDifficulty().equals("Easy")){
             g.setColor(new Color(180, 185, 195));
             g.setFont(new Font("SansSerif", Font.ITALIC, 12));
-            g.drawString("Cliquez sur un bouton du cadran pour avancer. Cliquer sur un autre bouton pour réinitialiser.",
+            g.drawString(Translations.t("ROTARY_HINT_EASY"),
                     20, h - 12);
         }
     }

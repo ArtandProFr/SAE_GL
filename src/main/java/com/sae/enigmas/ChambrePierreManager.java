@@ -2,6 +2,7 @@ package com.sae.enigmas;
 
 import java.awt.Point;
 import java.awt.Rectangle;
+import com.roxane.app.Translations;
 
 public class ChambrePierreManager {
 
@@ -52,7 +53,7 @@ public class ChambrePierreManager {
                         decorPierre2 = "pierre2.jpg"; // On change définitivement l'image de fond (sans cadenas)
                         jeu.activerModeZoom("pierre_armoire.jpg");
                     } else {
-                        jeu.afficherAvertissement("L'armoire à pharmacie est verrouillée par un cadenas.\nIl me faut une clé pour l'ouvrir.", "Armoire verrouillée");
+                        jeu.afficherAvertissement(Translations.t("PIERRE_ARMOIRE_VERROUILLEE"), Translations.t("TITRE_ARMOIRE_VERROUILLEE"));
                     }
                 }
                 return true;
@@ -69,7 +70,7 @@ public class ChambrePierreManager {
             Rectangle zoneCle = new Rectangle((int)(iw * 0.43), (int)(ih * 0.48), (int)(iw * 0.12), (int)(ih * 0.15));
             if (zoneCle.contains(clic)) {
                 aLaCle = true;
-                jeu.afficherInfo2("Vous avez récupéré la clé de l'armoire à pharmacie !", "Objet trouvé");
+                jeu.afficherInfo2(Translations.t("PIERRE_CLE_TROUVEE"), Translations.t("TITRE_OBJET_TROUVE"));
                 
                 // Réalisme : on change instantanément l'image pour afficher le tiroir désormais VIDE
                 jeu.activerModeZoom("pierre_tiroir.jpg");
@@ -78,7 +79,7 @@ public class ChambrePierreManager {
             // Zone de la fiole de poison (médicaments) dans l'armoire
             Rectangle zoneFiole = new Rectangle((int)(iw * 0.46), (int)(ih * 0.35), (int)(iw * 0.08), (int)(ih * 0.22));
             if (zoneFiole.contains(clic)) {
-                jeu.afficherInfo2("Une fiole... Peut-être que c'est du poison... Serait-ce l'arme du crime ?\nPierre cache bien son jeu.", "Indice Suspect");
+                jeu.afficherInfo2(Translations.t("PIERRE_MEDICAMENTS"), Translations.t("TITRE_INDICE_SUSPECT"));
             }
         }
     }

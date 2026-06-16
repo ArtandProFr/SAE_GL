@@ -1,4 +1,5 @@
 package com.sae.enigmas;
+import com.roxane.app.Translations;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -18,10 +19,10 @@ public class MovingBallsUI extends EnigmaDialog {
     private Save save = null;
 
     public MovingBallsUI(Window parent, Save save, int num) {
-        super(parent, "Verrou à billes - Tiroir de Jacques", W, H);
+        super(parent, Translations.t("BALLS_TITLE"), W, H);
         this.enigme = buildEnigme(save != null ? save.getDifficulty() : "Normal", num);
         this.save = save;
-        setStatus("Cliquez sur les boutons périphériques pour faire glisser les billes jusqu'aux cibles.",
+        setStatus(Translations.t("BALLS_STATUS"),
                 new Color(41, 128, 185));
         int fps = 60;
         javax.swing.Timer timer = new javax.swing.Timer(1000 / fps, e -> {
@@ -451,7 +452,7 @@ public class MovingBallsUI extends EnigmaDialog {
         if (save.getDifficulty().equals("Easy")){
             g.setColor(new Color(180, 185, 195));
             g.setFont(new Font("SansSerif", Font.ITALIC, 12));
-            g.drawString("Toutes les billes doivent reposer sur une case 'objectif'.",
+            g.drawString(Translations.t("BALLS_HINT"),
                     20, h - 13);
         }
     }

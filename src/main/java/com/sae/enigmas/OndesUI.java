@@ -1,4 +1,5 @@
 package com.sae.enigmas;
+import com.roxane.app.Translations;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -106,11 +107,11 @@ public class OndesUI extends EnigmaDialog {
     private double timeAnim = 0; // pour effet visuel léger
 
     public OndesUI(Window parent, Save save) {
-        super(parent, "Décrocher - Analyse du signal", W, H);
+        super(parent, Translations.t("ONDES_TITLE"), W, H);
         difficulte = (save != null && save.getDifficulty() != null) ? save.getDifficulty() : "Normal";
         construire(difficulte);
         layoutKnobs();
-        setStatus("Caler le signal du joueur (bleu) sur la cible (rouge). Difficulté : " + difficulte,
+        setStatus(String.format(Translations.t("ONDES_STATUS_FMT"), difficulte),
                 new Color(41, 128, 185));
     }
 
@@ -265,10 +266,10 @@ public class OndesUI extends EnigmaDialog {
             if (err > tol) { ok = false; break; }
         }
         if (ok) {
-            setStatus("Signal synchronisé. Vous décrochez : 'Allô ?'", new Color(46, 204, 113));
+            setStatus(Translations.t("ONDES_OK"), new Color(46, 204, 113));
             markSolvedAndClose();
         } else {
-            setStatus("Le signal ne correspond pas encore.", new Color(192, 57, 43));
+            setStatus(Translations.t("ONDES_FAIL"), new Color(192, 57, 43));
         }
     }
 
@@ -300,14 +301,14 @@ public class OndesUI extends EnigmaDialog {
         // 1) Oscilloscopes calés sur la hauteur virtuelle H_JEU (660)
         int scopeTop = 30, scopeBot = H_JEU - 200;
         if (cibleWaves.size() == 1) {
-            renderScope(g, 30, scopeTop, w - 60, scopeBot - scopeTop, cibleWaves.get(0), joueurWaves.get(0), "Signal");
+            renderScope(g, 30, scopeTop, w - 60, scopeBot - scopeTop, cibleWaves.get(0), joueurWaves.get(0), Translations.t("ONDES_SIGNAL"));
         } else {
             int nW = cibleWaves.size();
             int slot = (w - 30 - 30 * (nW + 1)) / nW;
             for (int i = 0; i < nW; i++) {
                 int x = 30 + i * (slot + 30);
                 renderScope(g, x, scopeTop, slot, scopeBot - scopeTop,
-                        cibleWaves.get(i), joueurWaves.get(i), "Onde " + (i + 1));
+                        cibleWaves.get(i), joueurWaves.get(i), String.format(Translations.t("ONDES_ONDE_FMT"), (i + 1)));
             }
         }
 
@@ -321,18 +322,18 @@ public class OndesUI extends EnigmaDialog {
         g.setColor(Color.WHITE);
         g.drawRoundRect(btnTest.x, btnTest.y, btnTest.width, btnTest.height, 14, 14);
         g.setFont(new Font("SansSerif", Font.BOLD, 14));
-        String t = "Décrocher (tester le signal)";
+        String t = Translations.t("ONDES_BTN");
         int tw = g.getFontMetrics().stringWidth(t);
         g.drawString(t, btnTest.x + (btnTest.width - tw) / 2, btnTest.y + 24);
 
         // Légende remontée légèrement pour laisser la place au bouton vert
         g.setFont(new Font("SansSerif", Font.PLAIN, 11));
         g.setColor(new Color(231, 76, 60));
-        g.drawString("● Cible", 40, H_JEU - 95);
+        g.drawString(Translations.t("ONDES_CIBLE"), 40, H_JEU - 95);
         g.setColor(new Color(52, 152, 219));
-        g.drawString("● Vous", 110, H_JEU - 95);
+        g.drawString(Translations.t("ONDES_VOUS"), 110, H_JEU - 95);
         g.setColor(new Color(180, 185, 195));
-        g.drawString("Difficulté : " + difficulte + "  —  " + knobs.size() + " potard(s)", 200, H_JEU - 95);
+        g.drawString(String.format(Translations.t("ONDES_DIFF_FMT"), difficulte, knobs.size()), 200, H_JEU - 95);
     }
 
     private void renderScope(Graphics2D g, int x, int y, int wB, int hB, Wave tgt, Wave plr, String titre) {

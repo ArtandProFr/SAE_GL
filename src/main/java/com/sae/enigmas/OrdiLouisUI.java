@@ -1,4 +1,5 @@
 package com.sae.enigmas;
+import com.roxane.app.Translations;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -29,7 +30,7 @@ public class OrdiLouisUI extends EnigmaDialog {
     private final Rectangle btnValider = new Rectangle(W/2 - 100, 217, 180, 40);
 
     public OrdiLouisUI(Window parent, Save save) {
-        super(parent, "Ordinateur de Louis - Verrouillé", W, H);
+        super(parent, Translations.t("ORDI_TITLE"), W, H);
 
         this.difficulty = save.getDifficulty();
         field = new JTextField();
@@ -53,17 +54,17 @@ public class OrdiLouisUI extends EnigmaDialog {
             field.requestFocusInWindow();
         });
 
-        setStatus("Saisissez le code à 4 chiffres affiché sur le post-it de Louis, puis validez.",
+        setStatus(Translations.t("ORDI_STATUS"),
                 new Color(41, 128, 185));
     }
 
     private void tenter() {
         String s = field.getText().trim();
         if (s.equals(CODE_LOUIS)) {
-            setStatus("Accès autorisé. Vous lisez l'écran...", new Color(46, 204, 113));
+            setStatus(Translations.t("ORDI_ACCES_OK"), new Color(46, 204, 113));
             markSolvedAndClose();
         } else {
-            setStatus("Code refusé.", new Color(192, 57, 43));
+            setStatus(Translations.t("ORDI_CODE_REFUSE"), new Color(192, 57, 43));
         }
     }
 
@@ -84,10 +85,10 @@ public class OrdiLouisUI extends EnigmaDialog {
         Draw.rectOutline(g, 30, 30, w - 60, 120, new Color(60, 70, 85), 2);
         g.setColor(new Color(46, 204, 113));
         g.setFont(new Font("Monospaced", Font.BOLD, 16));
-        g.drawString("Louis@INSA:~$ login --code", 50, 70);
-        g.drawString("> ENTRER LE CODE D'ACCÈS...", 50, 100);
+        g.drawString(Translations.t("ORDI_TERM_1"), 50, 70);
+        g.drawString(Translations.t("ORDI_TERM_2"), 50, 100);
         if (this.difficulty.equals("Easy")){
-            g.drawString("> Indice : post-it", 50, 130);
+            g.drawString(Translations.t("ORDI_TERM_INDICE"), 50, 130);
         }
 
         // Bouton valider
@@ -97,7 +98,7 @@ public class OrdiLouisUI extends EnigmaDialog {
         g.setColor(Color.WHITE);
         g.drawRoundRect(btnValider.x, btnValider.y, btnValider.width, btnValider.height, 14, 14);
         g.setFont(new Font("SansSerif", Font.BOLD, 15));
-        String t = "Valider";
+        String t = Translations.t("BTN_VALIDER");
         int tw = g.getFontMetrics().stringWidth(t);
         g.drawString(t, btnValider.x + (btnValider.width - tw) / 2, btnValider.y + 26);
     }

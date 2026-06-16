@@ -1,4 +1,5 @@
 package com.sae.enigmas;
+import com.roxane.app.Translations;
 
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
@@ -61,7 +62,7 @@ public abstract class EnigmaDialog extends JDialog {
 
         JPanel bottom = new JPanel();
         bottom.setBackground(new Color(28, 30, 36));
-        JButton btnAbandon = new JButton("Quitter l'énigme");
+        JButton btnAbandon = new JButton(Translations.t("BTN_QUITTER_ENIGME"));
         btnAbandon.setBackground(new Color(192, 57, 43));
         btnAbandon.setForeground(Color.WHITE);
         btnAbandon.setFocusPainted(false);
