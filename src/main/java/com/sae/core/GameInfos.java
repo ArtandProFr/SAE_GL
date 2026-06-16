@@ -22,8 +22,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 public class GameInfos{
-    public static String GAMENAME = "MY OWN ENEMY";
-    public static String GAMENAME_TYPE_2 = "My Own Enemy";
+    public static String GAMENAME = "BLURRED";
+    public static String GAMENAME_TYPE_2 = "Blurred";
     public static HashMap CREDITS = new HashMap<>();
     
     static {

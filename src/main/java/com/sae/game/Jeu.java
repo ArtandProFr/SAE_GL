@@ -1,7 +1,5 @@
 package com.sae.game;
 
-import java.util.Arrays;
-
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
@@ -19,10 +17,11 @@ import java.awt.RenderingHints;
 import java.awt.Window;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.IOException;
-import java.net.URL;
 import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
+import java.io.IOException;
+import java.net.URL;
+import java.util.Arrays;
 
 import javax.imageio.ImageIO;
 import javax.swing.AbstractAction;
@@ -162,7 +161,7 @@ public class Jeu extends JFrame {
         this.save = save;
         this.parent = parent;
         this.stage = stage;
-        this.DEFAULT_TITLE = "Escape Game - " + save.getSavename()
+        this.DEFAULT_TITLE = GameInfos.GAMENAME_TYPE_2 + " - " + save.getSavename()
                 + " (" + save.getUsername() + ") / [" + Translations.t(save.getDifficulty()) + "]";
 
         // Extraction et lissage de la phase sauvegardée
@@ -184,6 +183,30 @@ public class Jeu extends JFrame {
         txtExplicatif = new JLabel();
         txtExplicatif.setFont(new Font("Arial", Font.BOLD, 15));
         txtExplicatif.setForeground(Color.WHITE);
+        
+        boolean opaque = true;
+        if (opaque){
+            // 1. Rendre le JLabel opaque (indispensable pour voir le fond !)
+            txtExplicatif.setOpaque(true);
+            // 2. Définir la couleur du fond (par exemple, un gris foncé)
+            txtExplicatif.setBackground(new Color(50, 50, 50));
+        } else {
+            // On ne met PAS opaque(true) car on veut de la transparence
+            txtExplicatif.setOpaque(false); 
+
+            // On crée un fond personnalisé à la volée avec une couche Alpha (0 à 255)
+            txtExplicatif.setBackground(new Color(0, 0, 0, 180)); // Noir à 70% d'opacité
+        }
+
+        // 3. Ajouter une bordure pour faire l'encadré
+        // Le "EmptyBorder" sert de marge interne (padding) pour que le texte ne colle pas aux bords
+        txtExplicatif.setBorder(javax.swing.BorderFactory.createCompoundBorder(
+            javax.swing.BorderFactory.createLineBorder(new Color(200, 150, 45), 2), // Bordure extérieure (ex: Jaune, épaisseur 2px)
+            javax.swing.BorderFactory.createEmptyBorder(10, 15, 10, 15)   // Marge interne : Haut, Gauche, Bas, Droite
+        ));
+
+        // 4. Centrer le texte à l'intérieur de l'encadré (Optionnel mais recommandé)
+        txtExplicatif.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
 
         btnGauche = new JButton("<");
         btnGauche.setFont(new Font("Arial", Font.BOLD, 20));
@@ -1498,9 +1521,9 @@ public class Jeu extends JFrame {
             txtExplicatif.setText("Salon | Louis est allongé sur le canapé... Il ne bouge plus.");
             return;
         }
-        String progr = "  |  " + this.phase.getDescription();
+        String progr = "  |         " + this.phase.getDescription();
         if (enigmeVerre.isCorpsExamine() && numPhase() == 11 && !enigmeVerre.tousVerresTrouves()) {
-            progr = "  |  Fouille l'appartement : Trouve les 5 verres rouges (" + enigmeVerre.compterVerresTrouves() + "/5)";
+            progr = "  |         Fouille l'appartement : Trouve les 5 verres rouges (" + enigmeVerre.compterVerresTrouves() + "/5)";
         }
         switch (universActuel) {
             case U_SALON   -> txtExplicatif.setText("Salon" + progr);

@@ -76,7 +76,7 @@ public class MainApp extends Application {
     }
 
     public void showMenu() {
-        Text title = new Text("MENU");
+        Text title = new Text(Translations.t("MENU"));
         if (minecraftFontTitle != null) {
             title.setFont(minecraftFontTitle);
         }
