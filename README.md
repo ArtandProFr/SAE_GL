@@ -15,6 +15,7 @@ Le joueur incarne **Thomas**, un colocataire qui découvre un matin le corps de 
    mvn clean javafx:run
    ```
    ou exécutez le `.jar` généré si vous en avez packagé un.
+   Il vous est aussi possible de passer par la branche Executable qui contient un .jar compatible x64 (Windows, Linux, Mac).
 
 ### But du jeu
 Trouvez les indices qui mènent au coupable en résolvant les énigmes de chaque pièce. La progression est linéaire : chaque phase débloque la suivante.
