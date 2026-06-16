@@ -531,6 +531,10 @@ public class Jeu extends JFrame {
     }
 
     private void gererClicSouris(MouseEvent e) {
+
+        /* Mini-map (toujours active hors zoom) */
+        if (gererClicMiniMap(e.getPoint())) return;
+
         // Écran de crédits : tout clic ramène au menu principal (sur le thread JavaFX)
         if (creditsMode) {
             Save.updateLine(save);
@@ -579,9 +583,6 @@ public class Jeu extends JFrame {
                 return;
             }
         }
-
-        /* Mini-map (toujours active hors zoom) */
-        if (gererClicMiniMap(e.getPoint())) return;
 
         /* Logique propre à chaque univers/phase */
         if (universActuel.equals(U_SALON) && indexDecor == 0) {
@@ -638,7 +639,7 @@ public class Jeu extends JFrame {
         boolean inter = false;
 
         // Mini-map : toujours interactive si zoom inactif
-        if (pierreManager.getModeZoom().equals("AUCUN") && surMiniMap(clic.x + imgBounds.x, clic.y + imgBounds.y)) {
+        if (pierreManager.getModeZoom().equals("AUCUN") && surMiniMap(clic)) {
             inter = true;
         }
 
@@ -1488,21 +1489,22 @@ public class Jeu extends JFrame {
     private Rectangle[] miniMapRects = new Rectangle[7];
     private final String[] miniMapUnivers = { U_PIERRE, U_LOUIS, U_SDB, U_JACQUES, U_SALON, U_THOMAS, U_PAUL };
 
-    private boolean surMiniMap(int x, int y) {
-        for (Rectangle r : miniMapRects) if (r != null && r.contains(x, y)) return true;
+    private boolean surMiniMap(Point p) {
+        for (Rectangle r : miniMapRects) if (r != null && r.contains(p.x, p.y)) return true;
         return false;
     }
 
     private boolean gererClicMiniMap(Point p) {
+        // p est déjà dans le repère de l'image, miniMapRects aussi !
         for (int i = 0; i < miniMapRects.length; i++) {
             Rectangle r = miniMapRects[i];
-            if (r != null && r.contains(p)) {
+            if (r != null && r.contains(p)) { 
                 String cible = miniMapUnivers[i];
                 if (cible.equals(universActuel)) return true; 
-                if (cible.equals(U_PIERRE))   tenterAller(U_PIERRE, pierreManager.obtenirDecorsPierre());
+                if (cible.equals(U_PIERRE))       tenterAller(U_PIERRE, pierreManager.obtenirDecorsPierre());
                 else if (cible.equals(U_LOUIS))   tenterAllerLouis();
                 else if (cible.equals(U_JACQUES)) tenterAller(U_JACQUES, decorsJacques);
-                else if (cible.equals(U_SDB))    tenterAller(U_SDB, decorsSdb);
+                else if (cible.equals(U_SDB))     tenterAller(U_SDB, decorsSdb);
                 else if (cible.equals(U_THOMAS))  afficherInfo(messageAccesRefuse(U_THOMAS));
                 else if (cible.equals(U_PAUL))    afficherInfo(messageAccesRefuse(U_PAUL));
                 else if (cible.equals(U_SALON))   transitionner(U_SALON, decorsSalon);
@@ -1901,10 +1903,7 @@ public class Jeu extends JFrame {
         private void dessinerMiniMap(Graphics2D g2d) {
             // --- FACTEUR DE TAILLE ---
             float scale = 1.3f; 
-            
             int tc = Math.round(30 * scale);
-            int mapX = 30;
-            int mapY = getHeight() - (5 * tc) - 30;
 
             // Couleurs
             Color cDef = new Color(45, 52, 54, 240);
@@ -1912,15 +1911,22 @@ public class Jeu extends JFrame {
             Color cInacc = new Color(80, 30, 30, 200);
             Color tDef = Color.WHITE, tAct = Color.BLACK;
 
+            // On prend la hauteur de ton image (ou du panel si le panel fait la taille de l'image)
+            // Si "getHeight()" te donnait la bonne hauteur avant, garde getHeight() !
+            int imgH = getHeight(); 
+
+            int mapX = 30; // À 30 pixels du bord gauche de l'IMAGE
+            int mapY = imgH - (5 * tc) - 30; // À 30 pixels du bas de l'IMAGE
+
             // Dimensions scalées
             int largJacques = Math.round(46 * scale);
-            int largTP = Math.round(45 * scale); // Largeur suffisante pour "Thomas" et "Paul"
+            int largTP = Math.round(45 * scale);
 
-            // Rectangles
+            // Rectangles (Générés purement dans le repère de l'image)
             Rectangle rPierre  = new Rectangle(mapX, mapY, tc * 2, tc * 2);
             Rectangle rLouis   = new Rectangle(mapX, mapY + tc * 2, tc * 2, tc * 2);
             Rectangle rSdb     = new Rectangle(mapX, mapY + tc * 4, tc * 2, tc);
-            
+
             Rectangle rJacques = new Rectangle(mapX + tc * 2, mapY, largJacques, tc);
             Rectangle rThomas  = new Rectangle(mapX + tc * 2 + largJacques, mapY, largTP, tc);
             Rectangle rPaul    = new Rectangle(mapX + tc * 2 + largJacques + largTP, mapY, largTP, tc);
