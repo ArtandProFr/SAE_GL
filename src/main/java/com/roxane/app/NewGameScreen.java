@@ -223,6 +223,13 @@ public class NewGameScreen {
         StackPane gameRoot = new StackPane(swingNode);
         gameRoot.setStyle("-fx-background-color: black;");
 
+        // ─── RECTANGLE D'AIDE "ÉCHAP" (en bas à droite, par-dessus le jeu) ────
+        Label escHint = new Label(Translations.t("HINT_ESCAPE_PAUSE"));
+        escHint.setStyle("-fx-background-color: rgba(0,0,0,0.68); -fx-text-fill: #ffde64; "
+            + "-fx-padding: 8 14 8 14; -fx-border-color: #ffde64; -fx-border-width: 1.5; "
+            + "-fx-background-radius: 6; -fx-border-radius: 6;");
+        if (minecraftFont != null) escHint.setFont(Font.font(minecraftFont.getFamily(), 13));
+
         // ─── CRÉATION DE L'OVERLAY DE PAUSE ──────────────────────────────────
         StackPane pauseMenu = new StackPane();
         pauseMenu.setStyle("-fx-background-color: rgba(0, 0, 0, 0.7);"); // Fond sombre transparent
@@ -238,6 +245,7 @@ public class NewGameScreen {
         // Action de fermeture de la pause (identique au comportement de la touche Échap)
         resumeButton.setOnAction(ev -> {
             pauseMenu.setVisible(false);
+            escHint.setVisible(true);
             swingNode.setMouseTransparent(false);
             save.save();
         });
@@ -267,13 +275,26 @@ public class NewGameScreen {
         // Agencement vertical des boutons de pause
         VBox pauseButtonsBox = new VBox(15); // Espace de 15px entre les boutons
         pauseButtonsBox.getChildren().addAll(resumeButton, settingsButton, backButton);
-        pauseButtonsBox.setAlignment(Pos.CENTER);
+        pauseButtonsBox.setAlignment(Pos.CENTER_LEFT);
+        // Ajoute une marge à gauche (par exemple 80 ou 100 pixels selon ton rendu)
+        pauseButtonsBox.setPadding(new Insets(0, 0, 0, 100)); // Haut, Droite, Bas, Gauche
         
         pauseMenu.getChildren().add(pauseButtonsBox);
         StackPane.setAlignment(pauseButtonsBox, Pos.CENTER);
 
+        // ─── BLOC "NOTE DE VERSION" (encadré sur le côté droit de la pause) ───
+        VBox releaseNotesBox = buildReleaseNotesBox();
+        pauseMenu.getChildren().add(releaseNotesBox);
+        StackPane.setAlignment(releaseNotesBox, Pos.CENTER_RIGHT);
+        StackPane.setMargin(releaseNotesBox, new Insets(0, 40, 0, 0));
+
         // Ajout de l'overlay de pause dans le conteneur principal
         gameRoot.getChildren().add(pauseMenu);
+
+        // Le rectangle d'aide ÉCHAP reste au-dessus du jeu (masqué pendant la pause)
+        gameRoot.getChildren().add(escHint);
+        StackPane.setAlignment(escHint, Pos.BOTTOM_RIGHT);
+        StackPane.setMargin(escHint, new Insets(0, 24, 24, 0));
 
         Settings.getInstance().applyBrightness(gameRoot);
         Scene gameScene = new Scene(gameRoot, 1280, 720);
@@ -284,6 +305,7 @@ public class NewGameScreen {
             if (event.getCode() == javafx.scene.input.KeyCode.ESCAPE) {
                 this.pause.switchStatus();
                 pauseMenu.setVisible(this.pause.isPaused);
+                escHint.setVisible(!this.pause.isPaused);
                 swingNode.setMouseTransparent(this.pause.isPaused);
                 if (this.pause.isPaused && phase.getPoids() != 0){
                         save.addTime(((int) (Time.now() - save.getLastSave())) / 1000);
@@ -313,5 +335,52 @@ public class NewGameScreen {
         stage.setScene(gameScene);
         stage.setTitle(Translations.t(GameInfos.GAMENAME_TYPE_2)+ " - " + save.getSavename()
                 + " (" + save.getUsername() + ") / [" + Translations.t(save.getDifficulty()) + "]");
+    }
+
+    /**
+     * Construit l'encadré "Note de version" affiché sur le côté du menu PAUSE.
+     * Il documente la version courante et les bugs connus + leurs solutions.
+     */
+    private VBox buildReleaseNotesBox() {
+        VBox box = new VBox(10);
+        box.getStyleClass().add("gold-frame");
+        box.setAlignment(Pos.TOP_LEFT);
+        box.setPadding(new Insets(16));
+        box.setMaxWidth(380);
+        box.setMaxHeight(440);
+        box.setStyle("-fx-background-color: rgba(18,18,22,0.92); -fx-border-color: #ffde64; "
+            + "-fx-border-width: 2; -fx-background-radius: 8; -fx-border-radius: 8;");
+
+        Label title = new Label(Translations.t("RELEASE_NOTES_TITLE"));
+        title.setTextFill(Color.web("#ffde64"));
+        if (minecraftFont != null) title.setFont(Font.font(minecraftFont.getFamily(), 20));
+
+        Label version = new Label(Translations.t("VERSION_LABEL") + " : " + GameInfos.VERSION);
+        version.setTextFill(Color.web("#ffffff"));
+        if (minecraftFont != null) version.setFont(Font.font(minecraftFont.getFamily(), 14));
+
+        Label bugsHeader = new Label(Translations.t("RELEASE_NOTES_BUGS_HEADER"));
+        bugsHeader.setTextFill(Color.web("#ffb347"));
+        if (minecraftFont != null) bugsHeader.setFont(Font.font(minecraftFont.getFamily(), 15));
+
+        box.getChildren().addAll(title, version, bugsHeader);
+
+        for (String[] note : GameInfos.RELEASE_NOTES) {
+            Label bugTitle = new Label("• " + Translations.t(note[0]));
+            bugTitle.setTextFill(Color.web("#ffde64"));
+            bugTitle.setWrapText(true);
+            bugTitle.setMaxWidth(348);
+            if (minecraftFont != null) bugTitle.setFont(Font.font(minecraftFont.getFamily(), 13));
+
+            Label bugFix = new Label(Translations.t(note[1]));
+            bugFix.setTextFill(Color.web("#d8d8d8"));
+            bugFix.setWrapText(true);
+            bugFix.setMaxWidth(348);
+            bugFix.setFont(Font.font("System", 12));
+
+            box.getChildren().addAll(bugTitle, bugFix);
+        }
+
+        return box;
     }
 }
